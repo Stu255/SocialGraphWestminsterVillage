@@ -15,7 +15,6 @@ export default function Home() {
   const [selectedNode, setSelectedNode] = useState<any>(null);
   const [filters, setFilters] = useState({
     party: null,
-    committee: null,
     relationshipType: null,
   });
 
@@ -28,22 +27,20 @@ export default function Home() {
   });
 
   return (
-    <div className="h-screen w-full bg-background">
+    <div className="h-screen w-full bg-background overflow-hidden">
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={20} minSize={15}>
-          <div className="h-full p-4 border-r">
-            <FilterPanel filters={filters} onFilterChange={setFilters} />
-            <div className="mt-4">
+          <div className="h-full p-4 border-r overflow-y-auto">
+            <div className="space-y-4">
+              <FilterPanel filters={filters} onFilterChange={setFilters} />
               <NodeForm />
-            </div>
-            <div className="mt-4">
               <RelationshipForm />
             </div>
           </div>
         </ResizablePanel>
-        
+
         <ResizableHandle />
-        
+
         <ResizablePanel defaultSize={60}>
           <NetworkGraph
             nodes={politicians || []}
@@ -52,11 +49,11 @@ export default function Home() {
             onNodeSelect={setSelectedNode}
           />
         </ResizablePanel>
-        
+
         <ResizableHandle />
-        
+
         <ResizablePanel defaultSize={20} minSize={15}>
-          <div className="h-full p-4 border-l">
+          <div className="h-full p-4 border-l overflow-y-auto">
             <AnalysisPanel 
               selectedNode={selectedNode}
               nodes={politicians || []}
