@@ -51,25 +51,19 @@ export const relationships = pgTable("relationships", {
   notes: text("notes"),
 });
 
-// Define relations
-export const politicianRelations = relations(politicians, ({ many }) => ({
+// Relations
+export const politiciansRelations = relations(politicians, ({ many }) => ({
   committeeMemberships: many(committeeMemberships),
   historicalPositions: many(historicalPositions),
-  outgoingRelations: many(relationships, {
-    fields: [politicians.id],
-    references: [relationships.sourcePoliticianId],
-  }),
-  incomingRelations: many(relationships, {
-    fields: [politicians.id],
-    references: [relationships.targetPoliticianId],
-  }),
+  outgoingRelationships: many(relationships),
+  incomingRelationships: many(relationships),
 }));
 
-export const committeeRelations = relations(committees, ({ many }) => ({
+export const committeesRelations = relations(committees, ({ many }) => ({
   memberships: many(committeeMemberships),
 }));
 
-export const committeeMembershipRelations = relations(committeeMemberships, ({ one }) => ({
+export const committeeMembershipsRelations = relations(committeeMemberships, ({ one }) => ({
   politician: one(politicians, {
     fields: [committeeMemberships.politicianId],
     references: [politicians.id],
@@ -80,14 +74,14 @@ export const committeeMembershipRelations = relations(committeeMemberships, ({ o
   }),
 }));
 
-export const historicalPositionRelations = relations(historicalPositions, ({ one }) => ({
+export const historicalPositionsRelations = relations(historicalPositions, ({ one }) => ({
   politician: one(politicians, {
     fields: [historicalPositions.politicianId],
     references: [politicians.id],
   }),
 }));
 
-export const relationshipRelations = relations(relationships, ({ one }) => ({
+export const relationshipsRelations = relations(relationships, ({ one }) => ({
   sourcePolitician: one(politicians, {
     fields: [relationships.sourcePoliticianId],
     references: [politicians.id],
