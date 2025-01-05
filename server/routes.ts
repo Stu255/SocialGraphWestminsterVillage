@@ -9,50 +9,61 @@ export function registerRoutes(app: Express): Server {
 
   // Politicians
   app.get("/api/politicians", async (_req, res) => {
-    const allPoliticians = await db.query.politicians.findMany();
-    res.json(allPoliticians);
+    try {
+      const allPoliticians = await db.select().from(politicians);
+      res.json(allPoliticians);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch politicians" });
+    }
   });
 
   app.post("/api/politicians", async (req, res) => {
-    const politician = await db.insert(politicians).values(req.body).returning();
-    res.json(politician[0]);
-  });
-
-  app.put("/api/politicians/:id", async (req, res) => {
-    const { id } = req.params;
-    const politician = await db
-      .update(politicians)
-      .set(req.body)
-      .where(eq(politicians.id, parseInt(id)))
-      .returning();
-    res.json(politician[0]);
+    try {
+      const politician = await db.insert(politicians).values(req.body).returning();
+      res.json(politician[0]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create politician" });
+    }
   });
 
   // Relationships
   app.get("/api/relationships", async (_req, res) => {
-    const allRelationships = await db.query.relationships.findMany();
-    res.json(allRelationships);
+    try {
+      const allRelationships = await db.select().from(relationships);
+      res.json(allRelationships);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch relationships" });
+    }
   });
 
   app.post("/api/relationships", async (req, res) => {
-    const relationship = await db.insert(relationships).values(req.body).returning();
-    res.json(relationship[0]);
+    try {
+      const relationship = await db.insert(relationships).values(req.body).returning();
+      res.json(relationship[0]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create relationship" });
+    }
   });
 
   // Network Analysis Endpoints
   app.get("/api/analysis/centrality", async (_req, res) => {
-    const relationships = await db.query.relationships.findMany();
-    const politicians = await db.query.politicians.findMany();
+    try {
+      const [allRelationships, allPoliticians] = await Promise.all([
+        db.select().from(relationships),
+        db.select().from(politicians)
+      ]);
 
-    // Simple degree centrality calculation
-    const centrality = politicians.map(p => {
-      const degree = relationships.filter(r =>
-        r.sourcePoliticianId === p.id || r.targetPoliticianId === p.id
-      ).length;
-      return { id: p.id, name: p.name, centrality: degree };
-    });
+      const centrality = allPoliticians.map(p => {
+        const degree = allRelationships.filter(r =>
+          r.sourcePoliticianId === p.id || r.targetPoliticianId === p.id
+        ).length;
+        return { id: p.id, name: p.name, centrality: degree };
+      });
 
-    res.json(centrality);
+      res.json(centrality);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to calculate centrality" });
+    }
   });
 
   return httpServer;

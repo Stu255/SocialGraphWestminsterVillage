@@ -1,6 +1,5 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { relations } from "drizzle-orm";
 
 // Core Politicians table
 export const politicians = pgTable("politicians", {
@@ -9,6 +8,7 @@ export const politicians = pgTable("politicians", {
   party: text("party").notNull(),
   currentRole: text("current_role"),
   constituency: text("constituency").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Simple relationships between politicians
@@ -21,14 +21,8 @@ export const relationships = pgTable("relationships", {
     .references(() => politicians.id)
     .notNull(),
   relationshipType: text("relationship_type").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
-
-// Basic relations
-export const politiciansRelations = relations(politicians, ({ many }) => ({
-  outgoingRelations: many(relationships),
-  incomingRelations: many(relationships)
-}));
 
 // Schemas for validation
 export const insertPoliticianSchema = createInsertSchema(politicians);
