@@ -129,7 +129,7 @@ export function RelationshipForm() {
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent position="popper" side="top" align="start">
                       {relationshipTypes.map((type) => (
                         <SelectItem key={type.id} value={type.name}>
                           {type.name}
