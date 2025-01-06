@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { db } from "@db";
 import { politicians, relationships } from "@db/schema";
 
@@ -26,6 +26,24 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.delete("/api/politicians/:id", async (req, res) => {
+    try {
+      // First delete all relationships involving this politician
+      await db.delete(relationships).where(
+        or(
+          eq(relationships.sourcePoliticianId, parseInt(req.params.id)),
+          eq(relationships.targetPoliticianId, parseInt(req.params.id))
+        )
+      );
+
+      // Then delete the politician
+      await db.delete(politicians).where(eq(politicians.id, parseInt(req.params.id)));
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete politician" });
+    }
+  });
+
   // Relationships
   app.get("/api/relationships", async (_req, res) => {
     try {
@@ -42,6 +60,15 @@ export function registerRoutes(app: Express): Server {
       res.json(relationship[0]);
     } catch (error) {
       res.status(500).json({ error: "Failed to create relationship" });
+    }
+  });
+
+  app.delete("/api/relationships/:id", async (req, res) => {
+    try {
+      await db.delete(relationships).where(eq(relationships.id, parseInt(req.params.id)));
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete relationship" });
     }
   });
 

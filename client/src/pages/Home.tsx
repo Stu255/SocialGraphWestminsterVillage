@@ -26,6 +26,10 @@ export default function Home() {
     queryKey: ["/api/relationships"],
   });
 
+  const handleNodeDeleted = () => {
+    setSelectedNode(null);
+  };
+
   return (
     <div className="h-screen w-full bg-background overflow-hidden">
       <ResizablePanelGroup direction="horizontal">
@@ -58,6 +62,7 @@ export default function Home() {
               selectedNode={selectedNode}
               nodes={politicians || []}
               relationships={relationships || []}
+              onNodeDeleted={handleNodeDeleted}
             />
           </div>
         </ResizablePanel>
