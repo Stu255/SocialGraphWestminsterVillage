@@ -26,6 +26,19 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.put("/api/politicians/:id", async (req, res) => {
+    try {
+      const [updatedPolitician] = await db
+        .update(politicians)
+        .set(req.body)
+        .where(eq(politicians.id, parseInt(req.params.id)))
+        .returning();
+      res.json(updatedPolitician);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update politician" });
+    }
+  });
+
   app.delete("/api/politicians/:id", async (req, res) => {
     try {
       // First delete all relationships involving this politician
