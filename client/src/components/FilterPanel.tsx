@@ -1,8 +1,13 @@
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const parties = ["Conservative", "Labour", "Liberal Democrat", "SNP", "Other"] as const;
-const relationshipTypes = ["SPAD", "Advisor", "Mentor", "Committee", "Department"] as const;
+
+interface RelationshipType {
+  id: number;
+  name: string;
+}
 
 interface Filters {
   party: string | null;
@@ -15,6 +20,10 @@ interface FilterPanelProps {
 }
 
 export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
+  const { data: relationshipTypes = [] } = useQuery<RelationshipType[]>({
+    queryKey: ["/api/relationship-types"],
+  });
+
   return (
     <Card>
       <CardHeader>
@@ -57,8 +66,8 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
               {relationshipTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
+                <SelectItem key={type.id} value={type.name}>
+                  {type.name}
                 </SelectItem>
               ))}
             </SelectContent>
