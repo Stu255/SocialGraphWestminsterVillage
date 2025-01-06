@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { eq, or } from "drizzle-orm";
 import { db } from "@db";
-import { politicians, relationships } from "@db/schema";
+import { politicians, relationships, relationshipTypes } from "@db/schema";
 
 export function registerRoutes(app: Express): Server {
   const httpServer = createServer(app);
@@ -54,6 +54,34 @@ export function registerRoutes(app: Express): Server {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete politician" });
+    }
+  });
+
+  // Relationship Types
+  app.get("/api/relationship-types", async (_req, res) => {
+    try {
+      const types = await db.select().from(relationshipTypes);
+      res.json(types);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch relationship types" });
+    }
+  });
+
+  app.post("/api/relationship-types", async (req, res) => {
+    try {
+      const type = await db.insert(relationshipTypes).values(req.body).returning();
+      res.json(type[0]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create relationship type" });
+    }
+  });
+
+  app.delete("/api/relationship-types/:id", async (req, res) => {
+    try {
+      await db.delete(relationshipTypes).where(eq(relationshipTypes.id, parseInt(req.params.id)));
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete relationship type" });
     }
   });
 

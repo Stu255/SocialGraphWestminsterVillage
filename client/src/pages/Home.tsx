@@ -1,6 +1,7 @@
 import { NetworkGraph } from "@/components/NetworkGraph";
 import { NodeForm } from "@/components/NodeForm";
 import { RelationshipForm } from "@/components/RelationshipForm";
+import { RelationshipTypeManager } from "@/components/RelationshipTypeManager";
 import { FilterPanel } from "@/components/FilterPanel";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
 import { useState } from "react";
@@ -37,6 +38,7 @@ export default function Home() {
           <div className="h-full p-4 border-r overflow-y-auto">
             <div className="space-y-4">
               <FilterPanel filters={filters} onFilterChange={setFilters} />
+              <RelationshipTypeManager />
               <NodeForm />
               <RelationshipForm />
             </div>

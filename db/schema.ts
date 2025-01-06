@@ -11,7 +11,14 @@ export const politicians = pgTable("politicians", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Simple relationships between politicians
+// Relationship Types table
+export const relationshipTypes = pgTable("relationship_types", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Relationships between politicians
 export const relationships = pgTable("relationships", {
   id: serial("id").primaryKey(),
   sourcePoliticianId: integer("source_politician_id")
@@ -20,7 +27,9 @@ export const relationships = pgTable("relationships", {
   targetPoliticianId: integer("target_politician_id")
     .references(() => politicians.id)
     .notNull(),
-  relationshipType: text("relationship_type").notNull(),
+  relationshipType: text("relationship_type")
+    .references(() => relationshipTypes.name)
+    .notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -29,8 +38,11 @@ export const insertPoliticianSchema = createInsertSchema(politicians);
 export const selectPoliticianSchema = createSelectSchema(politicians);
 export const insertRelationshipSchema = createInsertSchema(relationships);
 export const selectRelationshipSchema = createSelectSchema(relationships);
+export const insertRelationshipTypeSchema = createInsertSchema(relationshipTypes);
+export const selectRelationshipTypeSchema = createSelectSchema(relationshipTypes);
 
 // Types
 export type Politician = typeof politicians.$inferSelect;
 export type InsertPolitician = typeof politicians.$inferInsert;
 export type Relationship = typeof relationships.$inferSelect;
+export type RelationshipType = typeof relationshipTypes.$inferSelect;

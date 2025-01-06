@@ -33,6 +33,13 @@ const partyColors = {
 export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
 
+  const getEdgeColor = (source: Node, target: Node) => {
+    if (source.party === target.party) {
+      return partyColors[source.party as keyof typeof partyColors] || partyColors.Default;
+    }
+    return "#999"; // Black for inter-party connections
+  };
+
   useEffect(() => {
     if (!svgRef.current || !nodes.length) return;
 
@@ -89,7 +96,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
       .selectAll("line")
       .data(filteredLinks)
       .join("line")
-      .attr("stroke", "#999")
+      .attr("stroke", d => getEdgeColor(d.source as Node, d.target as Node))
       .attr("stroke-opacity", 0.6)
       .attr("stroke-width", 2);
 

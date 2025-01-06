@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 
-const relationshipTypes = ["SPAD", "Advisor", "Mentor", "Committee", "Department"] as const;
-
 interface Politician {
+  id: number;
+  name: string;
+}
+
+interface RelationshipType {
   id: number;
   name: string;
 }
@@ -32,6 +35,10 @@ export function RelationshipForm() {
 
   const { data: politicians = [] } = useQuery<Politician[]>({
     queryKey: ["/api/politicians"],
+  });
+
+  const { data: relationshipTypes = [] } = useQuery<RelationshipType[]>({
+    queryKey: ["/api/relationship-types"],
   });
 
   const mutation = useMutation({
@@ -124,8 +131,8 @@ export function RelationshipForm() {
                     </FormControl>
                     <SelectContent>
                       {relationshipTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
+                        <SelectItem key={type.id} value={type.name}>
+                          {type.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
