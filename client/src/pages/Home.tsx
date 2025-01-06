@@ -34,20 +34,18 @@ export default function Home() {
   return (
     <div className="h-screen w-full bg-background overflow-hidden">
       <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel defaultSize={20} minSize={15}>
-          <div className="h-full p-4 border-r overflow-y-auto">
-            <div className="space-y-4">
-              <FilterPanel filters={filters} onFilterChange={setFilters} />
-              <RelationshipTypeManager />
-              <NodeForm />
-              <RelationshipForm />
-            </div>
+        <ResizablePanel defaultSize={25} minSize={20}>
+          <div className="h-full p-6 border-r overflow-y-auto space-y-6">
+            <FilterPanel filters={filters} onFilterChange={setFilters} />
+            <RelationshipTypeManager />
+            <NodeForm />
+            <RelationshipForm />
           </div>
         </ResizablePanel>
 
         <ResizableHandle />
 
-        <ResizablePanel defaultSize={60}>
+        <ResizablePanel defaultSize={55}>
           <NetworkGraph
             nodes={politicians || []}
             links={relationships || []}
@@ -59,7 +57,7 @@ export default function Home() {
         <ResizableHandle />
 
         <ResizablePanel defaultSize={20} minSize={15}>
-          <div className="h-full p-4 border-l overflow-y-auto">
+          <div className="h-full p-6 border-l overflow-y-auto">
             <AnalysisPanel 
               selectedNode={selectedNode}
               nodes={politicians || []}
