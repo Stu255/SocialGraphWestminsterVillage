@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { eq, or } from "drizzle-orm";
 import { db } from "@db";
-import { people, relationships, relationshipTypes, affiliations } from "@db/schema";
+import { people, relationships, relationshipTypes, affiliations, insertPersonSchema } from "@db/schema";
 
 export function registerRoutes(app: Express): Server {
   const httpServer = createServer(app);
@@ -19,10 +19,30 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/people", async (req, res) => {
     try {
-      const person = await db.insert(people).values(req.body).returning();
+      // Validate request body
+      const result = insertPersonSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: "Invalid input: " + result.error.issues.map(i => i.message).join(", ") 
+        });
+      }
+
+      // Check if affiliation exists
+      const [affiliation] = await db
+        .select()
+        .from(affiliations)
+        .where(eq(affiliations.name, result.data.affiliation))
+        .limit(1);
+
+      if (!affiliation) {
+        return res.status(400).json({ error: "Invalid affiliation" });
+      }
+
+      const person = await db.insert(people).values(result.data).returning();
       res.json(person[0]);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to create person" });
+    } catch (error: any) {
+      console.error("Error creating person:", error);
+      res.status(500).json({ error: error?.message || "Failed to create person" });
     }
   });
 
