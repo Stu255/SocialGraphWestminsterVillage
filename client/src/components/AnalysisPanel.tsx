@@ -234,12 +234,12 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
                 <p><strong>Party:</strong> {selectedNode.party}</p>
                 <p><strong>Constituency:</strong> {selectedNode.constituency}</p>
                 <p><strong>Current Role:</strong> {selectedNode.currentRole}</p>
-                {selectedNode.notes && (
-                  <div>
-                    <p className="font-medium mb-2">Notes:</p>
-                    <p className="text-sm whitespace-pre-wrap">{selectedNode.notes}</p>
-                  </div>
-                )}
+                <div>
+                  <p className="font-medium mb-2">Notes:</p>
+                  <p className="text-sm whitespace-pre-wrap">
+                    {selectedNode.notes || "No notes added yet."}
+                  </p>
+                </div>
               </>
             )}
           </div>
