@@ -18,7 +18,7 @@ interface Affiliation {
 
 export function NodeForm() {
   const [showRelationshipDialog, setShowRelationshipDialog] = useState(false);
-  const [newPolitician, setNewPolitician] = useState<{ id: number; name: string } | null>(null);
+  const [newPerson, setNewPerson] = useState<{ id: number; name: string } | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -37,7 +37,7 @@ export function NodeForm() {
 
   const mutation = useMutation({
     mutationFn: async (values: any) => {
-      const res = await fetch("/api/politicians", {
+      const res = await fetch("/api/people", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
@@ -51,8 +51,8 @@ export function NodeForm() {
       return res.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/politicians"] });
-      setNewPolitician({ id: data.id, name: data.name });
+      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      setNewPerson({ id: data.id, name: data.name });
       setShowRelationshipDialog(true);
       form.reset();
       toast({
@@ -164,7 +164,7 @@ export function NodeForm() {
       <MultiStepRelationshipDialog
         open={showRelationshipDialog}
         onOpenChange={setShowRelationshipDialog}
-        newPolitician={newPolitician}
+        newPerson={newPerson}
       />
     </>
   );
