@@ -5,10 +5,18 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 export const politicians = pgTable("politicians", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  party: text("party").notNull(),
+  affiliation: text("affiliation").notNull(),
   currentRole: text("current_role"),
   constituency: text("constituency").notNull(),
   notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Affiliations table
+export const affiliations = pgTable("affiliations", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  color: text("color").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -41,9 +49,13 @@ export const insertRelationshipSchema = createInsertSchema(relationships);
 export const selectRelationshipSchema = createSelectSchema(relationships);
 export const insertRelationshipTypeSchema = createInsertSchema(relationshipTypes);
 export const selectRelationshipTypeSchema = createSelectSchema(relationshipTypes);
+export const insertAffiliationSchema = createInsertSchema(affiliations);
+export const selectAffiliationSchema = createSelectSchema(affiliations);
 
 // Types
 export type Politician = typeof politicians.$inferSelect;
 export type InsertPolitician = typeof politicians.$inferInsert;
 export type Relationship = typeof relationships.$inferSelect;
 export type RelationshipType = typeof relationshipTypes.$inferSelect;
+export type Affiliation = typeof affiliations.$inferSelect;
+export type InsertAffiliation = typeof affiliations.$inferInsert;

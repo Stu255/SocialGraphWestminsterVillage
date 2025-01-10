@@ -2,6 +2,7 @@ import { NetworkGraph } from "@/components/NetworkGraph";
 import { NodeForm } from "@/components/NodeForm";
 import { RelationshipForm } from "@/components/RelationshipForm";
 import { RelationshipTypeManager } from "@/components/RelationshipTypeManager";
+import { AffiliationManager } from "@/components/AffiliationManager";
 import { FilterPanel } from "@/components/FilterPanel";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
 import { useState } from "react";
@@ -15,7 +16,7 @@ import {
 export default function Home() {
   const [selectedNode, setSelectedNode] = useState<any>(null);
   const [filters, setFilters] = useState({
-    party: null,
+    affiliation: null,
     relationshipType: null,
   });
 
@@ -37,9 +38,10 @@ export default function Home() {
         <ResizablePanel defaultSize={25} minSize={20}>
           <div className="h-full p-6 border-r overflow-y-auto space-y-6">
             <FilterPanel filters={filters} onFilterChange={setFilters} />
-            <RelationshipTypeManager />
             <NodeForm />
             <RelationshipForm />
+            <AffiliationManager />
+            <RelationshipTypeManager />
           </div>
         </ResizablePanel>
 

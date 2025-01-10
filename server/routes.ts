@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { eq, or } from "drizzle-orm";
 import { db } from "@db";
-import { politicians, relationships, relationshipTypes } from "@db/schema";
+import { politicians, relationships, relationshipTypes, affiliations } from "@db/schema";
 
 export function registerRoutes(app: Express): Server {
   const httpServer = createServer(app);
@@ -54,6 +54,47 @@ export function registerRoutes(app: Express): Server {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete politician" });
+    }
+  });
+
+  // Affiliations
+  app.get("/api/affiliations", async (_req, res) => {
+    try {
+      const all = await db.select().from(affiliations);
+      res.json(all);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch affiliations" });
+    }
+  });
+
+  app.post("/api/affiliations", async (req, res) => {
+    try {
+      const affiliation = await db.insert(affiliations).values(req.body).returning();
+      res.json(affiliation[0]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create affiliation" });
+    }
+  });
+
+  app.put("/api/affiliations/:id", async (req, res) => {
+    try {
+      const [updated] = await db
+        .update(affiliations)
+        .set(req.body)
+        .where(eq(affiliations.id, parseInt(req.params.id)))
+        .returning();
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update affiliation" });
+    }
+  });
+
+  app.delete("/api/affiliations/:id", async (req, res) => {
+    try {
+      await db.delete(affiliations).where(eq(affiliations.id, parseInt(req.params.id)));
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete affiliation" });
     }
   });
 
