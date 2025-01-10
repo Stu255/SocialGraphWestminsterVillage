@@ -17,7 +17,6 @@ export const politicians = pgTable("politicians", {
     .references(() => affiliations.name)
     .notNull(),
   currentRole: text("current_role"),
-  constituency: text("constituency").notNull(),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
