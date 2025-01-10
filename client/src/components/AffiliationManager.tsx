@@ -142,7 +142,7 @@ export function AffiliationManager() {
             <label className="text-sm font-medium">Color</label>
             <Input
               type="color"
-              value={editingAffiliation?.color}
+              value={editingAffiliation?.color || "#808080"}
               onChange={(e) =>
                 setEditingAffiliation(prev =>
                   prev ? { ...prev, color: e.target.value } : null

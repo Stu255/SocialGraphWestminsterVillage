@@ -1,0 +1,38 @@
+Warning: A component is changing a controlled input to be uncontrolled. This is likely caused by the value changing from a defined to undefined, which should not happen. Decide between using a controlled or uncontrolled input element for the lifetime of the component. More info: https://reactjs.org/link/controlled-components
+    at input
+    at _c (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/ui/input.tsx:20:11)
+    at div
+    at div
+    at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GPVWVTJC.js?v=32143f29:41:13
+    at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NIOGU42K.js?v=32143f29:59:7
+    at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-TQG5UYZM.js?v=32143f29:52:11
+    at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-TQG5UYZM.js?v=32143f29:33:11
+    at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GPVWVTJC.js?v=32143f29:41:13
+    at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DUK2ASJT.js?v=32143f29:42:5
+    at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YINSKODG.js?v=32143f29:230:13
+    at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YINSKODG.js?v=32143f29:153:58
+    at Presence (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OPUPN2GS.js?v=32143f29:24:11)
+    at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YINSKODG.js?v=32143f29:144:64
+    at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-TQG5UYZM.js?v=32143f29:52:11
+    at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-TQG5UYZM.js?v=32143f29:33:11
+    at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GPVWVTJC.js?v=32143f29:41:13
+    at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NIOGU42K.js?v=32143f29:258:22
+    at Presence (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OPUPN2GS.js?v=32143f29:24:11)
+    at Provider (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-SDAYBGFR.js?v=32143f29:48:15)
+    at DialogPortal (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YINSKODG.js?v=32143f29:107:11)
+    at _c3 (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/ui/dialog.tsx:49:12)
+    at Provider (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-SDAYBGFR.js?v=32143f29:48:15)
+    at Dialog (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YINSKODG.js?v=32143f29:48:5)
+    at AffiliationManager (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/AffiliationManager.tsx:33:23)
+    at div
+    at div
+    at PanelWithForwardedRef (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-resizable-panels.js?v=32143f29:40:3)
+    at forwardRef(Panel)
+    at div
+    at PanelGroupWithForwardedRef (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-resizable-panels.js?v=32143f29:1423:3)
+    at forwardRef(PanelGroup)
+    at ResizablePanelGroup (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/ui/resizable.tsx:21:3)
+    at div
+    at Home (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/pages/Home.tsx:34:43)
+    at Route…
+Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as d3 from "d3";
 import { Card } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
 
 interface Node {
   id: number;
@@ -22,16 +23,26 @@ interface Props {
   onNodeSelect: (node: Node | null) => void;
 }
 
-const affiliationColors: { [key: string]: string } = {
-  Default: "#808080",
-};
-
 export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
 
+  // Fetch affiliations data to get colors
+  const { data: affiliations = [] } = useQuery({
+    queryKey: ["/api/affiliations"],
+  });
+
+  // Create a map of affiliation colors
+  const affiliationColors = Object.fromEntries(
+    affiliations.map((a: any) => [a.name, a.color])
+  );
+
+  const getNodeColor = (affiliation: string) => {
+    return affiliationColors[affiliation] || "#808080"; // Default gray if no color found
+  };
+
   const getEdgeColor = (source: Node, target: Node) => {
     if (source.affiliation === target.affiliation) {
-      return affiliationColors[source.affiliation] || affiliationColors.Default;
+      return getNodeColor(source.affiliation);
     }
     return "#999"; // Gray for inter-affiliation connections
   };
@@ -78,7 +89,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
     }));
 
     // Create force simulation
-    const simulation = d3.forceSimulation(filteredNodes)
+    const simulation = d3.forceSimulation(filteredNodes as any)
       .force("link", d3.forceLink(filteredLinks)
         .id((d: any) => d.id)
         .distance(100))
@@ -121,7 +132,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
     // Add circles to node groups
     nodeGroup.append("circle")
       .attr("r", 8)
-      .attr("fill", d => affiliationColors[d.affiliation] || affiliationColors.Default)
+      .attr("fill", d => getNodeColor(d.affiliation))
       .on("click", (_event, d) => onNodeSelect(d));
 
     // Add labels to node groups
@@ -140,13 +151,13 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
         .attr("x2", d => (d.target as any).x)
         .attr("y2", d => (d.target as any).y);
 
-      nodeGroup.attr("transform", d => `translate(${d.x},${d.y})`);
+      nodeGroup.attr("transform", d => `translate(${(d as any).x},${(d as any).y})`);
     });
 
     return () => {
       simulation.stop();
     };
-  }, [nodes, links, filters, onNodeSelect]);
+  }, [nodes, links, filters, onNodeSelect, affiliationColors]);
 
   return (
     <Card className="h-full w-full">
