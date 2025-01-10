@@ -14,6 +14,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 
+interface Politician {
+  id: number;
+  name: string;
+  party: string;
+  currentRole?: string;
+  constituency: string;
+}
+
+interface RelationshipType {
+  id: number;
+  name: string;
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -32,11 +45,11 @@ export function MultiStepRelationshipDialog({ open, onOpenChange, newPolitician 
 
   const queryClient = useQueryClient();
 
-  const { data: politicians = [] } = useQuery({
+  const { data: politicians = [] } = useQuery<Politician[]>({
     queryKey: ["/api/politicians"],
   });
 
-  const { data: relationshipTypes = [] } = useQuery({
+  const { data: relationshipTypes = [] } = useQuery<RelationshipType[]>({
     queryKey: ["/api/relationship-types"],
   });
 
@@ -57,7 +70,6 @@ export function MultiStepRelationshipDialog({ open, onOpenChange, newPolitician 
 
   const handleNext = () => {
     if (step === 1) {
-      // Initialize relationships array with selected politicians
       setRelationships(
         selectedPoliticians.map(id => ({
           politicianId: id,
@@ -69,7 +81,6 @@ export function MultiStepRelationshipDialog({ open, onOpenChange, newPolitician 
   };
 
   const handleFinish = async () => {
-    // Create all relationships
     const promises = relationships.map(rel => {
       if (!newPolitician) return;
       return createRelationshipMutation.mutateAsync({
@@ -156,7 +167,7 @@ export function MultiStepRelationshipDialog({ open, onOpenChange, newPolitician 
                         <SelectValue placeholder="Select relationship type" />
                       </SelectTrigger>
                       <SelectContent position="popper" side="top" align="start">
-                        {relationshipTypes.map((type: any) => (
+                        {relationshipTypes.map((type) => (
                           <SelectItem key={type.id} value={type.name}>
                             {type.name}
                           </SelectItem>

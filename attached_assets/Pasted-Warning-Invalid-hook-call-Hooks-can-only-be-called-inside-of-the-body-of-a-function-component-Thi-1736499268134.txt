@@ -1,0 +1,44 @@
+Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem.
+Cannot read properties of null (reading 'useState')
+Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem.
+Cannot read properties of null (reading 'useContext')
+Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem.
+Cannot read properties of null (reading 'useState')
+The above error occurred in the <Switch> component:
+
+    at Switch (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=32143f29:379:17)
+    at App
+    at QueryClientProvider (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=1d0d8a5d:2805:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+The above error occurred in the <Toaster> component:
+
+    at Toaster (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/ui/toaster.tsx:29:22)
+    at QueryClientProvider (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=1d0d8a5d:2805:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+Cannot read properties of null (reading 'useContext')
+at useContext (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-3TFVT2CW.js?v=32143f29:1062:29)
+at useRouter (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=32143f29:257:51)
+at Switch (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=32143f29:380:18)
+at renderWithHooks (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=1d0d8a5d:11548:26)
+at mountIndeterminateComponent (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=1d0d8a5d:14926:21)
+at beginWork (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=1d0d8a5d:15914:22)
+at beginWork$1 (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=1d0d8a5d:19753:22)
+at performUnitOfWork (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=1d0d8a5d:19198:20)
+at workLoopSync (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=1d0d8a5d:19137:13)
+at renderRootSync (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=1d0d8a
