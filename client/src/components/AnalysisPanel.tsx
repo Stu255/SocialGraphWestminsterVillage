@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pencil, Trash2, X, Check } from "lucide-react";
 import { useState, useEffect } from "react";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +34,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     party: "",
     constituency: "",
     currentRole: "",
+    notes: "",
   });
 
   // Initialize edit values when node is selected
@@ -42,6 +44,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         party: selectedNode.party,
         constituency: selectedNode.constituency,
         currentRole: selectedNode.currentRole || "",
+        notes: selectedNode.notes || "",
       });
     }
   }, [selectedNode]);
@@ -216,12 +219,27 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
                     onChange={(e) => setEditedValues(prev => ({ ...prev, currentRole: e.target.value }))}
                   />
                 </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Notes</label>
+                  <Textarea
+                    value={editedValues.notes}
+                    onChange={(e) => setEditedValues(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="Add notes about this person..."
+                    className="min-h-[100px]"
+                  />
+                </div>
               </>
             ) : (
               <>
                 <p><strong>Party:</strong> {selectedNode.party}</p>
                 <p><strong>Constituency:</strong> {selectedNode.constituency}</p>
                 <p><strong>Current Role:</strong> {selectedNode.currentRole}</p>
+                {selectedNode.notes && (
+                  <div>
+                    <p className="font-medium mb-2">Notes:</p>
+                    <p className="text-sm whitespace-pre-wrap">{selectedNode.notes}</p>
+                  </div>
+                )}
               </>
             )}
           </div>

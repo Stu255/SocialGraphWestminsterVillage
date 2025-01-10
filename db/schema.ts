@@ -8,6 +8,7 @@ export const politicians = pgTable("politicians", {
   party: text("party").notNull(),
   currentRole: text("current_role"),
   constituency: text("constituency").notNull(),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
