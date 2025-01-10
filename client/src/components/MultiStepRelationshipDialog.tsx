@@ -14,12 +14,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 
-interface Politician {
+interface Person {
   id: number;
   name: string;
-  party: string;
+  affiliation: string;
   currentRole?: string;
-  constituency: string;
 }
 
 interface RelationshipType {
@@ -30,23 +29,23 @@ interface RelationshipType {
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  newPolitician: { id: number; name: string } | null;
+  newPerson: { id: number; name: string } | null;
 }
 
 interface RelationshipSelection {
-  politicianId: number;
+  personId: number;
   type: string;
 }
 
-export function MultiStepRelationshipDialog({ open, onOpenChange, newPolitician }: Props) {
+export function MultiStepRelationshipDialog({ open, onOpenChange, newPerson }: Props) {
   const [step, setStep] = useState<1 | 2>(1);
-  const [selectedPoliticians, setSelectedPoliticians] = useState<number[]>([]);
+  const [selectedPeople, setSelectedPeople] = useState<number[]>([]);
   const [relationships, setRelationships] = useState<RelationshipSelection[]>([]);
 
   const queryClient = useQueryClient();
 
-  const { data: politicians = [] } = useQuery<Politician[]>({
-    queryKey: ["/api/politicians"],
+  const { data: people = [] } = useQuery<Person[]>({
+    queryKey: ["/api/people"],
   });
 
   const { data: relationshipTypes = [] } = useQuery<RelationshipType[]>({
@@ -71,8 +70,8 @@ export function MultiStepRelationshipDialog({ open, onOpenChange, newPolitician 
   const handleNext = () => {
     if (step === 1) {
       setRelationships(
-        selectedPoliticians.map(id => ({
-          politicianId: id,
+        selectedPeople.map(id => ({
+          personId: id,
           type: "",
         }))
       );
@@ -82,29 +81,29 @@ export function MultiStepRelationshipDialog({ open, onOpenChange, newPolitician 
 
   const handleFinish = async () => {
     const promises = relationships.map(rel => {
-      if (!newPolitician) return;
+      if (!newPerson) return;
       return createRelationshipMutation.mutateAsync({
-        sourcePoliticianId: newPolitician.id,
-        targetPoliticianId: rel.politicianId,
+        sourcePersonId: newPerson.id,
+        targetPersonId: rel.personId,
         relationshipType: rel.type,
       });
     });
 
     await Promise.all(promises);
     setStep(1);
-    setSelectedPoliticians([]);
+    setSelectedPeople([]);
     setRelationships([]);
     onOpenChange(false);
   };
 
   const handleClose = () => {
     setStep(1);
-    setSelectedPoliticians([]);
+    setSelectedPeople([]);
     setRelationships([]);
     onOpenChange(false);
   };
 
-  if (!newPolitician) return null;
+  if (!newPerson) return null;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -112,35 +111,35 @@ export function MultiStepRelationshipDialog({ open, onOpenChange, newPolitician 
         <DialogHeader>
           <DialogTitle>
             {step === 1
-              ? "Select Politicians"
+              ? "Select People"
               : "Define Relationships"}
           </DialogTitle>
           <DialogDescription>
             {step === 1
-              ? "Select politicians to create relationships with."
-              : "Choose relationship types for each selected politician."}
+              ? "Select people to create relationships with."
+              : "Choose relationship types for each selected person."}
           </DialogDescription>
         </DialogHeader>
 
         {step === 1 ? (
           <ScrollArea className="h-[300px] pr-4">
             <div className="space-y-4">
-              {politicians
-                .filter(p => p.id !== newPolitician.id)
-                .map(politician => (
-                  <div key={politician.id} className="flex items-center space-x-2">
+              {people
+                .filter(p => p.id !== newPerson.id)
+                .map(person => (
+                  <div key={person.id} className="flex items-center space-x-2">
                     <Checkbox
-                      id={`p-${politician.id}`}
-                      checked={selectedPoliticians.includes(politician.id)}
+                      id={`p-${person.id}`}
+                      checked={selectedPeople.includes(person.id)}
                       onCheckedChange={(checked) => {
-                        setSelectedPoliticians(prev =>
+                        setSelectedPeople(prev =>
                           checked
-                            ? [...prev, politician.id]
-                            : prev.filter(id => id !== politician.id)
+                            ? [...prev, person.id]
+                            : prev.filter(id => id !== person.id)
                         );
                       }}
                     />
-                    <Label htmlFor={`p-${politician.id}`}>{politician.name}</Label>
+                    <Label htmlFor={`p-${person.id}`}>{person.name}</Label>
                   </div>
                 ))}
             </div>
@@ -149,12 +148,12 @@ export function MultiStepRelationshipDialog({ open, onOpenChange, newPolitician 
           <ScrollArea className="h-[300px] pr-4">
             <div className="space-y-4">
               {relationships.map((rel, index) => {
-                const politician = politicians.find(p => p.id === rel.politicianId);
+                const person = people.find(p => p.id === rel.personId);
                 return (
-                  <div key={rel.politicianId} className="space-y-2">
-                    <Label>{politician?.name}</Label>
+                  <div key={rel.personId} className="space-y-2">
+                    <Label>{person?.name}</Label>
                     <Select
-                      value={rel.type}
+                      value={rel.type || undefined}
                       onValueChange={(value) => {
                         setRelationships(prev => {
                           const newRels = [...prev];
@@ -185,7 +184,7 @@ export function MultiStepRelationshipDialog({ open, onOpenChange, newPolitician 
           {step === 1 ? (
             <Button
               onClick={handleNext}
-              disabled={selectedPoliticians.length === 0}
+              disabled={selectedPeople.length === 0}
             >
               Next
             </Button>

@@ -9,8 +9,8 @@ export const affiliations = pgTable("affiliations", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Core Politicians table
-export const politicians = pgTable("politicians", {
+// Core People table
+export const people = pgTable("people", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   affiliation: text("affiliation")
@@ -28,14 +28,14 @@ export const relationshipTypes = pgTable("relationship_types", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Relationships between politicians
+// Relationships between people
 export const relationships = pgTable("relationships", {
   id: serial("id").primaryKey(),
-  sourcePoliticianId: integer("source_politician_id")
-    .references(() => politicians.id)
+  sourcePersonId: integer("source_person_id")
+    .references(() => people.id)
     .notNull(),
-  targetPoliticianId: integer("target_politician_id")
-    .references(() => politicians.id)
+  targetPersonId: integer("target_person_id")
+    .references(() => people.id)
     .notNull(),
   relationshipType: text("relationship_type")
     .references(() => relationshipTypes.name)
@@ -44,8 +44,8 @@ export const relationships = pgTable("relationships", {
 });
 
 // Schemas for validation
-export const insertPoliticianSchema = createInsertSchema(politicians);
-export const selectPoliticianSchema = createSelectSchema(politicians);
+export const insertPersonSchema = createInsertSchema(people);
+export const selectPersonSchema = createSelectSchema(people);
 export const insertRelationshipSchema = createInsertSchema(relationships);
 export const selectRelationshipSchema = createSelectSchema(relationships);
 export const insertRelationshipTypeSchema = createInsertSchema(relationshipTypes);
@@ -54,8 +54,8 @@ export const insertAffiliationSchema = createInsertSchema(affiliations);
 export const selectAffiliationSchema = createSelectSchema(affiliations);
 
 // Types
-export type Politician = typeof politicians.$inferSelect;
-export type InsertPolitician = typeof politicians.$inferInsert;
+export type Person = typeof people.$inferSelect;
+export type InsertPerson = typeof people.$inferInsert;
 export type Relationship = typeof relationships.$inferSelect;
 export type RelationshipType = typeof relationshipTypes.$inferSelect;
 export type Affiliation = typeof affiliations.$inferSelect;

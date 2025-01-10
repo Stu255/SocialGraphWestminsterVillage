@@ -11,8 +11,8 @@ interface Node {
 }
 
 interface Link {
-  sourcePoliticianId: number;
-  targetPoliticianId: number;
+  sourcePersonId: number;
+  targetPersonId: number;
   relationshipType: string;
 }
 
@@ -79,12 +79,12 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
     const filteredLinks = links.filter(link => {
       if (filters.relationshipType && link.relationshipType !== filters.relationshipType) return false;
       // Only include links where both nodes are in the filtered set
-      const sourceExists = filteredNodes.some(n => n.id === link.sourcePoliticianId);
-      const targetExists = filteredNodes.some(n => n.id === link.targetPoliticianId);
+      const sourceExists = filteredNodes.some(n => n.id === link.sourcePersonId);
+      const targetExists = filteredNodes.some(n => n.id === link.targetPersonId);
       return sourceExists && targetExists;
     }).map(link => ({
-      source: filteredNodes.find(n => n.id === link.sourcePoliticianId),
-      target: filteredNodes.find(n => n.id === link.targetPoliticianId),
+      source: filteredNodes.find(n => n.id === link.sourcePersonId),
+      target: filteredNodes.find(n => n.id === link.targetPersonId),
       type: link.relationshipType
     }));
 

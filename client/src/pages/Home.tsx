@@ -20,8 +20,8 @@ export default function Home() {
     relationshipType: null,
   });
 
-  const { data: politicians } = useQuery({
-    queryKey: ["/api/politicians"],
+  const { data: people } = useQuery({
+    queryKey: ["/api/people"],
   });
 
   const { data: relationships } = useQuery({
@@ -49,7 +49,7 @@ export default function Home() {
 
         <ResizablePanel defaultSize={55}>
           <NetworkGraph
-            nodes={politicians || []}
+            nodes={people || []}
             links={relationships || []}
             filters={filters}
             onNodeSelect={setSelectedNode}
@@ -62,7 +62,7 @@ export default function Home() {
           <div className="h-full p-6 border-l overflow-y-auto">
             <AnalysisPanel 
               selectedNode={selectedNode}
-              nodes={politicians || []}
+              nodes={people || []}
               relationships={relationships || []}
               onNodeDeleted={handleNodeDeleted}
             />

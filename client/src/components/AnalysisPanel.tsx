@@ -18,8 +18,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const parties = ["Conservative", "Labour", "Liberal Democrat", "SNP", "Other"] as const;
-
 interface AnalysisPanelProps {
   selectedNode: any;
   nodes: any[];
@@ -31,8 +29,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [editedValues, setEditedValues] = useState({
-    party: "",
-    constituency: "",
+    affiliation: "",
     currentRole: "",
     notes: "",
   });
@@ -41,8 +38,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   useEffect(() => {
     if (selectedNode) {
       setEditedValues({
-        party: selectedNode.party,
-        constituency: selectedNode.constituency,
+        affiliation: selectedNode.affiliation,
         currentRole: selectedNode.currentRole || "",
         notes: selectedNode.notes || "",
       });
@@ -54,32 +50,36 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     enabled: !!nodes.length,
   });
 
-  const updatePoliticianMutation = useMutation({
+  const { data: affiliations = [] } = useQuery({
+    queryKey: ["/api/affiliations"],
+  });
+
+  const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
-      const res = await fetch(`/api/politicians/${selectedNode.id}`, {
+      const res = await fetch(`/api/people/${selectedNode.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),
       });
-      if (!res.ok) throw new Error("Failed to update politician");
+      if (!res.ok) throw new Error("Failed to update person");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/politicians"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
       setIsEditing(false);
     },
   });
 
-  const deletePoliticianMutation = useMutation({
+  const deletePersonMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/politicians/${id}`, {
+      const res = await fetch(`/api/people/${id}`, {
         method: 'DELETE',
       });
-      if (!res.ok) throw new Error("Failed to delete politician");
+      if (!res.ok) throw new Error("Failed to delete person");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/politicians"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
       queryClient.invalidateQueries({ queryKey: ["/api/relationships"] });
       if (onNodeDeleted) onNodeDeleted();
     },
@@ -99,7 +99,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   });
 
   const handleSave = () => {
-    updatePoliticianMutation.mutate(editedValues);
+    updatePersonMutation.mutate(editedValues);
   };
 
   if (!selectedNode) {
@@ -119,8 +119,8 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
   const nodeMetrics = centrality?.find((c: any) => c.id === selectedNode.id);
   const nodeRelationships = relationships.filter(r => 
-    r.sourcePoliticianId === selectedNode.id || 
-    r.targetPoliticianId === selectedNode.id
+    r.sourcePersonId === selectedNode.id || 
+    r.targetPersonId === selectedNode.id
   );
 
   return (
@@ -163,7 +163,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Politician</AlertDialogTitle>
+                      <AlertDialogTitle>Delete Person</AlertDialogTitle>
                       <AlertDialogDescription>
                         This will permanently delete {selectedNode.name} and all their relationships.
                         This action cannot be undone.
@@ -172,7 +172,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction 
-                        onClick={() => deletePoliticianMutation.mutate(selectedNode.id)}
+                        onClick={() => deletePersonMutation.mutate(selectedNode.id)}
                       >
                         Delete
                       </AlertDialogAction>
@@ -188,29 +188,22 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
             {isEditing ? (
               <>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Party</label>
+                  <label className="text-sm font-medium">Affiliation</label>
                   <Select
-                    value={editedValues.party}
-                    onValueChange={(value) => setEditedValues(prev => ({ ...prev, party: value }))}
+                    value={editedValues.affiliation}
+                    onValueChange={(value) => setEditedValues(prev => ({ ...prev, affiliation: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select party" />
+                      <SelectValue placeholder="Select affiliation" />
                     </SelectTrigger>
                     <SelectContent>
-                      {parties.map((party) => (
-                        <SelectItem key={party} value={party}>
-                          {party}
+                      {affiliations.map((affiliation: any) => (
+                        <SelectItem key={affiliation.id} value={affiliation.name}>
+                          {affiliation.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Constituency</label>
-                  <Input
-                    value={editedValues.constituency}
-                    onChange={(e) => setEditedValues(prev => ({ ...prev, constituency: e.target.value }))}
-                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Current Role</label>
@@ -231,8 +224,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
               </>
             ) : (
               <>
-                <p><strong>Party:</strong> {selectedNode.party}</p>
-                <p><strong>Constituency:</strong> {selectedNode.constituency}</p>
+                <p><strong>Affiliation:</strong> {selectedNode.affiliation}</p>
                 <p><strong>Current Role:</strong> {selectedNode.currentRole}</p>
                 <div>
                   <p className="font-medium mb-2">Notes:</p>
@@ -266,16 +258,16 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
           <div className="space-y-2">
             {nodeRelationships.map(rel => {
               const otherNode = nodes.find(n => 
-                n.id === (rel.sourcePoliticianId === selectedNode.id ? 
-                  rel.targetPoliticianId : 
-                  rel.sourcePoliticianId
+                n.id === (rel.sourcePersonId === selectedNode.id ? 
+                  rel.targetPersonId : 
+                  rel.sourcePersonId
                 )
               );
 
               return (
                 <div key={rel.id} className="flex items-center justify-between">
                   <span>
-                    {rel.sourcePoliticianId === selectedNode.id ? "→" : "←"} {otherNode?.name} 
+                    {rel.sourcePersonId === selectedNode.id ? "→" : "←"} {otherNode?.name} 
                     ({rel.relationshipType})
                   </span>
                   <Button

@@ -2,58 +2,58 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { eq, or } from "drizzle-orm";
 import { db } from "@db";
-import { politicians, relationships, relationshipTypes, affiliations } from "@db/schema";
+import { people, relationships, relationshipTypes, affiliations } from "@db/schema";
 
 export function registerRoutes(app: Express): Server {
   const httpServer = createServer(app);
 
-  // Politicians
-  app.get("/api/politicians", async (_req, res) => {
+  // People
+  app.get("/api/people", async (_req, res) => {
     try {
-      const allPoliticians = await db.select().from(politicians);
-      res.json(allPoliticians);
+      const allPeople = await db.select().from(people);
+      res.json(allPeople);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch politicians" });
+      res.status(500).json({ error: "Failed to fetch people" });
     }
   });
 
-  app.post("/api/politicians", async (req, res) => {
+  app.post("/api/people", async (req, res) => {
     try {
-      const politician = await db.insert(politicians).values(req.body).returning();
-      res.json(politician[0]);
+      const person = await db.insert(people).values(req.body).returning();
+      res.json(person[0]);
     } catch (error) {
-      res.status(500).json({ error: "Failed to create politician" });
+      res.status(500).json({ error: "Failed to create person" });
     }
   });
 
-  app.put("/api/politicians/:id", async (req, res) => {
+  app.put("/api/people/:id", async (req, res) => {
     try {
-      const [updatedPolitician] = await db
-        .update(politicians)
+      const [updatedPerson] = await db
+        .update(people)
         .set(req.body)
-        .where(eq(politicians.id, parseInt(req.params.id)))
+        .where(eq(people.id, parseInt(req.params.id)))
         .returning();
-      res.json(updatedPolitician);
+      res.json(updatedPerson);
     } catch (error) {
-      res.status(500).json({ error: "Failed to update politician" });
+      res.status(500).json({ error: "Failed to update person" });
     }
   });
 
-  app.delete("/api/politicians/:id", async (req, res) => {
+  app.delete("/api/people/:id", async (req, res) => {
     try {
-      // First delete all relationships involving this politician
+      // First delete all relationships involving this person
       await db.delete(relationships).where(
         or(
-          eq(relationships.sourcePoliticianId, parseInt(req.params.id)),
-          eq(relationships.targetPoliticianId, parseInt(req.params.id))
+          eq(relationships.sourcePersonId, parseInt(req.params.id)),
+          eq(relationships.targetPersonId, parseInt(req.params.id))
         )
       );
 
-      // Then delete the politician
-      await db.delete(politicians).where(eq(politicians.id, parseInt(req.params.id)));
+      // Then delete the person
+      await db.delete(people).where(eq(people.id, parseInt(req.params.id)));
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: "Failed to delete politician" });
+      res.status(500).json({ error: "Failed to delete person" });
     }
   });
 
@@ -157,14 +157,14 @@ export function registerRoutes(app: Express): Server {
   // Network Analysis Endpoints
   app.get("/api/analysis/centrality", async (_req, res) => {
     try {
-      const [allRelationships, allPoliticians] = await Promise.all([
+      const [allRelationships, allPeople] = await Promise.all([
         db.select().from(relationships),
-        db.select().from(politicians)
+        db.select().from(people)
       ]);
 
-      const centrality = allPoliticians.map(p => {
+      const centrality = allPeople.map(p => {
         const degree = allRelationships.filter(r =>
-          r.sourcePoliticianId === p.id || r.targetPoliticianId === p.id
+          r.sourcePersonId === p.id || r.targetPersonId === p.id
         ).length;
         return { id: p.id, name: p.name, centrality: degree };
       });

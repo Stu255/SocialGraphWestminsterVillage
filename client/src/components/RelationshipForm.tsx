@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 
-interface Politician {
+interface Person {
   id: number;
   name: string;
 }
@@ -16,8 +16,8 @@ interface RelationshipType {
 }
 
 interface FormValues {
-  sourcePoliticianId: string;
-  targetPoliticianId: string;
+  sourcePersonId: string;
+  targetPersonId: string;
   relationshipType: string;
   startDate: string;
 }
@@ -26,15 +26,15 @@ export function RelationshipForm() {
   const queryClient = useQueryClient();
   const form = useForm<FormValues>({
     defaultValues: {
-      sourcePoliticianId: "",
-      targetPoliticianId: "",
+      sourcePersonId: "",
+      targetPersonId: "",
       relationshipType: "",
       startDate: new Date().toISOString(),
     },
   });
 
-  const { data: politicians = [] } = useQuery<Politician[]>({
-    queryKey: ["/api/politicians"],
+  const { data: people = [] } = useQuery<Person[]>({
+    queryKey: ["/api/people"],
   });
 
   const { data: relationshipTypes = [] } = useQuery<RelationshipType[]>({
@@ -48,8 +48,8 @@ export function RelationshipForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...values,
-          sourcePoliticianId: parseInt(values.sourcePoliticianId),
-          targetPoliticianId: parseInt(values.targetPoliticianId),
+          sourcePersonId: parseInt(values.sourcePersonId),
+          targetPersonId: parseInt(values.targetPersonId),
         }),
       });
       if (!res.ok) throw new Error("Failed to create relationship");
@@ -71,18 +71,18 @@ export function RelationshipForm() {
           <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
             <FormField
               control={form.control}
-              name="sourcePoliticianId"
+              name="sourcePersonId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Source Politician</FormLabel>
+                  <FormLabel>Source Person</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select politician" />
+                        <SelectValue placeholder="Select person" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {politicians.map((p) => (
+                      {people.map((p) => (
                         <SelectItem key={p.id} value={p.id.toString()}>
                           {p.name}
                         </SelectItem>
@@ -95,18 +95,18 @@ export function RelationshipForm() {
 
             <FormField
               control={form.control}
-              name="targetPoliticianId"
+              name="targetPersonId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Target Politician</FormLabel>
+                  <FormLabel>Target Person</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select politician" />
+                        <SelectValue placeholder="Select person" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {politicians.map((p) => (
+                      {people.map((p) => (
                         <SelectItem key={p.id} value={p.id.toString()}>
                           {p.name}
                         </SelectItem>
