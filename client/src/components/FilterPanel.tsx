@@ -2,7 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const parties = ["Conservative", "Labour", "Liberal Democrat", "SNP", "Other"] as const;
+interface Affiliation {
+  id: number;
+  name: string;
+  color: string;
+}
 
 interface RelationshipType {
   id: number;
@@ -10,7 +14,7 @@ interface RelationshipType {
 }
 
 interface Filters {
-  party: string | null;
+  affiliation: string | null;
   relationshipType: string | null;
 }
 
@@ -20,6 +24,10 @@ interface FilterPanelProps {
 }
 
 export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
+  const { data: affiliations = [] } = useQuery<Affiliation[]>({
+    queryKey: ["/api/affiliations"],
+  });
+
   const { data: relationshipTypes = [] } = useQuery<RelationshipType[]>({
     queryKey: ["/api/relationship-types"],
   });
@@ -31,21 +39,21 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Party</label>
+          <label className="text-sm font-medium">Affiliation</label>
           <Select
-            value={filters.party || "all"}
+            value={filters.affiliation || "all"}
             onValueChange={(value) =>
-              onFilterChange({ ...filters, party: value === "all" ? null : value })
+              onFilterChange({ ...filters, affiliation: value === "all" ? null : value })
             }
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select party" />
+              <SelectValue placeholder="Select affiliation" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Parties</SelectItem>
-              {parties.map((party) => (
-                <SelectItem key={party} value={party}>
-                  {party}
+              <SelectItem value="all">All Affiliations</SelectItem>
+              {affiliations.map((affiliation) => (
+                <SelectItem key={affiliation.id} value={affiliation.name}>
+                  {affiliation.name}
                 </SelectItem>
               ))}
             </SelectContent>

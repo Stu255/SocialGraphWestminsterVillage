@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 interface Node {
   id: number;
   name: string;
-  party: string;
+  affiliation: string;
   currentRole?: string;
 }
 
@@ -22,22 +22,18 @@ interface Props {
   onNodeSelect: (node: Node | null) => void;
 }
 
-const partyColors = {
-  Conservative: "#0087DC",
-  Labour: "#DC241f",
-  "Liberal Democrat": "#FDBB30",
-  SNP: "#FDF38E",
+const affiliationColors: { [key: string]: string } = {
   Default: "#808080",
-} as const;
+};
 
 export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
 
   const getEdgeColor = (source: Node, target: Node) => {
-    if (source.party === target.party) {
-      return partyColors[source.party as keyof typeof partyColors] || partyColors.Default;
+    if (source.affiliation === target.affiliation) {
+      return affiliationColors[source.affiliation] || affiliationColors.Default;
     }
-    return "#999"; // Black for inter-party connections
+    return "#999"; // Gray for inter-affiliation connections
   };
 
   useEffect(() => {
@@ -64,7 +60,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
 
     // Filter nodes and links based on filters
     const filteredNodes = nodes.filter(node => {
-      if (filters.party && node.party !== filters.party) return false;
+      if (filters.affiliation && node.affiliation !== filters.affiliation) return false;
       return true;
     });
 
@@ -125,7 +121,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
     // Add circles to node groups
     nodeGroup.append("circle")
       .attr("r", 8)
-      .attr("fill", d => partyColors[d.party as keyof typeof partyColors] || partyColors.Default)
+      .attr("fill", d => affiliationColors[d.affiliation] || affiliationColors.Default)
       .on("click", (_event, d) => onNodeSelect(d));
 
     // Add labels to node groups

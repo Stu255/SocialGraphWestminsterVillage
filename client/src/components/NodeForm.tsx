@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,17 +8,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { MultiStepRelationshipDialog } from "./MultiStepRelationshipDialog";
 
-const parties = ["Conservative", "Labour", "Liberal Democrat", "SNP", "Other"];
+interface Affiliation {
+  id: number;
+  name: string;
+  color: string;
+}
 
 export function NodeForm() {
   const [showRelationshipDialog, setShowRelationshipDialog] = useState(false);
   const [newPolitician, setNewPolitician] = useState<{ id: number; name: string } | null>(null);
   const queryClient = useQueryClient();
+
+  const { data: affiliations = [] } = useQuery<Affiliation[]>({
+    queryKey: ["/api/affiliations"],
+  });
+
   const form = useForm({
     defaultValues: {
       name: "",
       constituency: "",
-      party: "",
+      affiliation: "",
       currentRole: "",
     },
   });
@@ -78,20 +87,20 @@ export function NodeForm() {
 
               <FormField
                 control={form.control}
-                name="party"
+                name="affiliation"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Party</FormLabel>
+                    <FormLabel>Affiliation</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select party" />
+                          <SelectValue placeholder="Select affiliation" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {parties.map((party) => (
-                          <SelectItem key={party} value={party}>
-                            {party}
+                        {affiliations.map((affiliation) => (
+                          <SelectItem key={affiliation.id} value={affiliation.name}>
+                            {affiliation.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

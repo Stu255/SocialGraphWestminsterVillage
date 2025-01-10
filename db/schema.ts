@@ -1,22 +1,24 @@
 import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
-// Core Politicians table
-export const politicians = pgTable("politicians", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  affiliation: text("affiliation").notNull(),
-  currentRole: text("current_role"),
-  constituency: text("constituency").notNull(),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
 // Affiliations table
 export const affiliations = pgTable("affiliations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   color: text("color").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Core Politicians table
+export const politicians = pgTable("politicians", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  affiliation: text("affiliation")
+    .references(() => affiliations.name)
+    .notNull(),
+  currentRole: text("current_role"),
+  constituency: text("constituency").notNull(),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
