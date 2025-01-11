@@ -80,11 +80,10 @@ export function MobileLayout({
                 key={index}
                 className={cn(
                   "absolute top-0 left-0 w-full transition-transform duration-300 ease-in-out",
-                  "transform"
+                  index === currentPanel ? "visible" : "invisible"
                 )}
                 style={{
-                  transform: `translateX(${(index - currentPanel) * 100}%)`,
-                  visibility: Math.abs(index - currentPanel) <= 1 ? 'visible' : 'hidden'
+                  transform: `translateX(${(index - currentPanel) * 100}%)`
                 }}
               >
                 {panel.component}
