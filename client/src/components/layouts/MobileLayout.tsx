@@ -29,7 +29,7 @@ export function MobileLayout({
   onNodeDeleted,
 }: MobileLayoutProps) {
   const [currentPanel, setCurrentPanel] = useState(0);
-  
+
   const panels = [
     { title: "Filters", component: <FilterPanel filters={filters} onFilterChange={onFilterChange} /> },
     { title: "Add Person", component: <NodeForm /> },
@@ -72,20 +72,20 @@ export function MobileLayout({
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        
+
         <div className="overflow-y-auto h-[calc(50vh-4rem)] p-4">
-          {/* Carousel */}
-          <div 
-            className="flex transition-transform duration-300 ease-in-out"
-            style={{ transform: `translateX(-${currentPanel * 100}%)` }}
-          >
+          <div className="relative w-full h-full">
             {panels.map((panel, index) => (
               <div
                 key={index}
                 className={cn(
-                  "w-full flex-shrink-0",
-                  currentPanel === index ? "block" : "hidden"
+                  "absolute top-0 left-0 w-full transition-transform duration-300 ease-in-out",
+                  "transform"
                 )}
+                style={{
+                  transform: `translateX(${(index - currentPanel) * 100}%)`,
+                  visibility: Math.abs(index - currentPanel) <= 1 ? 'visible' : 'hidden'
+                }}
               >
                 {panel.component}
               </div>
