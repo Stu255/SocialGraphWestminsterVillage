@@ -4,6 +4,22 @@ import { eq, or, desc } from "drizzle-orm";
 import { db } from "@db";
 import { people, relationships, relationshipTypes, affiliations, insertPersonSchema } from "@db/schema";
 
+function getSortableSurname(name: string): string {
+  const parts = name.split(" ");
+  if (parts.length === 3 && (parts[0] === "Sir" || parts[0] === "Dame")) {
+    return parts[2].toLowerCase();
+  }
+  return (parts[1] || parts[0]).toLowerCase();
+}
+
+function sortPeopleByName(peopleList: any[]): any[] {
+  return [...peopleList].sort((a, b) => {
+    const surnameA = getSortableSurname(a.name);
+    const surnameB = getSortableSurname(b.name);
+    return surnameA.localeCompare(surnameB);
+  });
+}
+
 export function registerRoutes(app: Express): Server {
   const httpServer = createServer(app);
 
@@ -11,7 +27,9 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/people", async (_req, res) => {
     try {
       const allPeople = await db.select().from(people);
-      res.json(allPeople);
+      // Sort people by surname before sending response
+      const sortedPeople = sortPeopleByName(allPeople);
+      res.json(sortedPeople);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch people" });
     }
