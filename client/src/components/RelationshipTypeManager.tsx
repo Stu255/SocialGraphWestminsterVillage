@@ -80,7 +80,7 @@ export function RelationshipTypeManager() {
               <div className="flex items-center gap-2">
                 <span>{type.name}</span>
                 <span className="text-xs text-muted-foreground">
-                  ({relationshipCounts[type.name] || 0} relationships)
+                  ({relationshipCounts[type.name] || 0})
                 </span>
               </div>
               <Button

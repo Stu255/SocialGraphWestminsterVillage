@@ -108,7 +108,7 @@ export function AffiliationManager() {
                   />
                   <span>{affiliation.name}</span>
                   <span className="text-xs text-muted-foreground">
-                    ({affiliation.memberCount} members)
+                    ({affiliation.memberCount})
                   </span>
                 </div>
                 <div className="flex gap-2">
