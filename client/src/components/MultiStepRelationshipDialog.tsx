@@ -13,12 +13,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
+import { TabbedPersonSelect } from "@/components/ui/tabbed-person-select";
 
 interface Person {
   id: number;
   name: string;
   affiliation: string;
-  currentRole?: string;
 }
 
 interface RelationshipType {
@@ -123,26 +123,7 @@ export function MultiStepRelationshipDialog({ open, onOpenChange, newPerson }: P
 
         {step === 1 ? (
           <ScrollArea className="h-[300px] pr-4">
-            <div className="space-y-4">
-              {people
-                .filter(p => p.id !== newPerson.id)
-                .map(person => (
-                  <div key={person.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`p-${person.id}`}
-                      checked={selectedPeople.includes(person.id)}
-                      onCheckedChange={(checked) => {
-                        setSelectedPeople(prev =>
-                          checked
-                            ? [...prev, person.id]
-                            : prev.filter(id => id !== person.id)
-                        );
-                      }}
-                    />
-                    <Label htmlFor={`p-${person.id}`}>{person.name}</Label>
-                  </div>
-                ))}
-            </div>
+            <TabbedPersonSelect people={people.filter(p => p.id !== newPerson?.id)} setSelectedPeople={setSelectedPeople} selectedPeople={selectedPeople} />
           </ScrollArea>
         ) : (
           <ScrollArea className="h-[300px] pr-4">

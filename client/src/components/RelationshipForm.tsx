@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { TabbedPersonSelect } from "@/components/ui/tabbed-person-select";
 
 interface Person {
   id: number;
@@ -33,10 +34,6 @@ export function RelationshipForm() {
     },
   });
 
-  const { data: people = [] } = useQuery<Person[]>({
-    queryKey: ["/api/people"],
-  });
-
   const { data: relationshipTypes = [] } = useQuery<RelationshipType[]>({
     queryKey: ["/api/relationship-types"],
   });
@@ -61,6 +58,8 @@ export function RelationshipForm() {
     },
   });
 
+  const sourceId = form.watch("sourcePersonId");
+
   return (
     <Card>
       <CardHeader>
@@ -72,23 +71,13 @@ export function RelationshipForm() {
             <FormField
               control={form.control}
               name="sourcePersonId"
+              rules={{ required: "Source person is required" }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Source Person</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select person" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {people.map((p) => (
-                        <SelectItem key={p.id} value={p.id.toString()}>
-                          {p.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <TabbedPersonSelect {...field} />
+                  </FormControl>
                 </FormItem>
               )}
             />
@@ -96,23 +85,16 @@ export function RelationshipForm() {
             <FormField
               control={form.control}
               name="targetPersonId"
+              rules={{ required: "Target person is required" }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Target Person</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select person" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {people.map((p) => (
-                        <SelectItem key={p.id} value={p.id.toString()}>
-                          {p.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <TabbedPersonSelect 
+                      {...field} 
+                      excludeIds={sourceId ? [parseInt(sourceId)] : []}
+                    />
+                  </FormControl>
                 </FormItem>
               )}
             />
@@ -120,6 +102,7 @@ export function RelationshipForm() {
             <FormField
               control={form.control}
               name="relationshipType"
+              rules={{ required: "Relationship type is required" }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Relationship Type</FormLabel>
