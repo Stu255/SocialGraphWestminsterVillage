@@ -20,6 +20,42 @@ function sortPeopleByName(peopleList: any[]): any[] {
   });
 }
 
+function calculateCloseness(
+  nodeId: number,
+  nodes: Map<number, Set<number>>,
+  totalNodes: number
+): number {
+  const distances = new Map<number, number>();
+  const queue: [number, number][] = [[nodeId, 0]];
+  distances.set(nodeId, 0);
+
+  while (queue.length > 0) {
+    const [currentNode, distance] = queue.shift()!;
+    const neighbors = nodes.get(currentNode) || new Set();
+
+    for (const neighbor of neighbors) {
+      if (!distances.has(neighbor)) {
+        distances.set(neighbor, distance + 1);
+        queue.push([neighbor, distance + 1]);
+      }
+    }
+  }
+
+  // Calculate closeness centrality
+  const totalDistance = Array.from(distances.values()).reduce((sum, dist) => sum + dist, 0);
+  const reachableNodes = distances.size;
+
+  // If node can't reach all other nodes, adjust the formula
+  if (reachableNodes === 1) return 0; // Isolated node
+  if (reachableNodes < totalNodes) {
+    // Adjusted closeness for disconnected graphs
+    return ((reachableNodes - 1) * (reachableNodes - 1)) / 
+           ((totalNodes - 1) * totalDistance);
+  }
+
+  return (reachableNodes - 1) / totalDistance;
+}
+
 export function registerRoutes(app: Express): Server {
   const httpServer = createServer(app);
 
@@ -223,12 +259,25 @@ export function registerRoutes(app: Express): Server {
         db.select().from(people)
       ]);
 
-      const centrality = allPeople.map(p => {
-        const degree = allRelationships.filter(r =>
-          r.sourcePersonId === p.id || r.targetPersonId === p.id
-        ).length;
-        return { id: p.id, name: p.name, centrality: degree };
+      // Create adjacency list representation
+      const nodes = new Map<number, Set<number>>();
+      allPeople.forEach(p => nodes.set(p.id, new Set()));
+
+      allRelationships.forEach(r => {
+        const sourceSet = nodes.get(r.sourcePersonId) || new Set();
+        const targetSet = nodes.get(r.targetPersonId) || new Set();
+        sourceSet.add(r.targetPersonId);
+        targetSet.add(r.sourcePersonId);
+        nodes.set(r.sourcePersonId, sourceSet);
+        nodes.set(r.targetPersonId, targetSet);
       });
+
+      const totalNodes = allPeople.length;
+      const centrality = allPeople.map(p => ({
+        id: p.id,
+        name: p.name,
+        centrality: calculateCloseness(p.id, nodes, totalNodes)
+      }));
 
       res.json(centrality);
     } catch (error) {

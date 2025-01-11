@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pencil, Trash2, X, Check } from "lucide-react";
+import { Pencil, Trash2, X, Check, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { 
@@ -50,9 +50,10 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     enabled: !!nodes.length,
   });
 
-  const { data: affiliations = [] } = useQuery({
-    queryKey: ["/api/affiliations"],
-  });
+  // Display top 10 people by centrality
+  const topPeople = centrality
+    ?.sort((a: any, b: any) => b.centrality - a.centrality)
+    .slice(0, 10) || [];
 
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
@@ -109,9 +110,21 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
           <CardTitle>Network Analysis</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Select a node to view detailed analysis
-          </p>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Select a node to view detailed analysis
+            </p>
+
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Top 10 Most Connected People</h3>
+              {topPeople.map((person: any, index: number) => (
+                <div key={person.id} className="flex justify-between items-center text-sm">
+                  <span>{index + 1}. {person.name}</span>
+                  <span className="text-muted-foreground">{person.centrality.toFixed(3)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
@@ -125,9 +138,20 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center gap-2 mb-2">
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={onNodeDeleted}
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <h2 className="text-lg font-semibold">{selectedNode.name}</h2>
+      </div>
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle>{selectedNode.name}</CardTitle>
+          <CardTitle>Profile</CardTitle>
           <div className="flex gap-2">
             {isEditing ? (
               <>
@@ -244,7 +268,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <p><strong>Centrality Score:</strong> {nodeMetrics?.centrality || 0}</p>
+            <p><strong>Centrality Score:</strong> {nodeMetrics?.centrality.toFixed(3) || 0}</p>
             <p><strong>Direct Connections:</strong> {nodeRelationships.length}</p>
           </div>
         </CardContent>
@@ -286,3 +310,5 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     </div>
   );
 }
+
+const affiliations = []; // This needs to be populated from your data source
