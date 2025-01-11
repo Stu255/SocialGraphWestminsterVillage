@@ -9,7 +9,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
@@ -123,7 +122,11 @@ export function MultiStepRelationshipDialog({ open, onOpenChange, newPerson }: P
 
         {step === 1 ? (
           <ScrollArea className="h-[300px] pr-4">
-            <TabbedPersonSelect people={people.filter(p => p.id !== newPerson?.id)} setSelectedPeople={setSelectedPeople} selectedPeople={selectedPeople} />
+            <TabbedPersonSelect 
+              selectedPeople={selectedPeople}
+              setSelectedPeople={setSelectedPeople}
+              people={people.filter(p => p.id !== newPerson?.id)}
+            />
           </ScrollArea>
         ) : (
           <ScrollArea className="h-[300px] pr-4">

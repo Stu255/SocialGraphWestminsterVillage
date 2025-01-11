@@ -1,0 +1,32 @@
+Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?
+
+Check the render method of `SlotClone`.
+    at TabbedPersonSelect (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/ui/tabbed-person-select.tsx:29:3)
+    at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-TQG5UYZM.js?v=32143f29:52:11
+    at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-TQG5UYZM.js?v=32143f29:33:11
+    at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/ui/form.tsx:127:9
+    at div
+    at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/ui/form.tsx:71:6
+    at Controller (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-hook-form.js?v=32143f29:313:35)
+    at FormField (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/ui/form.tsx:32:6)
+    at form
+    at FormProvider (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-hook-form.js?v=32143f29:102:11)
+    at div
+    at _c9 (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/ui/card.tsx:106:12)
+    at div
+    at _c (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/ui/card.tsx:20:11)
+    at RelationshipForm (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/RelationshipForm.tsx:27:23)
+    at div
+    at div
+    at PanelWithForwardedRef (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-resizable-panels.js?v=32143f29:40:3)
+    at forwardRef(Panel)
+    at div
+    at PanelGroupWithForwardedRef (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-resizable-panels.js?v=32143f29:1423:3)
+    at forwardRef(PanelGroup)
+    at ResizablePanelGroup (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/ui/resizable.tsx:21:3)
+    at div
+    at Home (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/pages/Home.tsx:34:43)
+    at Route (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=32143f29:323:16)
+    at Switch (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=32143f29:379:17)
+    at App
+    at QueryClientProvider (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=32143f29:2805:3)
