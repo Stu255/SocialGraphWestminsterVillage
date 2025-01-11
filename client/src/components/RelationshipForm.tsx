@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { TabbedPersonSelect } from "@/components/ui/tabbed-person-select";
 
 interface Person {
@@ -76,8 +76,13 @@ export function RelationshipForm() {
                 <FormItem>
                   <FormLabel>Source Person</FormLabel>
                   <FormControl>
-                    <TabbedPersonSelect {...field} />
+                    <TabbedPersonSelect 
+                      value={field.value} 
+                      onChange={field.onChange}
+                      placeholder="Select source person"
+                    />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -91,10 +96,13 @@ export function RelationshipForm() {
                   <FormLabel>Target Person</FormLabel>
                   <FormControl>
                     <TabbedPersonSelect 
-                      {...field} 
+                      value={field.value} 
+                      onChange={field.onChange}
+                      placeholder="Select target person"
                       excludeIds={sourceId ? [parseInt(sourceId)] : []}
                     />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -120,6 +128,7 @@ export function RelationshipForm() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
                 </FormItem>
               )}
             />

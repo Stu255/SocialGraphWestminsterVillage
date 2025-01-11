@@ -26,7 +26,7 @@ interface Affiliation {
 
 interface Props {
   value?: string;
-  onValueChange?: (value: string) => void;
+  onChange?: (value: string) => void;
   placeholder?: string;
   excludeIds?: number[];
   // For multi-select mode
@@ -37,7 +37,7 @@ interface Props {
 
 export const TabbedPersonSelect = forwardRef<HTMLButtonElement, Props>(({
   value,
-  onValueChange,
+  onChange,
   placeholder = "Select person",
   excludeIds = [],
   selectedPeople,
@@ -132,7 +132,7 @@ export const TabbedPersonSelect = forwardRef<HTMLButtonElement, Props>(({
 
   // Single-select mode
   return (
-    <Select onValueChange={onValueChange} value={value}>
+    <Select onValueChange={onChange} value={value}>
       <SelectTrigger ref={ref}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
