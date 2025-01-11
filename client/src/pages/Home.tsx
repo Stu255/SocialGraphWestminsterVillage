@@ -1,19 +1,22 @@
 import { NetworkGraph } from "@/components/NetworkGraph";
-import { NodeForm } from "@/components/NodeForm";
-import { RelationshipForm } from "@/components/RelationshipForm";
-import { RelationshipTypeManager } from "@/components/RelationshipTypeManager";
-import { AffiliationManager } from "@/components/AffiliationManager";
-import { FilterPanel } from "@/components/FilterPanel";
-import { AnalysisPanel } from "@/components/AnalysisPanel";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useMobile } from "@/hooks/use-mobile";
+import { MobileLayout } from "@/components/layouts/MobileLayout";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { FilterPanel } from "@/components/FilterPanel";
+import { NodeForm } from "@/components/NodeForm";
+import { RelationshipForm } from "@/components/RelationshipForm";
+import { AffiliationManager } from "@/components/AffiliationManager";
+import { RelationshipTypeManager } from "@/components/RelationshipTypeManager";
+import { AnalysisPanel } from "@/components/AnalysisPanel";
 
 export default function Home() {
+  const isMobile = useMobile();
   const [selectedNode, setSelectedNode] = useState<any>(null);
   const [filters, setFilters] = useState({
     affiliation: null,
@@ -32,6 +35,30 @@ export default function Home() {
     setSelectedNode(null);
   };
 
+  const graph = (
+    <NetworkGraph
+      nodes={people || []}
+      links={relationships || []}
+      filters={filters}
+      onNodeSelect={setSelectedNode}
+    />
+  );
+
+  if (isMobile) {
+    return (
+      <MobileLayout
+        selectedNode={selectedNode}
+        nodes={people || []}
+        relationships={relationships || []}
+        filters={filters}
+        onFilterChange={setFilters}
+        onNodeDeleted={handleNodeDeleted}
+      >
+        {graph}
+      </MobileLayout>
+    );
+  }
+
   return (
     <div className="h-screen w-full bg-background overflow-hidden">
       <ResizablePanelGroup direction="horizontal">
@@ -48,12 +75,7 @@ export default function Home() {
         <ResizableHandle />
 
         <ResizablePanel defaultSize={55}>
-          <NetworkGraph
-            nodes={people || []}
-            links={relationships || []}
-            filters={filters}
-            onNodeSelect={setSelectedNode}
-          />
+          {graph}
         </ResizablePanel>
 
         <ResizableHandle />
