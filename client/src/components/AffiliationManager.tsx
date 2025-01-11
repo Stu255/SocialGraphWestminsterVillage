@@ -107,6 +107,9 @@ export function AffiliationManager() {
                     style={{ backgroundColor: affiliation.color }}
                   />
                   <span>{affiliation.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    ({affiliation.memberCount} members)
+                  </span>
                 </div>
                 <div className="flex gap-2">
                   <Button

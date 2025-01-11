@@ -13,6 +13,16 @@ export function RelationshipTypeManager() {
     queryKey: ["/api/relationship-types"],
   });
 
+  const { data: relationships = [] } = useQuery({
+    queryKey: ["/api/relationships"],
+  });
+
+  // Calculate relationship counts for each type
+  const relationshipCounts = relationships.reduce((acc: Record<string, number>, rel: any) => {
+    acc[rel.relationshipType] = (acc[rel.relationshipType] || 0) + 1;
+    return acc;
+  }, {});
+
   const createMutation = useMutation({
     mutationFn: async (name: string) => {
       const res = await fetch("/api/relationship-types", {
@@ -67,7 +77,12 @@ export function RelationshipTypeManager() {
         <div className="space-y-2">
           {relationshipTypes.map((type: any) => (
             <div key={type.id} className="flex items-center justify-between">
-              <span>{type.name}</span>
+              <div className="flex items-center gap-2">
+                <span>{type.name}</span>
+                <span className="text-xs text-muted-foreground">
+                  ({relationshipCounts[type.name] || 0} relationships)
+                </span>
+              </div>
               <Button
                 variant="ghost"
                 size="icon"
