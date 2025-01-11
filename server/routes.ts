@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { eq, or } from "drizzle-orm";
+import { eq, or, desc, sql } from "drizzle-orm";
 import { db } from "@db";
 import { people, relationships, relationshipTypes, affiliations, insertPersonSchema } from "@db/schema";
 
@@ -80,9 +80,26 @@ export function registerRoutes(app: Express): Server {
   // Affiliations
   app.get("/api/affiliations", async (_req, res) => {
     try {
-      const all = await db.select().from(affiliations);
-      res.json(all);
+      // Get affiliations with counts
+      const affiliationsWithCounts = await db
+        .select({
+          id: affiliations.id,
+          name: affiliations.name,
+          color: affiliations.color,
+          count: db.select({ value: db.fn.count() })
+            .from(people)
+            .where(eq(people.affiliation, affiliations.name))
+            .as('count')
+        })
+        .from(affiliations)
+        .orderBy(desc(sql`(${db.select({ value: db.fn.count() })
+          .from(people)
+          .where(eq(people.affiliation, affiliations.name))
+          .as('count')})`));
+
+      res.json(affiliationsWithCounts);
     } catch (error) {
+      console.error("Error fetching affiliations:", error);
       res.status(500).json({ error: "Failed to fetch affiliations" });
     }
   });
