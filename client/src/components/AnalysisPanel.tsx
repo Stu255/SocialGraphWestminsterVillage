@@ -29,6 +29,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [editedValues, setEditedValues] = useState({
+    name: "",
     affiliation: "",
     currentRole: "",
     notes: "",
@@ -38,12 +39,17 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   useEffect(() => {
     if (selectedNode) {
       setEditedValues({
+        name: selectedNode.name,
         affiliation: selectedNode.affiliation,
         currentRole: selectedNode.currentRole || "",
         notes: selectedNode.notes || "",
       });
     }
   }, [selectedNode]);
+
+  const { data: affiliations = [] } = useQuery({
+    queryKey: ["/api/affiliations"],
+  });
 
   const { data: centrality } = useQuery({
     queryKey: ["/api/analysis/centrality"],
@@ -212,6 +218,13 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
             {isEditing ? (
               <>
                 <div className="space-y-2">
+                  <label className="text-sm font-medium">Name</label>
+                  <Input
+                    value={editedValues.name}
+                    onChange={(e) => setEditedValues(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
                   <label className="text-sm font-medium">Affiliation</label>
                   <Select
                     value={editedValues.affiliation}
@@ -248,6 +261,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
               </>
             ) : (
               <>
+                <p><strong>Name:</strong> {selectedNode.name}</p>
                 <p><strong>Affiliation:</strong> {selectedNode.affiliation}</p>
                 <p><strong>Current Role:</strong> {selectedNode.currentRole}</p>
                 <div>
@@ -310,5 +324,3 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     </div>
   );
 }
-
-const affiliations = []; // This needs to be populated from your data source
