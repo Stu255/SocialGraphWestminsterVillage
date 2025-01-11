@@ -80,23 +80,27 @@ export function registerRoutes(app: Express): Server {
   // Affiliations
   app.get("/api/affiliations", async (_req, res) => {
     try {
-      const result = await db.query.affiliations.findMany({
-        columns: {
-          id: true,
-          name: true,
-          color: true,
-        },
-        extras: {
-          memberCount: db.query.people.findMany({
-            where: eq(people.affiliation, affiliations.name),
-          }).length,
-        },
-        orderBy: (affiliations, { desc }) => [desc(affiliations.id)],
-      });
+      // First get all affiliations
+      const allAffiliations = await db.select().from(affiliations);
 
-      // Sort by member count
-      const sortedAffiliations = result.sort((a, b) => 
-        (b.memberCount || 0) - (a.memberCount || 0)
+      // Then get the count of people for each affiliation
+      const affiliationsWithCounts = await Promise.all(
+        allAffiliations.map(async (affiliation) => {
+          const count = await db
+            .select()
+            .from(people)
+            .where(eq(people.affiliation, affiliation.name));
+
+          return {
+            ...affiliation,
+            memberCount: count.length
+          };
+        })
+      );
+
+      // Sort by member count in descending order
+      const sortedAffiliations = affiliationsWithCounts.sort((a, b) => 
+        b.memberCount - a.memberCount
       );
 
       res.json(sortedAffiliations);
