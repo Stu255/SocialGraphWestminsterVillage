@@ -31,15 +31,11 @@ interface AddContactDialogProps {
 const STEPS = [
   {
     title: "Basic Information",
-    fields: ["name", "jobTitle", "organization"]
+    fields: ["name", "roleTitle", "organization"]
   },
   {
-    title: "Contact Details",
-    fields: ["officeNumber", "mobileNumber", "email1", "email2"]
-  },
-  {
-    title: "Social & Notes",
-    fields: ["linkedin", "twitter", "notes"]
+    title: "Additional Information",
+    fields: ["affiliation", "notes"]
   }
 ];
 
@@ -51,15 +47,10 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
   const form = useForm({
     defaultValues: {
       name: "",
-      jobTitle: "",
+      roleTitle: "",
       organization: "",
-      officeNumber: "",
-      mobileNumber: "",
-      email1: "",
-      email2: "",
-      linkedin: "",
-      twitter: "",
-      notes: "",
+      affiliation: "",
+      notes: ""
     },
   });
 
@@ -68,16 +59,11 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
       // Transform form values to match database schema
       const transformedData = {
         name: values.name,
-        jobTitle: values.jobTitle || null,
+        role_title: values.roleTitle || null,
         organization: values.organization || null,
-        officeNumber: values.officeNumber || null,
-        mobileNumber: values.mobileNumber || null,
-        email1: values.email1 || null,
-        email2: values.email2 || null,
-        linkedin: values.linkedin || null,
-        twitter: values.twitter || null,
+        affiliation: values.affiliation || null,
         notes: values.notes || null,
-        graphId: graphId // Required field from props
+        graph_id: graphId // Required field from props
       };
 
       console.log('Submitting data:', transformedData); // Debug log
@@ -165,8 +151,7 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                   render={({ field: formField }) => (
                     <FormItem>
                       <FormLabel className="capitalize">
-                        {field === "email1" ? "Email Address 1" :
-                         field === "email2" ? "Email Address 2" :
+                        {field === "roleTitle" ? "Role Title" :
                          field.replace(/([A-Z])/g, ' $1').trim()}
                       </FormLabel>
                       <FormControl>
