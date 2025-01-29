@@ -17,6 +17,10 @@ const crypto = {
     return `${buf.toString("hex")}.${salt}`;
   },
   compare: async (suppliedPassword: string, storedPassword: string) => {
+    // If there's no salt separator, the password hasn't been properly hashed
+    if (!storedPassword.includes('.')) {
+      return false;
+    }
     const [hashedPassword, salt] = storedPassword.split(".");
     const hashedPasswordBuf = Buffer.from(hashedPassword, "hex");
     const suppliedPasswordBuf = (await scryptAsync(
