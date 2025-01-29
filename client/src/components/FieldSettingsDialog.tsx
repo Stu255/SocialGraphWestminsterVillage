@@ -48,6 +48,7 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
 
   const { data: customFields = [] } = useQuery<CustomField[]>({
     queryKey: ["/api/custom-fields", graphId],
+    enabled: open && !!graphId // Only fetch when dialog is open and graphId exists
   });
 
   const createFieldMutation = useMutation({
@@ -64,6 +65,7 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
       return res.json();
     },
     onSuccess: () => {
+      // Immediately invalidate and refetch the custom fields
       queryClient.invalidateQueries({ queryKey: ["/api/custom-fields", graphId] });
       setNewField({ fieldName: "", fieldType: "text" });
       toast({
@@ -92,6 +94,7 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
       return res.json();
     },
     onSuccess: () => {
+      // Immediately invalidate and refetch the custom fields
       queryClient.invalidateQueries({ queryKey: ["/api/custom-fields", graphId] });
       toast({
         title: "Success",
@@ -137,12 +140,8 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
 
   const allFields = [
     ...DEFAULT_FIELDS,
-    ...customFields.map(field => ({ ...field, isDefault: false }))
+    ...(customFields || []).map(field => ({ ...field, isDefault: false }))
   ];
-
-  const isDefaultField = (fieldName: string) => {
-    return DEFAULT_FIELDS.some(f => f.fieldName === fieldName);
-  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -166,11 +165,12 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
                 <p className="font-medium">{field.fieldName}</p>
                 <p className="text-sm text-muted-foreground">{field.fieldType}</p>
               </div>
-              {!isDefaultField(field.fieldName) && (
+              {!field.isDefault && (
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => field.id && deleteFieldMutation.mutate(field.id)}
+                  disabled={deleteFieldMutation.isPending}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -199,7 +199,10 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
                 <SelectItem value="date">Date</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={handleAddField} disabled={createFieldMutation.isPending}>
+            <Button 
+              onClick={handleAddField} 
+              disabled={createFieldMutation.isPending}
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </div>
