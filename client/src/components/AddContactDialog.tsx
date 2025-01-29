@@ -31,11 +31,15 @@ interface AddContactDialogProps {
 const STEPS = [
   {
     title: "Basic Information",
-    fields: ["name", "roleTitle", "organization"]
+    fields: ["name", "jobTitle", "organization"]
+  },
+  {
+    title: "Contact Information",
+    fields: ["officeNumber", "mobileNumber", "email1", "email2"]
   },
   {
     title: "Additional Information",
-    fields: ["affiliation", "notes"]
+    fields: ["linkedin", "twitter", "lastContact", "notes"]
   }
 ];
 
@@ -47,9 +51,15 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
   const form = useForm({
     defaultValues: {
       name: "",
-      roleTitle: "",
+      jobTitle: "",
       organization: "",
-      affiliation: "",
+      lastContact: "",
+      officeNumber: "",
+      mobileNumber: "",
+      email1: "",
+      email2: "",
+      linkedin: "",
+      twitter: "",
       notes: ""
     },
   });
@@ -59,14 +69,20 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
       // Transform form values to match database schema
       const transformedData = {
         name: values.name,
-        role_title: values.roleTitle || null,
+        job_title: values.jobTitle || null,
         organization: values.organization || null,
-        affiliation: values.affiliation || null,
+        last_contact: values.lastContact ? new Date(values.lastContact).toISOString() : null,
+        office_number: values.officeNumber || null,
+        mobile_number: values.mobileNumber || null,
+        email_1: values.email1 || null,
+        email_2: values.email2 || null,
+        linkedin: values.linkedin || null,
+        twitter: values.twitter || null,
         notes: values.notes || null,
-        graph_id: graphId // Required field from props
+        graph_id: graphId
       };
 
-      console.log('Submitting data:', transformedData); // Debug log
+      console.log('Submitting data:', transformedData);
 
       const res = await fetch("/api/people", {
         method: "POST",
@@ -76,7 +92,7 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
 
       if (!res.ok) {
         const errorText = await res.text();
-        console.error('Server response:', errorText); // Debug log
+        console.error('Server response:', errorText);
         throw new Error(errorText || "Failed to create contact");
       }
 
@@ -146,17 +162,20 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                 <FormField
                   key={field}
                   control={form.control}
-                  name={field as any}
+                  name={field}
                   rules={{ required: field === "name" ? "Name is required" : false }}
                   render={({ field: formField }) => (
                     <FormItem>
                       <FormLabel className="capitalize">
-                        {field === "roleTitle" ? "Role Title" :
+                        {field === "email1" ? "Email Address 1" :
+                         field === "email2" ? "Email Address 2" :
                          field.replace(/([A-Z])/g, ' $1').trim()}
                       </FormLabel>
                       <FormControl>
                         {field === "notes" ? (
                           <Textarea {...formField} className="min-h-[100px]" />
+                        ) : field === "lastContact" ? (
+                          <Input {...formField} type="date" />
                         ) : (
                           <Input {...formField} />
                         )}

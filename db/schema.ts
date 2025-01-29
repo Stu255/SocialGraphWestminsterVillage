@@ -17,18 +17,23 @@ export const socialGraphs = pgTable("social_graphs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Field preferences for each social graph
-export const fieldPreferences = pgTable("field_preferences", {
+// Core People table with all the fields from FieldSettingsDialog
+export const people = pgTable("people", {
   id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  jobTitle: text("job_title"),
+  organization: text("organization"),
+  lastContact: timestamp("last_contact"),
+  officeNumber: text("office_number"),
+  mobileNumber: text("mobile_number"),
+  email1: text("email_1"),
+  email2: text("email_2"),
+  linkedin: text("linkedin"),
+  twitter: text("twitter"),
+  notes: text("notes"),
   graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
-  preferences: jsonb("preferences").notNull().$type<{
-    order: string[];
-    hidden: string[];
-  }>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-}, (table) => ({
-  graphIdIdx: unique("graph_id_idx").on(table.graphId),
-}));
+});
 
 // Affiliations table for organizational groupings
 export const affiliations = pgTable("affiliations", {
@@ -40,18 +45,6 @@ export const affiliations = pgTable("affiliations", {
 }, (table) => ({
   nameGraphIdIdx: unique("name_graph_id_idx").on(table.name, table.graphId),
 }));
-
-// Core People table
-export const people = pgTable("people", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  roleTitle: text("role_title"),
-  organization: text("organization"),
-  affiliation: text("affiliation"),
-  notes: text("notes"),
-  graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
 
 // Relationship Types table
 export const relationshipTypes = pgTable("relationship_types", {
@@ -84,6 +77,20 @@ export const customFields = pgTable("custom_fields", {
 }, (table) => ({
   fieldNameGraphIdIdx: unique("field_name_graph_id_idx").on(table.fieldName, table.graphId),
 }));
+
+// Field preferences for each social graph
+export const fieldPreferences = pgTable("field_preferences", {
+  id: serial("id").primaryKey(),
+  graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
+  preferences: jsonb("preferences").notNull().$type<{
+    order: string[];
+    hidden: string[];
+  }>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  graphIdIdx: unique("graph_id_idx").on(table.graphId),
+}));
+
 
 // Schema types
 export type User = typeof users.$inferSelect;
