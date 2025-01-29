@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { FieldSettingsDialog } from "./FieldSettingsDialog";
 import { AddContactDialog } from "./AddContactDialog";
+import { ContactListDialog } from "./ContactListDialog";
 import { useToast } from "@/hooks/use-toast";
 
 interface NodeFormProps {
@@ -12,7 +13,8 @@ interface NodeFormProps {
 }
 
 export function NodeForm({ graphId }: NodeFormProps) {
-  const [showDialog, setShowDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showListDialog, setShowListDialog] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -59,7 +61,7 @@ export function NodeForm({ graphId }: NodeFormProps) {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
-      setShowDialog(false);
+      setShowAddDialog(false);
       toast({
         title: "Success",
         description: "Contact added successfully",
@@ -74,27 +76,41 @@ export function NodeForm({ graphId }: NodeFormProps) {
     },
   });
 
-
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle>Add Contact</CardTitle>
+        <CardTitle>Manage Contacts</CardTitle>
         <FieldSettingsDialog graphId={graphId} />
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-2">
         <Button 
           className="w-full" 
-          onClick={() => setShowDialog(true)}
+          onClick={() => setShowAddDialog(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Contact
         </Button>
 
+        <Button 
+          className="w-full"
+          variant="outline"
+          onClick={() => setShowListDialog(true)}
+        >
+          <Users className="h-4 w-4 mr-2" />
+          See Contacts
+        </Button>
+
         <AddContactDialog
-          open={showDialog}
-          onOpenChange={setShowDialog}
+          open={showAddDialog}
+          onOpenChange={setShowAddDialog}
           graphId={graphId}
           mutation={mutation}
+        />
+
+        <ContactListDialog
+          open={showListDialog}
+          onOpenChange={setShowListDialog}
+          graphId={graphId}
         />
       </CardContent>
     </Card>
