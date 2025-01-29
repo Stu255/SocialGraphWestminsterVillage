@@ -150,21 +150,6 @@ export function registerRoutes(app: Express): Server {
         });
       }
 
-      const [affiliation] = await db
-        .select()
-        .from(affiliations)
-        .where(
-          and(
-            eq(affiliations.name, result.data.affiliation),
-            eq(affiliations.graphId, result.data.graphId)
-          )
-        )
-        .limit(1);
-
-      if (!affiliation) {
-        return res.status(400).json({ error: "Invalid affiliation" });
-      }
-
       const person = await db.insert(people).values(result.data).returning();
       res.json(person[0]);
     } catch (error: any) {
