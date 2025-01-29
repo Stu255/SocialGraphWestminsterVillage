@@ -1,8 +1,17 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { eq, or, desc } from "drizzle-orm";
+import { eq, or, desc, and } from "drizzle-orm";
 import { db } from "@db";
-import { people, relationships, relationshipTypes, affiliations, insertPersonSchema } from "@db/schema";
+import { 
+  people, 
+  relationships, 
+  relationshipTypes, 
+  affiliations, 
+  socialGraphs,
+  insertPersonSchema,
+  insertSocialGraphSchema
+} from "@db/schema";
+import { setupAuth } from "./auth";
 
 function getSortableSurname(name: string): string {
   const parts = name.split(" ");
@@ -41,14 +50,11 @@ function calculateCloseness(
     }
   }
 
-  // Calculate closeness centrality
   const totalDistance = Array.from(distances.values()).reduce((sum, dist) => sum + dist, 0);
   const reachableNodes = distances.size;
 
-  // If node can't reach all other nodes, adjust the formula
-  if (reachableNodes === 1) return 0; // Isolated node
+  if (reachableNodes === 1) return 0;
   if (reachableNodes < totalNodes) {
-    // Adjusted closeness for disconnected graphs
     return ((reachableNodes - 1) * (reachableNodes - 1)) / 
            ((totalNodes - 1) * totalDistance);
   }
@@ -57,13 +63,71 @@ function calculateCloseness(
 }
 
 export function registerRoutes(app: Express): Server {
+  // Setup authentication routes
+  setupAuth(app);
+
   const httpServer = createServer(app);
 
-  // People
-  app.get("/api/people", async (_req, res) => {
+  // Social Graphs
+  app.get("/api/graphs", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+
     try {
-      const allPeople = await db.select().from(people);
-      // Sort people by surname before sending response
+      const graphs = await db
+        .select()
+        .from(socialGraphs)
+        .where(eq(socialGraphs.userId, req.user.id));
+      res.json(graphs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch graphs" });
+    }
+  });
+
+  app.post("/api/graphs", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+
+    try {
+      const result = insertSocialGraphSchema.safeParse({
+        ...req.body,
+        userId: req.user.id
+      });
+
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: "Invalid input: " + result.error.issues.map(i => i.message).join(", ") 
+        });
+      }
+
+      const [graph] = await db
+        .insert(socialGraphs)
+        .values(result.data)
+        .returning();
+      res.json(graph);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create graph" });
+    }
+  });
+
+  // People
+  app.get("/api/people", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+
+    const { graphId } = req.query;
+    if (!graphId) {
+      return res.status(400).json({ error: "Graph ID is required" });
+    }
+
+    try {
+      const allPeople = await db
+        .select()
+        .from(people)
+        .where(eq(people.graphId, Number(graphId)));
       const sortedPeople = sortPeopleByName(allPeople);
       res.json(sortedPeople);
     } catch (error) {
@@ -72,8 +136,11 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.post("/api/people", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+
     try {
-      // Validate request body
       const result = insertPersonSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ 
@@ -81,11 +148,15 @@ export function registerRoutes(app: Express): Server {
         });
       }
 
-      // Check if affiliation exists
       const [affiliation] = await db
         .select()
         .from(affiliations)
-        .where(eq(affiliations.name, result.data.affiliation))
+        .where(
+          and(
+            eq(affiliations.name, result.data.affiliation),
+            eq(affiliations.graphId, result.data.graphId)
+          )
+        )
         .limit(1);
 
       if (!affiliation) {
@@ -101,11 +172,14 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.put("/api/people/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
     try {
       const [updatedPerson] = await db
         .update(people)
         .set(req.body)
-        .where(eq(people.id, parseInt(req.params.id)))
+        .where(and(eq(people.id, parseInt(req.params.id)), eq(people.graphId, req.body.graphId)))
         .returning();
       res.json(updatedPerson);
     } catch (error) {
@@ -114,6 +188,9 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.delete("/api/people/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
     try {
       // First delete all relationships involving this person
       await db.delete(relationships).where(
@@ -131,11 +208,19 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
   // Affiliations
-  app.get("/api/affiliations", async (_req, res) => {
+  app.get("/api/affiliations", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+    const { graphId } = req.query;
+    if (!graphId) {
+      return res.status(400).json({ error: "Graph ID is required" });
+    }
     try {
       // First get all affiliations
-      const allAffiliations = await db.select().from(affiliations);
+      const allAffiliations = await db.select().from(affiliations).where(eq(affiliations.graphId, Number(graphId)));
 
       // Then get the count of people for each affiliation
       const affiliationsWithCounts = await Promise.all(
@@ -143,7 +228,7 @@ export function registerRoutes(app: Express): Server {
           const count = await db
             .select()
             .from(people)
-            .where(eq(people.affiliation, affiliation.name));
+            .where(and(eq(people.affiliation, affiliation.name), eq(people.graphId, Number(graphId))));
 
           return {
             ...affiliation,
@@ -165,8 +250,11 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.post("/api/affiliations", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
     try {
-      const affiliation = await db.insert(affiliations).values(req.body).returning();
+      const affiliation = await db.insert(affiliations).values({...req.body, graphId: req.body.graphId}).returning();
       res.json(affiliation[0]);
     } catch (error) {
       res.status(500).json({ error: "Failed to create affiliation" });
@@ -174,11 +262,14 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.put("/api/affiliations/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
     try {
       const [updated] = await db
         .update(affiliations)
-        .set(req.body)
-        .where(eq(affiliations.id, parseInt(req.params.id)))
+        .set({...req.body, graphId: req.body.graphId})
+        .where(and(eq(affiliations.id, parseInt(req.params.id)), eq(affiliations.graphId, req.body.graphId)))
         .returning();
       res.json(updated);
     } catch (error) {
@@ -187,6 +278,9 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.delete("/api/affiliations/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
     try {
       await db.delete(affiliations).where(eq(affiliations.id, parseInt(req.params.id)));
       res.json({ success: true });
@@ -196,9 +290,16 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Relationship Types
-  app.get("/api/relationship-types", async (_req, res) => {
+  app.get("/api/relationship-types", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+    const { graphId } = req.query;
+    if (!graphId) {
+      return res.status(400).json({ error: "Graph ID is required" });
+    }
     try {
-      const types = await db.select().from(relationshipTypes);
+      const types = await db.select().from(relationshipTypes).where(eq(relationshipTypes.graphId, Number(graphId)));
       res.json(types);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch relationship types" });
@@ -206,8 +307,11 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.post("/api/relationship-types", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
     try {
-      const type = await db.insert(relationshipTypes).values(req.body).returning();
+      const type = await db.insert(relationshipTypes).values({...req.body, graphId: req.body.graphId}).returning();
       res.json(type[0]);
     } catch (error) {
       res.status(500).json({ error: "Failed to create relationship type" });
@@ -215,6 +319,9 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.delete("/api/relationship-types/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
     try {
       await db.delete(relationshipTypes).where(eq(relationshipTypes.id, parseInt(req.params.id)));
       res.json({ success: true });
@@ -224,9 +331,16 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Relationships
-  app.get("/api/relationships", async (_req, res) => {
+  app.get("/api/relationships", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+    const { graphId } = req.query;
+    if (!graphId) {
+      return res.status(400).json({ error: "Graph ID is required" });
+    }
     try {
-      const allRelationships = await db.select().from(relationships);
+      const allRelationships = await db.select().from(relationships).where(eq(relationships.graphId, Number(graphId)));
       res.json(allRelationships);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch relationships" });
@@ -234,8 +348,11 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.post("/api/relationships", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
     try {
-      const relationship = await db.insert(relationships).values(req.body).returning();
+      const relationship = await db.insert(relationships).values({...req.body, graphId: req.body.graphId}).returning();
       res.json(relationship[0]);
     } catch (error) {
       res.status(500).json({ error: "Failed to create relationship" });
@@ -243,6 +360,9 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.delete("/api/relationships/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
     try {
       await db.delete(relationships).where(eq(relationships.id, parseInt(req.params.id)));
       res.json({ success: true });
@@ -252,11 +372,18 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Network Analysis Endpoints
-  app.get("/api/analysis/centrality", async (_req, res) => {
+  app.get("/api/analysis/centrality", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+    const { graphId } = req.query;
+    if (!graphId) {
+      return res.status(400).json({ error: "Graph ID is required" });
+    }
     try {
       const [allRelationships, allPeople] = await Promise.all([
-        db.select().from(relationships),
-        db.select().from(people)
+        db.select().from(relationships).where(eq(relationships.graphId, Number(graphId))),
+        db.select().from(people).where(eq(people.graphId, Number(graphId)))
       ]);
 
       // Create adjacency list representation
