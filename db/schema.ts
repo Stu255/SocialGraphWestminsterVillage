@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, boolean, unique, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, boolean, unique, jsonb, date } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -24,7 +24,7 @@ export const people = pgTable("people", {
   name: text("name").notNull(),
   jobTitle: text("job_title"),
   organization: text("organization"),
-  lastContact: timestamp("last_contact"),
+  lastContact: date("last_contact"), // Changed from timestamp to date
   officeNumber: text("office_number"),
   mobileNumber: text("mobile_number"),
   email1: text("email_1"),
@@ -95,7 +95,10 @@ export const fieldPreferences = pgTable("field_preferences", {
 
 // Custom insert schema for people to handle date conversion
 const insertPeopleSchema = createInsertSchema(people, {
-  lastContact: z.string().transform(val => val ? new Date(val) : null).nullable(),
+  lastContact: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
+    .transform(val => val ? new Date(val) : null)
+    .nullable(),
 });
 
 // Export the schemas

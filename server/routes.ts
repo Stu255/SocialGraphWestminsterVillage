@@ -149,7 +149,7 @@ export function registerRoutes(app: Express): Server {
         graphId: req.body.graph_id,
         jobTitle: req.body.job_title,
         organization: req.body.organization,
-        lastContact: req.body.last_contact ? new Date(req.body.last_contact) : null,
+        lastContact: req.body.last_contact ? req.body.last_contact.split('T')[0] : null, // Extract YYYY-MM-DD
         officeNumber: req.body.office_number,
         mobileNumber: req.body.mobile_number,
         email1: req.body.email_1,
