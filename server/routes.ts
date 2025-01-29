@@ -8,6 +8,7 @@ import {
   relationshipTypes, 
   affiliations, 
   socialGraphs,
+  fieldPreferences,
   insertPersonSchema,
   insertSocialGraphSchema,
   customFields 
@@ -467,6 +468,76 @@ export function registerRoutes(app: Express): Server {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete custom field" });
+    }
+  });
+
+  // Field Preferences
+  app.get("/api/field-preferences/:graphId", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+    try {
+      const [prefs] = await db
+        .select()
+        .from(fieldPreferences)
+        .where(eq(fieldPreferences.graphId, parseInt(req.params.graphId)));
+
+      if (!prefs) {
+        // Return default preferences if none exist
+        const defaultPrefs = {
+          order: [
+            "name", "jobTitle", "organization", "lastContact",
+            "officeNumber", "mobileNumber", "email1", "email2",
+            "linkedin", "twitter", "notes"
+          ],
+          hidden: []
+        };
+
+        const [newPrefs] = await db
+          .insert(fieldPreferences)
+          .values({
+            graphId: parseInt(req.params.graphId),
+            preferences: defaultPrefs
+          })
+          .returning();
+
+        return res.json(newPrefs.preferences);
+      }
+
+      res.json(prefs.preferences);
+    } catch (error) {
+      console.error("Error fetching field preferences:", error);
+      res.status(500).json({ error: "Failed to fetch field preferences" });
+    }
+  });
+
+  app.put("/api/field-preferences/:graphId", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+    try {
+      const [prefs] = await db
+        .update(fieldPreferences)
+        .set({ preferences: req.body })
+        .where(eq(fieldPreferences.graphId, parseInt(req.params.graphId)))
+        .returning();
+
+      if (!prefs) {
+        const [newPrefs] = await db
+          .insert(fieldPreferences)
+          .values({
+            graphId: parseInt(req.params.graphId),
+            preferences: req.body
+          })
+          .returning();
+
+        return res.json(newPrefs.preferences);
+      }
+
+      res.json(prefs.preferences);
+    } catch (error) {
+      console.error("Error updating field preferences:", error);
+      res.status(500).json({ error: "Failed to update field preferences" });
     }
   });
 

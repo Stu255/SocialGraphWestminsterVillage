@@ -9,54 +9,49 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Settings, Plus, Trash2 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Settings, ArrowUp, ArrowDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface FieldSettingsDialogProps {
   graphId: number;
 }
 
-interface CustomField {
-  id: number;
-  fieldName: string;
-  fieldType: string;
-  isRequired: boolean;
+interface FieldPreferences {
+  order: string[];
+  hidden: string[];
 }
 
 const DEFAULT_FIELDS = [
-  { fieldName: "name", fieldType: "text", isRequired: true, isDefault: true },
-  { fieldName: "role", fieldType: "text", isRequired: false, isDefault: true },
-  { fieldName: "organisation", fieldType: "text", isRequired: false, isDefault: true },
-  { fieldName: "email", fieldType: "email", isRequired: false, isDefault: true },
-  { fieldName: "phone", fieldType: "tel", isRequired: false, isDefault: true },
-  { fieldName: "notes", fieldType: "textarea", isRequired: false, isDefault: true }
+  { id: "name", label: "Full Name", required: true },
+  { id: "jobTitle", label: "Job Title", required: false },
+  { id: "organization", label: "Organisation Name", required: false },
+  { id: "lastContact", label: "Last Contact Made", required: false },
+  { id: "officeNumber", label: "Office Number", required: false },
+  { id: "mobileNumber", label: "Mobile Number", required: false },
+  { id: "email1", label: "Email Address 1", required: false },
+  { id: "email2", label: "Email Address 2", required: false },
+  { id: "linkedin", label: "LinkedIn", required: false },
+  { id: "twitter", label: "Twitter", required: false },
+  { id: "notes", label: "Notes", required: false }
 ];
 
 export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
   const [open, setOpen] = useState(false);
-  const [newField, setNewField] = useState({ fieldName: "", fieldType: "text" });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: customFields = [] } = useQuery<CustomField[]>({
-    queryKey: ["/api/custom-fields", graphId],
-    enabled: open && !!graphId // Only fetch when dialog is open and graphId exists
+  const { data: preferences = { order: DEFAULT_FIELDS.map(f => f.id), hidden: [] } } = useQuery<FieldPreferences>({
+    queryKey: ["/api/field-preferences", graphId],
+    enabled: open && !!graphId
   });
 
-  const createFieldMutation = useMutation({
-    mutationFn: async (field: { fieldName: string; fieldType: string; isRequired: boolean }) => {
-      const res = await fetch("/api/custom-fields", {
-        method: "POST",
+  const updatePreferencesMutation = useMutation({
+    mutationFn: async (newPreferences: FieldPreferences) => {
+      const res = await fetch(`/api/field-preferences/${graphId}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...field, graphId }),
+        body: JSON.stringify(newPreferences),
       });
       if (!res.ok) {
         const error = await res.text();
@@ -65,12 +60,10 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
       return res.json();
     },
     onSuccess: () => {
-      // Immediately invalidate and refetch the custom fields
-      queryClient.invalidateQueries({ queryKey: ["/api/custom-fields", graphId] });
-      setNewField({ fieldName: "", fieldType: "text" });
+      queryClient.invalidateQueries({ queryKey: ["/api/field-preferences", graphId] });
       toast({
         title: "Success",
-        description: "Field added successfully",
+        description: "Field preferences updated successfully",
       });
     },
     onError: (error: Error) => {
@@ -82,66 +75,44 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
     },
   });
 
-  const deleteFieldMutation = useMutation({
-    mutationFn: async (fieldId: number) => {
-      const res = await fetch(`/api/custom-fields/${fieldId}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        const error = await res.text();
-        throw new Error(error);
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      // Immediately invalidate and refetch the custom fields
-      queryClient.invalidateQueries({ queryKey: ["/api/custom-fields", graphId] });
-      toast({
-        title: "Success",
-        description: "Field deleted successfully",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  const toggleFieldVisibility = (fieldId: string) => {
+    const newHidden = preferences.hidden.includes(fieldId)
+      ? preferences.hidden.filter(id => id !== fieldId)
+      : [...preferences.hidden, fieldId];
 
-  const handleAddField = () => {
-    if (!newField.fieldName.trim()) {
-      toast({
-        title: "Error",
-        description: "Field name is required",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if field name already exists
-    const allFieldNames = [...DEFAULT_FIELDS, ...customFields].map(f => f.fieldName.toLowerCase());
-    if (allFieldNames.includes(newField.fieldName.toLowerCase())) {
-      toast({
-        title: "Error",
-        description: "Field name already exists",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    createFieldMutation.mutate({
-      fieldName: newField.fieldName,
-      fieldType: newField.fieldType,
-      isRequired: false,
+    updatePreferencesMutation.mutate({
+      ...preferences,
+      hidden: newHidden
     });
   };
 
-  const allFields = [
-    ...DEFAULT_FIELDS,
-    ...(customFields || []).map(field => ({ ...field, isDefault: false }))
-  ];
+  const moveField = (fieldId: string, direction: 'up' | 'down') => {
+    const currentIndex = preferences.order.indexOf(fieldId);
+    if (direction === 'up' && currentIndex > 0) {
+      const newOrder = [...preferences.order];
+      [newOrder[currentIndex], newOrder[currentIndex - 1]] = 
+      [newOrder[currentIndex - 1], newOrder[currentIndex]];
+      updatePreferencesMutation.mutate({
+        ...preferences,
+        order: newOrder
+      });
+    } else if (direction === 'down' && currentIndex < preferences.order.length - 1) {
+      const newOrder = [...preferences.order];
+      [newOrder[currentIndex], newOrder[currentIndex + 1]] = 
+      [newOrder[currentIndex + 1], newOrder[currentIndex]];
+      updatePreferencesMutation.mutate({
+        ...preferences,
+        order: newOrder
+      });
+    }
+  };
+
+  // Sort fields according to the order preference
+  const orderedFields = [...DEFAULT_FIELDS].sort((a, b) => {
+    const aIndex = preferences.order.indexOf(a.id);
+    const bIndex = preferences.order.indexOf(b.id);
+    return aIndex - bIndex;
+  });
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -154,58 +125,51 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
         <DialogHeader>
           <DialogTitle>Field Settings</DialogTitle>
           <DialogDescription>
-            Customize the fields for people in this social graph
+            Configure which fields to show and their order
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 pt-4">
-          {allFields.map((field) => (
-            <div key={field.fieldName} className="flex items-center justify-between gap-2">
-              <div>
-                <p className="font-medium">{field.fieldName}</p>
-                <p className="text-sm text-muted-foreground">{field.fieldType}</p>
+          {orderedFields.map((field) => (
+            <div key={field.id} className="flex items-center justify-between gap-2">
+              <div className="flex-1">
+                <p className="font-medium">{field.label}</p>
+                {field.required && (
+                  <p className="text-sm text-muted-foreground">Required</p>
+                )}
               </div>
-              {!field.isDefault && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => field.id && deleteFieldMutation.mutate(field.id)}
-                  disabled={deleteFieldMutation.isPending}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
+
+              <div className="flex items-center gap-2">
+                {!field.required && (
+                  <Switch
+                    checked={!preferences.hidden.includes(field.id)}
+                    onCheckedChange={() => toggleFieldVisibility(field.id)}
+                  />
+                )}
+
+                <div className="flex flex-col">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => moveField(field.id, 'up')}
+                    disabled={preferences.order.indexOf(field.id) === 0}
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => moveField(field.id, 'down')}
+                    disabled={preferences.order.indexOf(field.id) === preferences.order.length - 1}
+                  >
+                    <ArrowDown className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
           ))}
-
-          <div className="flex items-center gap-2 pt-4 border-t">
-            <Input
-              placeholder="Field name"
-              value={newField.fieldName}
-              onChange={(e) => setNewField(prev => ({ ...prev, fieldName: e.target.value }))}
-            />
-            <Select
-              value={newField.fieldType}
-              onValueChange={(value) => setNewField(prev => ({ ...prev, fieldType: value }))}
-            >
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="text">Text</SelectItem>
-                <SelectItem value="email">Email</SelectItem>
-                <SelectItem value="tel">Phone</SelectItem>
-                <SelectItem value="url">URL</SelectItem>
-                <SelectItem value="date">Date</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              onClick={handleAddField} 
-              disabled={createFieldMutation.isPending}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
