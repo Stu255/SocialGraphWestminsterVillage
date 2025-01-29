@@ -64,7 +64,6 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
 
   const mutation = useMutation({
     mutationFn: async (values: any) => {
-      // Transform camelCase to snake_case for database compatibility
       const transformedData = {
         name: values.name,
         job_title: values.jobTitle,
@@ -96,6 +95,7 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
       queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
       onOpenChange(false);
       form.reset();
+      setStep(0);
       toast({
         title: "Success",
         description: "Contact added successfully",
@@ -115,13 +115,18 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
 
   const onSubmit = async (data: any) => {
     if (isLastStep) {
-      await mutation.mutateAsync(data);
+      try {
+        await mutation.mutateAsync(data);
+      } catch (error) {
+        // Error is handled by mutation's onError
+      }
     } else {
       setStep(s => s + 1);
     }
   };
 
-  const handlePrevious = () => {
+  const handlePrevious = (e: React.MouseEvent) => {
+    e.preventDefault();
     setStep(s => s - 1);
   };
 
