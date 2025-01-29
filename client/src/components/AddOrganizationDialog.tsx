@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   Dialog,
@@ -17,6 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { UseMutationResult } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface AddOrganizationDialogProps {
   open: boolean;
@@ -25,12 +27,32 @@ interface AddOrganizationDialogProps {
   mutation: UseMutationResult<any, Error, any>;
 }
 
+const STEPS = [
+  {
+    title: "Basic Information",
+    description: "Enter the organization's name and branding colors",
+    fields: ["name", "brandColor", "accentColor"]
+  },
+  {
+    title: "Business Information",
+    description: "Add the organization's online presence and location",
+    fields: ["website", "industry", "hqCity"]
+  },
+  {
+    title: "Company Details",
+    description: "Provide additional company information",
+    fields: ["headcount", "turnover"]
+  }
+];
+
 export function AddOrganizationDialog({ 
   open, 
   onOpenChange, 
   graphId,
   mutation 
 }: AddOrganizationDialogProps) {
+  const [step, setStep] = useState(0);
+
   const form = useForm({
     defaultValues: {
       name: "",
@@ -45,145 +67,95 @@ export function AddOrganizationDialog({
   });
 
   const onSubmit = async (data: any) => {
-    try {
-      await mutation.mutateAsync(data);
-    } catch (error) {
-      // Error is handled by mutation's onError
+    if (isLastStep) {
+      try {
+        if (!data.name?.trim()) {
+          return;
+        }
+        await mutation.mutateAsync(data);
+      } catch (error) {
+        // Error is handled by mutation's onError
+      }
+    } else {
+      setStep(s => s + 1);
     }
   };
+
+  const handlePrevious = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setStep(s => s - 1);
+  };
+
+  const currentStep = STEPS[step];
+  const isLastStep = step === STEPS.length - 1;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add Organization</DialogTitle>
+          <DialogTitle>{currentStep.title}</DialogTitle>
           <DialogDescription>
-            Add a new organization to your network
+            {currentStep.description}
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              rules={{ required: "Name is required" }}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="space-y-4">
+              {currentStep.fields.map((field) => (
+                <FormField
+                  key={field}
+                  control={form.control}
+                  name={field}
+                  rules={{ required: field === "name" ? "Name is required" : false }}
+                  render={({ field: formField }) => (
+                    <FormItem>
+                      <FormLabel className="capitalize">
+                        {field.replace(/([A-Z])/g, ' $1').trim()}
+                      </FormLabel>
+                      <FormControl>
+                        {field === "brandColor" || field === "accentColor" ? (
+                          <Input {...formField} type="color" />
+                        ) : field === "website" ? (
+                          <Input {...formField} type="url" placeholder="https://" />
+                        ) : field === "headcount" ? (
+                          <Input {...formField} type="number" />
+                        ) : (
+                          <Input {...formField} />
+                        )}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ))}
+            </div>
 
-            <FormField
-              control={form.control}
-              name="brandColor"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Brand Color</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="color" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="flex justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={step === 0}
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Previous
+              </Button>
 
-            <FormField
-              control={form.control}
-              name="accentColor"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Accent Color</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="color" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="website"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Website</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="url" placeholder="https://" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="industry"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Industry</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="hqCity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>HQ City</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="headcount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Headcount</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="number" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="turnover"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Turnover</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g. $1M - $5M" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Button
-              type="submit"
-              disabled={mutation.isPending}
-              className="w-full"
-            >
-              {mutation.isPending ? "Adding..." : "Add Organization"}
-            </Button>
+              <Button
+                type="submit"
+                disabled={mutation.isPending}
+              >
+                {isLastStep ? (
+                  mutation.isPending ? "Adding..." : "Add Organization"
+                ) : (
+                  <>
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-2" />
+                  </>
+                )}
+              </Button>
+            </div>
           </form>
         </Form>
       </DialogContent>
