@@ -56,7 +56,7 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
   });
 
   const createFieldMutation = useMutation({
-    mutationFn: async (field: Omit<CustomField, "id">) => {
+    mutationFn: async (field: { fieldName: string; fieldType: string; isRequired: boolean }) => {
       const res = await fetch("/api/custom-fields", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -71,6 +71,13 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
       toast({
         title: "Success",
         description: "Field added successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
       });
     },
   });
@@ -90,6 +97,13 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
         description: "Field deleted successfully",
       });
     },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const handleAddField = () => {
@@ -101,6 +115,18 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
       });
       return;
     }
+
+    // Check if field name already exists
+    const allFieldNames = [...DEFAULT_FIELDS, ...customFields].map(f => f.fieldName.toLowerCase());
+    if (allFieldNames.includes(newField.fieldName.toLowerCase())) {
+      toast({
+        title: "Error",
+        description: "Field name already exists",
+        variant: "destructive",
+      });
+      return;
+    }
+
     createFieldMutation.mutate({
       fieldName: newField.fieldName,
       fieldType: newField.fieldType,
@@ -135,7 +161,7 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
                 <p className="font-medium">{field.fieldName}</p>
                 <p className="text-sm text-muted-foreground">{field.fieldType}</p>
               </div>
-              {!field.isDefault && (
+              {!field.isDefault && 'id' in field && (
                 <Button
                   variant="ghost"
                   size="icon"

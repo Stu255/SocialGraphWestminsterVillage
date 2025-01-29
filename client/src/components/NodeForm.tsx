@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -17,6 +17,13 @@ interface Affiliation {
   color: string;
 }
 
+interface CustomField {
+  id: number;
+  fieldName: string;
+  fieldType: string;
+  isRequired: boolean;
+}
+
 interface NodeFormProps {
   graphId: number;
 }
@@ -31,6 +38,10 @@ export function NodeForm({ graphId }: NodeFormProps) {
     queryKey: ["/api/affiliations", graphId],
   });
 
+  const { data: customFields = [] } = useQuery<CustomField[]>({
+    queryKey: ["/api/custom-fields", graphId],
+  });
+
   const form = useForm({
     defaultValues: {
       name: "",
@@ -38,11 +49,47 @@ export function NodeForm({ graphId }: NodeFormProps) {
       affiliation: "",
       notes: "",
       graphId,
+      ...Object.fromEntries(customFields.map(field => [field.fieldName, ""]))
     },
   });
 
+  // Update form when custom fields change
+  useEffect(() => {
+    const customFieldValues = Object.fromEntries(customFields.map(field => [field.fieldName, ""]));
+    form.reset({ ...form.getValues(), ...customFieldValues });
+  }, [customFields]);
+
   const mutation = useMutation({
     mutationFn: async (values: any) => {
+      // Extract custom field values
+      const standardFields = ["name", "roleTitle", "affiliation", "notes", "graphId"];
+      const customFieldValues: Record<string, string> = {};
+
+      Object.keys(values).forEach(key => {
+        if (!standardFields.includes(key)) {
+          customFieldValues[key] = values[key];
+          delete values[key];
+        }
+      });
+
+      // Store custom field values in notes as JSON
+      if (Object.keys(customFieldValues).length > 0) {
+        try {
+          const existingNotes = values.notes ? JSON.parse(values.notes) : {};
+          values.notes = JSON.stringify({
+            ...existingNotes,
+            customFields: customFieldValues,
+            text: existingNotes.text || ""
+          });
+        } catch {
+          // If notes isn't valid JSON, wrap existing notes text
+          values.notes = JSON.stringify({
+            customFields: customFieldValues,
+            text: values.notes || ""
+          });
+        }
+      }
+
       const res = await fetch("/api/people", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -139,6 +186,23 @@ export function NodeForm({ graphId }: NodeFormProps) {
                 )}
               />
 
+              {/* Render custom fields */}
+              {customFields.map((field) => (
+                <FormField
+                  key={field.id}
+                  control={form.control}
+                  name={field.fieldName}
+                  render={({ field: formField }) => (
+                    <FormItem>
+                      <FormLabel>{field.fieldName}</FormLabel>
+                      <FormControl>
+                        <Input type={field.fieldType} {...formField} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              ))}
+
               <FormField
                 control={form.control}
                 name="notes"
@@ -172,6 +236,7 @@ export function NodeForm({ graphId }: NodeFormProps) {
         open={showRelationshipDialog}
         onOpenChange={setShowRelationshipDialog}
         newPerson={newPerson}
+        graphId={graphId}
       />
     </>
   );
