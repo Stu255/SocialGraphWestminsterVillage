@@ -2,11 +2,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pencil, Trash2, X, Check, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import { 
+import { useFieldPreferences } from "@/hooks/use-field-preferences";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -23,36 +23,50 @@ interface AnalysisPanelProps {
   nodes: any[];
   relationships: any[];
   onNodeDeleted?: () => void;
+  graphId: number;
 }
 
-export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDeleted }: AnalysisPanelProps) {
+const FIELD_LABELS: Record<string, string> = {
+  name: "Name",
+  jobTitle: "Job Title",
+  organization: "Organization",
+  lastContact: "Last Contact",
+  officeNumber: "Office Number",
+  mobileNumber: "Mobile Number",
+  email1: "Email Address 1",
+  email2: "Email Address 2",
+  linkedin: "LinkedIn",
+  twitter: "Twitter",
+  notes: "Notes"
+};
+
+export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDeleted, graphId }: AnalysisPanelProps) {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  const [editedValues, setEditedValues] = useState({
-    name: "",
-    affiliation: "",
-    currentRole: "",
-    notes: "",
-  });
+  const [editedValues, setEditedValues] = useState<Record<string, string>>({});
+  const { data: fieldPreferences } = useFieldPreferences(graphId);
 
   // Initialize edit values when node is selected
   useEffect(() => {
     if (selectedNode) {
       setEditedValues({
-        name: selectedNode.name,
-        affiliation: selectedNode.affiliation,
-        currentRole: selectedNode.currentRole || "",
+        name: selectedNode.name || "",
+        jobTitle: selectedNode.jobTitle || "",
+        organization: selectedNode.organization || "",
+        lastContact: selectedNode.lastContact ? new Date(selectedNode.lastContact).toISOString().split('T')[0] : "",
+        officeNumber: selectedNode.officeNumber || "",
+        mobileNumber: selectedNode.mobileNumber || "",
+        email1: selectedNode.email1 || "",
+        email2: selectedNode.email2 || "",
+        linkedin: selectedNode.linkedin || "",
+        twitter: selectedNode.twitter || "",
         notes: selectedNode.notes || "",
       });
     }
   }, [selectedNode]);
 
-  const { data: affiliations = [] } = useQuery({
-    queryKey: ["/api/affiliations"],
-  });
-
   const { data: centrality } = useQuery({
-    queryKey: ["/api/analysis/centrality"],
+    queryKey: ["/api/analysis/centrality", graphId],
     enabled: !!nodes.length,
   });
 
@@ -66,13 +80,13 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       const res = await fetch(`/api/people/${selectedNode.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
+        body: JSON.stringify({ ...values, graphId }),
       });
       if (!res.ok) throw new Error("Failed to update person");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
       setIsEditing(false);
     },
   });
@@ -86,8 +100,8 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/relationships"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
       if (onNodeDeleted) onNodeDeleted();
     },
   });
@@ -101,13 +115,18 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/relationships"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
     },
   });
 
   const handleSave = () => {
     updatePersonMutation.mutate(editedValues);
   };
+
+  // Get visible fields in the correct order
+  const visibleFields = fieldPreferences?.order.filter(
+    field => !fieldPreferences.hidden.includes(field)
+  ) || Object.keys(FIELD_LABELS);
 
   if (!selectedNode) {
     return (
@@ -137,16 +156,61 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   }
 
   const nodeMetrics = centrality?.find((c: any) => c.id === selectedNode.id);
-  const nodeRelationships = relationships.filter(r => 
-    r.sourcePersonId === selectedNode.id || 
+  const nodeRelationships = relationships.filter(r =>
+    r.sourcePersonId === selectedNode.id ||
     r.targetPersonId === selectedNode.id
   );
+
+  const renderField = (field: string) => {
+    if (isEditing) {
+      return (
+        <FormField
+          key={field}
+          name={field}
+          render={({ field: formField }) => (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{FIELD_LABELS[field]}</label>
+              {field === "notes" ? (
+                <Textarea
+                  value={editedValues[field]}
+                  onChange={(e) => setEditedValues(prev => ({ ...prev, [field]: e.target.value }))}
+                  className="min-h-[100px]"
+                />
+              ) : field === "lastContact" ? (
+                <Input
+                  type="date"
+                  value={editedValues[field]}
+                  onChange={(e) => setEditedValues(prev => ({ ...prev, [field]: e.target.value }))}
+                />
+              ) : (
+                <Input
+                  value={editedValues[field]}
+                  onChange={(e) => setEditedValues(prev => ({ ...prev, [field]: e.target.value }))}
+                />
+              )}
+            </div>
+          )}
+        />
+      );
+    }
+
+    let value = selectedNode[field];
+    if (field === "lastContact" && value) {
+      value = new Date(value).toLocaleDateString();
+    }
+
+    return (
+      <p key={field}>
+        <strong>{FIELD_LABELS[field]}:</strong> {value || "Not specified"}
+      </p>
+    );
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-2">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           size="icon"
           onClick={onNodeDeleted}
         >
@@ -201,7 +265,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
+                      <AlertDialogAction
                         onClick={() => deletePersonMutation.mutate(selectedNode.id)}
                       >
                         Delete
@@ -215,63 +279,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {isEditing ? (
-              <>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Name</label>
-                  <Input
-                    value={editedValues.name}
-                    onChange={(e) => setEditedValues(prev => ({ ...prev, name: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Affiliation</label>
-                  <Select
-                    value={editedValues.affiliation}
-                    onValueChange={(value) => setEditedValues(prev => ({ ...prev, affiliation: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select affiliation" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {affiliations.map((affiliation: any) => (
-                        <SelectItem key={affiliation.id} value={affiliation.name}>
-                          {affiliation.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Current Role</label>
-                  <Input
-                    value={editedValues.currentRole}
-                    onChange={(e) => setEditedValues(prev => ({ ...prev, currentRole: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Notes</label>
-                  <Textarea
-                    value={editedValues.notes}
-                    onChange={(e) => setEditedValues(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder="Add notes about this person..."
-                    className="min-h-[100px]"
-                  />
-                </div>
-              </>
-            ) : (
-              <>
-                <p><strong>Name:</strong> {selectedNode.name}</p>
-                <p><strong>Affiliation:</strong> {selectedNode.affiliation}</p>
-                <p><strong>Current Role:</strong> {selectedNode.currentRole}</p>
-                <div>
-                  <p className="font-medium mb-2">Notes:</p>
-                  <p className="text-sm whitespace-pre-wrap">
-                    {selectedNode.notes || "No notes added yet."}
-                  </p>
-                </div>
-              </>
-            )}
+            {visibleFields.map(field => renderField(field))}
           </div>
         </CardContent>
       </Card>
@@ -295,9 +303,9 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         <CardContent>
           <div className="space-y-2">
             {nodeRelationships.map(rel => {
-              const otherNode = nodes.find(n => 
-                n.id === (rel.sourcePersonId === selectedNode.id ? 
-                  rel.targetPersonId : 
+              const otherNode = nodes.find(n =>
+                n.id === (rel.sourcePersonId === selectedNode.id ?
+                  rel.targetPersonId :
                   rel.sourcePersonId
                 )
               );
@@ -305,7 +313,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
               return (
                 <div key={rel.id} className="flex items-center justify-between">
                   <span>
-                    {rel.sourcePersonId === selectedNode.id ? "→" : "←"} {otherNode?.name} 
+                    {rel.sourcePersonId === selectedNode.id ? "→" : "←"} {otherNode?.name}
                     ({rel.relationshipType})
                   </span>
                   <Button
@@ -324,3 +332,6 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     </div>
   );
 }
+
+// Placeholder for FormField component -  replace with actual implementation
+const FormField = ({ children }: { children: any }) => children;

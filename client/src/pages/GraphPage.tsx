@@ -77,6 +77,7 @@ export default function GraphPage({ params }: Props) {
         nodes={people || []}
         relationships={relationships || []}
         filters={filters}
+        graphId={graphId}
         onFilterChange={setFilters}
         onNodeDeleted={handleNodeDeleted}
         onHomeClick={handleHomeClick}
@@ -124,6 +125,7 @@ export default function GraphPage({ params }: Props) {
               nodes={people || []}
               relationships={relationships || []}
               onNodeDeleted={handleNodeDeleted}
+              graphId={graphId}
             />
           </div>
         </ResizablePanel>
