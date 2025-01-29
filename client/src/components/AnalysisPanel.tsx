@@ -7,6 +7,14 @@ import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { useFieldPreferences } from "@/hooks/use-field-preferences";
 import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -17,6 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useForm } from "react-hook-form";
 
 interface AnalysisPanelProps {
   selectedNode: any;
@@ -43,13 +52,28 @@ const FIELD_LABELS: Record<string, string> = {
 export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDeleted, graphId }: AnalysisPanelProps) {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  const [editedValues, setEditedValues] = useState<Record<string, string>>({});
   const { data: fieldPreferences } = useFieldPreferences(graphId);
 
-  // Initialize edit values when node is selected
+  const form = useForm({
+    defaultValues: {
+      name: "",
+      jobTitle: "",
+      organization: "",
+      lastContact: "",
+      officeNumber: "",
+      mobileNumber: "",
+      email1: "",
+      email2: "",
+      linkedin: "",
+      twitter: "",
+      notes: ""
+    }
+  });
+
+  // Initialize form values when node is selected or editing mode changes
   useEffect(() => {
     if (selectedNode) {
-      setEditedValues({
+      const formValues = {
         name: selectedNode.name || "",
         jobTitle: selectedNode.jobTitle || "",
         organization: selectedNode.organization || "",
@@ -60,10 +84,11 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         email2: selectedNode.email2 || "",
         linkedin: selectedNode.linkedin || "",
         twitter: selectedNode.twitter || "",
-        notes: selectedNode.notes || "",
-      });
+        notes: selectedNode.notes || ""
+      };
+      form.reset(formValues);
     }
-  }, [selectedNode]);
+  }, [selectedNode, isEditing, form]);
 
   const { data: centrality } = useQuery({
     queryKey: ["/api/analysis/centrality", graphId],
@@ -119,8 +144,8 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     },
   });
 
-  const handleSave = () => {
-    updatePersonMutation.mutate(editedValues);
+  const onSubmit = (data: any) => {
+    updatePersonMutation.mutate(data);
   };
 
   // Get visible fields in the correct order
@@ -161,47 +186,46 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     r.targetPersonId === selectedNode.id
   );
 
-  const renderField = (field: string) => {
+  const renderField = (fieldName: string) => {
     if (isEditing) {
       return (
         <FormField
-          key={field}
-          name={field}
-          render={({ field: formField }) => (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{FIELD_LABELS[field]}</label>
-              {field === "notes" ? (
-                <Textarea
-                  value={editedValues[field]}
-                  onChange={(e) => setEditedValues(prev => ({ ...prev, [field]: e.target.value }))}
-                  className="min-h-[100px]"
-                />
-              ) : field === "lastContact" ? (
-                <Input
-                  type="date"
-                  value={editedValues[field]}
-                  onChange={(e) => setEditedValues(prev => ({ ...prev, [field]: e.target.value }))}
-                />
-              ) : (
-                <Input
-                  value={editedValues[field]}
-                  onChange={(e) => setEditedValues(prev => ({ ...prev, [field]: e.target.value }))}
-                />
-              )}
-            </div>
+          key={fieldName}
+          control={form.control}
+          name={fieldName}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{FIELD_LABELS[fieldName]}</FormLabel>
+              <FormControl>
+                {fieldName === "notes" ? (
+                  <Textarea 
+                    {...field}
+                    className="min-h-[100px]"
+                  />
+                ) : fieldName === "lastContact" ? (
+                  <Input
+                    {...field}
+                    type="date"
+                  />
+                ) : (
+                  <Input {...field} />
+                )}
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
         />
       );
     }
 
-    let value = selectedNode[field];
-    if (field === "lastContact" && value) {
+    let value = selectedNode[fieldName];
+    if (fieldName === "lastContact" && value) {
       value = new Date(value).toLocaleDateString();
     }
 
     return (
-      <p key={field}>
-        <strong>{FIELD_LABELS[field]}:</strong> {value || "Not specified"}
+      <p key={fieldName}>
+        <strong>{FIELD_LABELS[fieldName]}:</strong> {value || "Not specified"}
       </p>
     );
   };
@@ -235,7 +259,8 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
                 <Button
                   variant="default"
                   size="icon"
-                  onClick={handleSave}
+                  onClick={form.handleSubmit(onSubmit)}
+                  disabled={updatePersonMutation.isPending}
                 >
                   <Check className="h-4 w-4" />
                 </Button>
@@ -278,9 +303,11 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {visibleFields.map(field => renderField(field))}
-          </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {visibleFields.map(field => renderField(field))}
+            </form>
+          </Form>
         </CardContent>
       </Card>
 
@@ -332,6 +359,3 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     </div>
   );
 }
-
-// Placeholder for FormField component -  replace with actual implementation
-const FormField = ({ children }: { children: any }) => children;
