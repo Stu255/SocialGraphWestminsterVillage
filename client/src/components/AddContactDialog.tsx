@@ -64,19 +64,22 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
 
   const mutation = useMutation({
     mutationFn: async (values: any) => {
+      // Transform form values to match database schema
       const transformedData = {
         name: values.name,
-        job_title: values.jobTitle,
-        organization: values.organization,
-        office_number: values.officeNumber,
-        mobile_number: values.mobileNumber,
-        email_1: values.email1,
-        email_2: values.email2,
-        linkedin: values.linkedin,
-        twitter: values.twitter,
-        notes: values.notes,
-        graph_id: graphId
+        job_title: values.jobTitle || null,
+        organization: values.organization || null,
+        office_number: values.officeNumber || null,
+        mobile_number: values.mobileNumber || null,
+        email_1: values.email1 || null,
+        email_2: values.email2 || null,
+        linkedin: values.linkedin || null,
+        twitter: values.twitter || null,
+        notes: values.notes || null,
+        graph_id: graphId // Required field from props
       };
+
+      console.log('Submitting data:', transformedData); // Debug log
 
       const res = await fetch("/api/people", {
         method: "POST",
@@ -86,6 +89,7 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
 
       if (!res.ok) {
         const errorText = await res.text();
+        console.error('Server response:', errorText); // Debug log
         throw new Error(errorText || "Failed to add contact");
       }
 
@@ -116,6 +120,14 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
   const onSubmit = async (data: any) => {
     if (isLastStep) {
       try {
+        if (!data.name?.trim()) {
+          toast({
+            title: "Error",
+            description: "Name is required",
+            variant: "destructive",
+          });
+          return;
+        }
         await mutation.mutateAsync(data);
       } catch (error) {
         // Error is handled by mutation's onError
