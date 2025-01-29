@@ -9,8 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Settings, ArrowUp, ArrowDown } from "lucide-react";
+import { Settings, ArrowUp, ArrowDown, Save, Cog } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 
 const DEFAULT_FIELDS = [
   { id: "name", label: "Full Name", required: true },
@@ -34,6 +35,11 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
   const [open, setOpen] = useState(false);
   const [fieldOrder, setFieldOrder] = useState(DEFAULT_FIELDS.map(f => f.id));
   const [hiddenFields, setHiddenFields] = useState<string[]>([]);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [fieldLabels, setFieldLabels] = useState(
+    Object.fromEntries(DEFAULT_FIELDS.map(f => [f.id, f.label]))
+  );
+  const [tempLabel, setTempLabel] = useState("");
 
   const toggleFieldVisibility = (fieldId: string) => {
     setHiddenFields(prev =>
@@ -56,6 +62,22 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
       [newOrder[currentIndex + 1], newOrder[currentIndex]];
       setFieldOrder(newOrder);
     }
+  };
+
+  const startEditing = (fieldId: string) => {
+    setEditingField(fieldId);
+    setTempLabel(fieldLabels[fieldId]);
+  };
+
+  const saveFieldLabel = (fieldId: string) => {
+    if (tempLabel.trim()) {
+      setFieldLabels(prev => ({
+        ...prev,
+        [fieldId]: tempLabel.trim()
+      }));
+    }
+    setEditingField(null);
+    setTempLabel("");
   };
 
   // Sort fields according to the order
@@ -85,7 +107,16 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
             {orderedFields.map((field) => (
               <div key={field.id} className="flex items-center justify-between gap-2">
                 <div className="flex-1">
-                  <p className="font-medium">{field.label}</p>
+                  {editingField === field.id ? (
+                    <Input
+                      value={tempLabel}
+                      onChange={(e) => setTempLabel(e.target.value)}
+                      className="w-full"
+                      autoFocus
+                    />
+                  ) : (
+                    <p className="font-medium">{fieldLabels[field.id]}</p>
+                  )}
                   {field.required && (
                     <p className="text-sm text-muted-foreground">Required</p>
                   )}
@@ -93,10 +124,30 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
 
                 <div className="flex items-center gap-2">
                   {!field.required && (
-                    <Switch
-                      checked={!hiddenFields.includes(field.id)}
-                      onCheckedChange={() => toggleFieldVisibility(field.id)}
-                    />
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          if (editingField === field.id) {
+                            saveFieldLabel(field.id);
+                          } else {
+                            startEditing(field.id);
+                          }
+                        }}
+                      >
+                        {editingField === field.id ? (
+                          <Save className="h-4 w-4" />
+                        ) : (
+                          <Cog className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Switch
+                        checked={!hiddenFields.includes(field.id)}
+                        onCheckedChange={() => toggleFieldVisibility(field.id)}
+                      />
+                    </>
                   )}
 
                   <div className="flex flex-col">
