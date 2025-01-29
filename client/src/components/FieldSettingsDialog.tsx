@@ -48,11 +48,6 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
 
   const { data: customFields = [] } = useQuery<CustomField[]>({
     queryKey: ["/api/custom-fields", graphId],
-    queryFn: async () => {
-      const res = await fetch(`/api/custom-fields?graphId=${graphId}`);
-      if (!res.ok) throw new Error("Failed to fetch custom fields");
-      return res.json();
-    },
   });
 
   const createFieldMutation = useMutation({
@@ -62,7 +57,10 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...field, graphId }),
       });
-      if (!res.ok) throw new Error("Failed to create field");
+      if (!res.ok) {
+        const error = await res.text();
+        throw new Error(error);
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -87,7 +85,10 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
       const res = await fetch(`/api/custom-fields/${fieldId}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete field");
+      if (!res.ok) {
+        const error = await res.text();
+        throw new Error(error);
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -198,7 +199,7 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
                 <SelectItem value="date">Date</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={handleAddField}>
+            <Button onClick={handleAddField} disabled={createFieldMutation.isPending}>
               <Plus className="h-4 w-4" />
             </Button>
           </div>

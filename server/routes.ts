@@ -10,7 +10,7 @@ import {
   socialGraphs,
   insertPersonSchema,
   insertSocialGraphSchema,
-  customFields // Added import for customFields
+  customFields 
 } from "@db/schema";
 import { setupAuth } from "./auth";
 
@@ -435,9 +435,25 @@ export function registerRoutes(app: Express): Server {
       return res.status(401).send("Not logged in");
     }
     try {
-      const field = await db.insert(customFields).values(req.body).returning();
+      const { graphId, fieldName, fieldType, isRequired } = req.body;
+
+      if (!graphId) {
+        return res.status(400).json({ error: "Graph ID is required" });
+      }
+
+      const field = await db
+        .insert(customFields)
+        .values({
+          graphId: Number(graphId),
+          fieldName,
+          fieldType,
+          isRequired: Boolean(isRequired)
+        })
+        .returning();
+
       res.json(field[0]);
     } catch (error) {
+      console.error("Error creating custom field:", error);
       res.status(500).json({ error: "Failed to create custom field" });
     }
   });
