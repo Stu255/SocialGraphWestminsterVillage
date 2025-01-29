@@ -59,18 +59,37 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
       linkedin: "",
       twitter: "",
       notes: "",
-      graphId,
     },
   });
 
   const mutation = useMutation({
     mutationFn: async (values: any) => {
+      // Transform camelCase to snake_case for database compatibility
+      const transformedData = {
+        name: values.name,
+        job_title: values.jobTitle,
+        organization: values.organization,
+        office_number: values.officeNumber,
+        mobile_number: values.mobileNumber,
+        email_1: values.email1,
+        email_2: values.email2,
+        linkedin: values.linkedin,
+        twitter: values.twitter,
+        notes: values.notes,
+        graph_id: graphId
+      };
+
       const res = await fetch("/api/people", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(transformedData),
       });
-      if (!res.ok) throw new Error("Failed to add contact");
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Failed to add contact");
+      }
+
       return res.json();
     },
     onSuccess: () => {
@@ -94,12 +113,16 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
   const currentStep = STEPS[step];
   const isLastStep = step === STEPS.length - 1;
 
-  const onSubmit = (data: any) => {
+  const onSubmit = async (data: any) => {
     if (isLastStep) {
-      mutation.mutate(data);
+      await mutation.mutateAsync(data);
     } else {
       setStep(s => s + 1);
     }
+  };
+
+  const handlePrevious = () => {
+    setStep(s => s - 1);
   };
 
   return (
@@ -143,7 +166,7 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setStep(s => s - 1)}
+                onClick={handlePrevious}
                 disabled={step === 0}
               >
                 <ChevronLeft className="h-4 w-4 mr-2" />
