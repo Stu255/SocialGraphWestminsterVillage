@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FilterPanel } from "@/components/FilterPanel";
 import { NodeForm } from "@/components/NodeForm";
@@ -17,6 +17,7 @@ interface MobileLayoutProps {
   filters: any;
   onFilterChange: (filters: any) => void;
   onNodeDeleted: () => void;
+  onHomeClick: () => void;
 }
 
 export function MobileLayout({
@@ -27,6 +28,7 @@ export function MobileLayout({
   filters,
   onFilterChange,
   onNodeDeleted,
+  onHomeClick,
 }: MobileLayoutProps) {
   const [currentPanel, setCurrentPanel] = useState(0);
 
@@ -64,13 +66,27 @@ export function MobileLayout({
       {/* Controls Section */}
       <div className="h-[50vh] bg-background border-t">
         <div className="flex items-center justify-between p-4 border-b">
-          <Button variant="ghost" size="icon" onClick={prevPanel}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={prevPanel}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            {selectedNode && currentPanel === 5 && (
+              <Button variant="ghost" size="icon" onClick={onHomeClick}>
+                <Home className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
           <h2 className="text-lg font-semibold">{panels[currentPanel].title}</h2>
-          <Button variant="ghost" size="icon" onClick={nextPanel}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {(!selectedNode || currentPanel !== 5) && (
+              <Button variant="ghost" size="icon" onClick={onHomeClick}>
+                <Home className="h-4 w-4" />
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" onClick={nextPanel}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         <div className="overflow-y-auto h-[calc(50vh-4rem)] p-4">

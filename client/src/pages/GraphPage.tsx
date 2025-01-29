@@ -2,6 +2,7 @@ import { NetworkGraph } from "@/components/NetworkGraph";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useMobile } from "@/hooks/use-mobile";
+import { useLocation } from "wouter";
 import { MobileLayout } from "@/components/layouts/MobileLayout";
 import {
   ResizableHandle,
@@ -14,6 +15,8 @@ import { RelationshipForm } from "@/components/RelationshipForm";
 import { AffiliationManager } from "@/components/AffiliationManager";
 import { RelationshipTypeManager } from "@/components/RelationshipTypeManager";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
+import { Button } from "@/components/ui/button";
+import { Home } from "lucide-react";
 
 interface Props {
   params: {
@@ -23,6 +26,7 @@ interface Props {
 
 export default function GraphPage({ params }: Props) {
   const isMobile = useMobile();
+  const [, setLocation] = useLocation();
   const [selectedNode, setSelectedNode] = useState<any>(null);
   const [filters, setFilters] = useState({
     affiliation: null,
@@ -53,6 +57,10 @@ export default function GraphPage({ params }: Props) {
     setSelectedNode(null);
   };
 
+  const handleHomeClick = () => {
+    setLocation("/");
+  };
+
   const graph = (
     <NetworkGraph
       nodes={people || []}
@@ -71,6 +79,7 @@ export default function GraphPage({ params }: Props) {
         filters={filters}
         onFilterChange={setFilters}
         onNodeDeleted={handleNodeDeleted}
+        onHomeClick={handleHomeClick}
       >
         {graph}
       </MobileLayout>
@@ -79,6 +88,16 @@ export default function GraphPage({ params }: Props) {
 
   return (
     <div className="h-screen w-full bg-background overflow-hidden">
+      <div className="absolute top-4 left-4 z-10">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleHomeClick}
+          className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+        >
+          <Home className="h-4 w-4" />
+        </Button>
+      </div>
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={25} minSize={20}>
           <div className="h-full p-6 border-r overflow-y-auto space-y-6">
