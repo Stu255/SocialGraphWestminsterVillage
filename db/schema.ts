@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 // Users table for authentication
@@ -63,6 +63,16 @@ export const relationships = pgTable("relationships", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Custom fields for each social graph
+export const customFields = pgTable("custom_fields", {
+  id: serial("id").primaryKey(),
+  graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
+  fieldName: text("field_name").notNull(),
+  fieldType: text("field_type").notNull(), // text, email, phone, etc.
+  isRequired: boolean("is_required").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Schemas for validation
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
@@ -76,6 +86,8 @@ export const insertRelationshipTypeSchema = createInsertSchema(relationshipTypes
 export const selectRelationshipTypeSchema = createSelectSchema(relationshipTypes);
 export const insertAffiliationSchema = createInsertSchema(affiliations);
 export const selectAffiliationSchema = createSelectSchema(affiliations);
+export const insertCustomFieldSchema = createInsertSchema(customFields);
+export const selectCustomFieldSchema = createSelectSchema(customFields);
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -88,3 +100,5 @@ export type Relationship = typeof relationships.$inferSelect;
 export type RelationshipType = typeof relationshipTypes.$inferSelect;
 export type Affiliation = typeof affiliations.$inferSelect;
 export type InsertAffiliation = typeof affiliations.$inferInsert;
+export type CustomField = typeof customFields.$inferSelect;
+export type InsertCustomField = typeof customFields.$inferInsert;

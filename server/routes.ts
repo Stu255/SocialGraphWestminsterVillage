@@ -9,7 +9,8 @@ import {
   affiliations, 
   socialGraphs,
   insertPersonSchema,
-  insertSocialGraphSchema
+  insertSocialGraphSchema,
+  customFields // Added import for customFields
 } from "@db/schema";
 import { setupAuth } from "./auth";
 
@@ -409,6 +410,47 @@ export function registerRoutes(app: Express): Server {
       res.json(centrality);
     } catch (error) {
       res.status(500).json({ error: "Failed to calculate centrality" });
+    }
+  });
+
+  // Custom Fields
+  app.get("/api/custom-fields", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+    const { graphId } = req.query;
+    if (!graphId) {
+      return res.status(400).json({ error: "Graph ID is required" });
+    }
+    try {
+      const fields = await db.select().from(customFields).where(eq(customFields.graphId, Number(graphId)));
+      res.json(fields);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch custom fields" });
+    }
+  });
+
+  app.post("/api/custom-fields", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+    try {
+      const field = await db.insert(customFields).values(req.body).returning();
+      res.json(field[0]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create custom field" });
+    }
+  });
+
+  app.delete("/api/custom-fields/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+    try {
+      await db.delete(customFields).where(eq(customFields.id, parseInt(req.params.id)));
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete custom field" });
     }
   });
 

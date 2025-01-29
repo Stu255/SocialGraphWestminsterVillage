@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { MultiStepRelationshipDialog } from "./MultiStepRelationshipDialog";
+import { FieldSettingsDialog } from "./FieldSettingsDialog";
 import { useToast } from "@/hooks/use-toast";
 
 interface Affiliation {
@@ -16,22 +17,27 @@ interface Affiliation {
   color: string;
 }
 
-export function NodeForm() {
+interface NodeFormProps {
+  graphId: number;
+}
+
+export function NodeForm({ graphId }: NodeFormProps) {
   const [showRelationshipDialog, setShowRelationshipDialog] = useState(false);
   const [newPerson, setNewPerson] = useState<{ id: number; name: string } | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const { data: affiliations = [] } = useQuery<Affiliation[]>({
-    queryKey: ["/api/affiliations"],
+    queryKey: ["/api/affiliations", graphId],
   });
 
   const form = useForm({
     defaultValues: {
       name: "",
-      currentRole: "",
+      roleTitle: "",
       affiliation: "",
       notes: "",
+      graphId,
     },
   });
 
@@ -51,7 +57,7 @@ export function NodeForm() {
       return res.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
       setNewPerson({ id: data.id, name: data.name });
       setShowRelationshipDialog(true);
       form.reset();
@@ -72,8 +78,9 @@ export function NodeForm() {
   return (
     <>
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle>Add Person</CardTitle>
+          <FieldSettingsDialog graphId={graphId} />
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -95,10 +102,10 @@ export function NodeForm() {
 
               <FormField
                 control={form.control}
-                name="currentRole"
+                name="roleTitle"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Current Role</FormLabel>
+                    <FormLabel>Role</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
