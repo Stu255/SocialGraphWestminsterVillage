@@ -143,15 +143,30 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      const result = insertPersonSchema.safeParse(req.body);
+      // Transform the incoming data to match the schema
+      const personData = {
+        name: req.body.name,
+        graphId: req.body.graphId,
+        jobTitle: req.body.jobTitle,
+        organization: req.body.organization,
+        officeNumber: req.body.officeNumber,
+        mobileNumber: req.body.mobileNumber,
+        email1: req.body.email1,
+        email2: req.body.email2,
+        linkedin: req.body.linkedin,
+        twitter: req.body.twitter,
+        notes: req.body.notes,
+      };
+
+      const result = insertPersonSchema.safeParse(personData);
       if (!result.success) {
         return res.status(400).json({ 
           error: "Invalid input: " + result.error.issues.map(i => i.message).join(", ") 
         });
       }
 
-      const person = await db.insert(people).values(result.data).returning();
-      res.json(person[0]);
+      const [person] = await db.insert(people).values(result.data).returning();
+      res.json(person);
     } catch (error: any) {
       console.error("Error creating person:", error);
       res.status(500).json({ error: error?.message || "Failed to create person" });

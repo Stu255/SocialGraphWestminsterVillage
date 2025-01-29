@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -67,16 +68,16 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
       // Transform form values to match database schema
       const transformedData = {
         name: values.name,
-        job_title: values.jobTitle || null,
+        jobTitle: values.jobTitle || null,
         organization: values.organization || null,
-        office_number: values.officeNumber || null,
-        mobile_number: values.mobileNumber || null,
-        email_1: values.email1 || null,
-        email_2: values.email2 || null,
+        officeNumber: values.officeNumber || null,
+        mobileNumber: values.mobileNumber || null,
+        email1: values.email1 || null,
+        email2: values.email2 || null,
         linkedin: values.linkedin || null,
         twitter: values.twitter || null,
         notes: values.notes || null,
-        graph_id: graphId // Required field from props
+        graphId: graphId // Required field from props
       };
 
       console.log('Submitting data:', transformedData); // Debug log
@@ -90,12 +91,12 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
       if (!res.ok) {
         const errorText = await res.text();
         console.error('Server response:', errorText); // Debug log
-        throw new Error(errorText || "Failed to add contact");
+        throw new Error(errorText || "Failed to create contact");
       }
 
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
       onOpenChange(false);
       form.reset();
@@ -147,6 +148,9 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{currentStep.title}</DialogTitle>
+          <DialogDescription>
+            Add a new contact to your network
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
