@@ -1,5 +1,6 @@
 import { pgTable, text, serial, integer, timestamp, boolean, unique, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { z } from "zod";
 
 // Users table for authentication
 export const users = pgTable("users", {
@@ -92,6 +93,29 @@ export const fieldPreferences = pgTable("field_preferences", {
 }));
 
 
+// Custom insert schema for people to handle date conversion
+const insertPeopleSchema = createInsertSchema(people, {
+  lastContact: z.string().transform(val => val ? new Date(val) : null).nullable(),
+});
+
+// Export the schemas
+export const insertUserSchema = createInsertSchema(users);
+export const selectUserSchema = createSelectSchema(users);
+export const insertSocialGraphSchema = createInsertSchema(socialGraphs);
+export const selectSocialGraphSchema = createSelectSchema(socialGraphs);
+export const insertPersonSchema = insertPeopleSchema;
+export const selectPersonSchema = createSelectSchema(people);
+export const insertRelationshipSchema = createInsertSchema(relationships);
+export const selectRelationshipSchema = createSelectSchema(relationships);
+export const insertRelationshipTypeSchema = createInsertSchema(relationshipTypes);
+export const selectRelationshipTypeSchema = createSelectSchema(relationshipTypes);
+export const insertAffiliationSchema = createInsertSchema(affiliations);
+export const selectAffiliationSchema = createSelectSchema(affiliations);
+export const insertCustomFieldSchema = createInsertSchema(customFields);
+export const selectCustomFieldSchema = createSelectSchema(customFields);
+export const insertFieldPreferenceSchema = createInsertSchema(fieldPreferences);
+export const selectFieldPreferenceSchema = createSelectSchema(fieldPreferences);
+
 // Schema types
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
@@ -107,22 +131,3 @@ export type CustomField = typeof customFields.$inferSelect;
 export type InsertCustomField = typeof customFields.$inferInsert;
 export type FieldPreference = typeof fieldPreferences.$inferSelect;
 export type InsertFieldPreference = typeof fieldPreferences.$inferInsert;
-
-
-// Schemas for validation
-export const insertUserSchema = createInsertSchema(users);
-export const selectUserSchema = createSelectSchema(users);
-export const insertSocialGraphSchema = createInsertSchema(socialGraphs);
-export const selectSocialGraphSchema = createSelectSchema(socialGraphs);
-export const insertPersonSchema = createInsertSchema(people);
-export const selectPersonSchema = createSelectSchema(people);
-export const insertRelationshipSchema = createInsertSchema(relationships);
-export const selectRelationshipSchema = createSelectSchema(relationships);
-export const insertRelationshipTypeSchema = createInsertSchema(relationshipTypes);
-export const selectRelationshipTypeSchema = createSelectSchema(relationshipTypes);
-export const insertAffiliationSchema = createInsertSchema(affiliations);
-export const selectAffiliationSchema = createSelectSchema(affiliations);
-export const insertCustomFieldSchema = createInsertSchema(customFields);
-export const selectCustomFieldSchema = createSelectSchema(customFields);
-export const insertFieldPreferenceSchema = createInsertSchema(fieldPreferences);
-export const selectFieldPreferenceSchema = createSelectSchema(fieldPreferences);

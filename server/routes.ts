@@ -149,7 +149,7 @@ export function registerRoutes(app: Express): Server {
         graphId: req.body.graph_id,
         jobTitle: req.body.job_title,
         organization: req.body.organization,
-        lastContact: req.body.last_contact,
+        lastContact: req.body.last_contact ? new Date(req.body.last_contact) : null,
         officeNumber: req.body.office_number,
         mobileNumber: req.body.mobile_number,
         email1: req.body.email_1,
