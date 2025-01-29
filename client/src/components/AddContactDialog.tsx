@@ -94,6 +94,14 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
   const currentStep = STEPS[step];
   const isLastStep = step === STEPS.length - 1;
 
+  const onSubmit = (data: any) => {
+    if (isLastStep) {
+      mutation.mutate(data);
+    } else {
+      setStep(s => s + 1);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -102,13 +110,13 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-4">
               {currentStep.fields.map((field) => (
                 <FormField
                   key={field}
                   control={form.control}
-                  name={field}
+                  name={field as any}
                   rules={{ required: field === "name" ? "Name is required" : false }}
                   render={({ field: formField }) => (
                     <FormItem>
@@ -143,8 +151,7 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
               </Button>
 
               <Button
-                type={isLastStep ? "submit" : "button"}
-                onClick={() => !isLastStep && setStep(s => s + 1)}
+                type="submit"
                 disabled={mutation.isPending}
               >
                 {isLastStep ? (
