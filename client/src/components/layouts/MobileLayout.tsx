@@ -5,16 +5,17 @@ import { cn } from "@/lib/utils";
 import { FilterPanel } from "@/components/FilterPanel";
 import { NodeForm } from "@/components/NodeForm";
 import { RelationshipForm } from "@/components/RelationshipForm";
-import { AffiliationManager } from "@/components/AffiliationManager";
+import { OrganizationManager } from "@/components/OrganizationManager";
 import { RelationshipTypeManager } from "@/components/RelationshipTypeManager";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
 
 interface MobileLayoutProps {
-  children: React.ReactNode; // This will be the graph
+  children: React.ReactNode;
   selectedNode: any;
   nodes: any[];
   relationships: any[];
   filters: any;
+  graphId: number; // Add graphId prop
   onFilterChange: (filters: any) => void;
   onNodeDeleted: () => void;
   onHomeClick: () => void;
@@ -26,6 +27,7 @@ export function MobileLayout({
   nodes,
   relationships,
   filters,
+  graphId,
   onFilterChange,
   onNodeDeleted,
   onHomeClick,
@@ -34,10 +36,10 @@ export function MobileLayout({
 
   const panels = [
     { title: "Filters", component: <FilterPanel filters={filters} onFilterChange={onFilterChange} /> },
-    { title: "Add Person", component: <NodeForm /> },
-    { title: "Add Relationship", component: <RelationshipForm /> },
-    { title: "Affiliations", component: <AffiliationManager /> },
-    { title: "Relationship Types", component: <RelationshipTypeManager /> },
+    { title: "Add Person", component: <NodeForm graphId={graphId} /> },
+    { title: "Add Relationship", component: <RelationshipForm graphId={graphId} /> },
+    { title: "Add Organization", component: <OrganizationManager graphId={graphId} /> },
+    { title: "Relationship Types", component: <RelationshipTypeManager graphId={graphId} /> },
     { title: "Analysis", component: 
       <AnalysisPanel 
         selectedNode={selectedNode}

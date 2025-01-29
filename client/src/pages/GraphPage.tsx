@@ -12,7 +12,7 @@ import {
 import { FilterPanel } from "@/components/FilterPanel";
 import { NodeForm } from "@/components/NodeForm";
 import { RelationshipForm } from "@/components/RelationshipForm";
-import { AffiliationManager } from "@/components/AffiliationManager";
+import { OrganizationManager } from "@/components/OrganizationManager";
 import { RelationshipTypeManager } from "@/components/RelationshipTypeManager";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
 import { Button } from "@/components/ui/button";
@@ -104,7 +104,7 @@ export default function GraphPage({ params }: Props) {
             <FilterPanel filters={filters} onFilterChange={setFilters} />
             <NodeForm graphId={graphId} />
             <RelationshipForm graphId={graphId} />
-            <AffiliationManager graphId={graphId} />
+            <OrganizationManager graphId={graphId} />
             <RelationshipTypeManager graphId={graphId} />
           </div>
         </ResizablePanel>
@@ -119,7 +119,7 @@ export default function GraphPage({ params }: Props) {
 
         <ResizablePanel defaultSize={20} minSize={15}>
           <div className="h-full p-6 border-l overflow-y-auto">
-            <AnalysisPanel 
+            <AnalysisPanel
               selectedNode={selectedNode}
               nodes={people || []}
               relationships={relationships || []}

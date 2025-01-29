@@ -36,16 +36,21 @@ export const people = pgTable("people", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Affiliations table for organizational groupings
-export const affiliations = pgTable("affiliations", {
+
+// Organizations table replaces affiliations
+export const organizations = pgTable("organizations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  color: text("color").notNull(),
+  brandColor: text("brand_color").notNull(),
+  accentColor: text("accent_color").notNull(),
+  website: text("website"),
+  industry: text("industry"),
+  hqCity: text("hq_city"),
+  headcount: integer("headcount"),
+  turnover: text("turnover"),
   graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-}, (table) => ({
-  nameGraphIdIdx: unique("name_graph_id_idx").on(table.name, table.graphId),
-}));
+});
 
 // Relationship Types table
 export const relationshipTypes = pgTable("relationship_types", {
@@ -112,8 +117,8 @@ export const insertRelationshipSchema = createInsertSchema(relationships);
 export const selectRelationshipSchema = createSelectSchema(relationships);
 export const insertRelationshipTypeSchema = createInsertSchema(relationshipTypes);
 export const selectRelationshipTypeSchema = createSelectSchema(relationshipTypes);
-export const insertAffiliationSchema = createInsertSchema(affiliations);
-export const selectAffiliationSchema = createSelectSchema(affiliations);
+export const insertOrganizationSchema = createInsertSchema(organizations);
+export const selectOrganizationSchema = createSelectSchema(organizations);
 export const insertCustomFieldSchema = createInsertSchema(customFields);
 export const selectCustomFieldSchema = createSelectSchema(customFields);
 export const insertFieldPreferenceSchema = createInsertSchema(fieldPreferences);
@@ -128,8 +133,8 @@ export type Person = typeof people.$inferSelect;
 export type InsertPerson = typeof people.$inferInsert;
 export type Relationship = typeof relationships.$inferSelect;
 export type RelationshipType = typeof relationshipTypes.$inferSelect;
-export type Affiliation = typeof affiliations.$inferSelect;
-export type InsertAffiliation = typeof affiliations.$inferInsert;
+export type Organization = typeof organizations.$inferSelect;
+export type InsertOrganization = typeof organizations.$inferInsert;
 export type CustomField = typeof customFields.$inferSelect;
 export type InsertCustomField = typeof customFields.$inferInsert;
 export type FieldPreference = typeof fieldPreferences.$inferSelect;

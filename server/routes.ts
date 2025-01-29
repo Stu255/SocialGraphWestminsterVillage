@@ -6,7 +6,7 @@ import {
   people, 
   relationships, 
   relationshipTypes, 
-  affiliations, 
+  organizations, 
   socialGraphs,
   fieldPreferences,
   insertPersonSchema,
@@ -212,8 +212,8 @@ export function registerRoutes(app: Express): Server {
   });
 
 
-  // Affiliations
-  app.get("/api/affiliations", async (req, res) => {
+  // Organizations (replacing affiliations)
+  app.get("/api/organizations", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not logged in");
     }
@@ -222,73 +222,52 @@ export function registerRoutes(app: Express): Server {
       return res.status(400).json({ error: "Graph ID is required" });
     }
     try {
-      // First get all affiliations
-      const allAffiliations = await db.select().from(affiliations).where(eq(affiliations.graphId, Number(graphId)));
-
-      // Then get the count of people for each affiliation
-      const affiliationsWithCounts = await Promise.all(
-        allAffiliations.map(async (affiliation) => {
-          const count = await db
-            .select()
-            .from(people)
-            .where(and(eq(people.affiliation, affiliation.name), eq(people.graphId, Number(graphId))));
-
-          return {
-            ...affiliation,
-            memberCount: count.length
-          };
-        })
-      );
-
-      // Sort by member count in descending order
-      const sortedAffiliations = affiliationsWithCounts.sort((a, b) => 
-        b.memberCount - a.memberCount
-      );
-
-      res.json(sortedAffiliations);
+      const orgs = await db.select().from(organizations).where(eq(organizations.graphId, Number(graphId)));
+      res.json(orgs);
     } catch (error) {
-      console.error("Error fetching affiliations:", error);
-      res.status(500).json({ error: "Failed to fetch affiliations" });
+      console.error("Error fetching organizations:", error);
+      res.status(500).json({ error: "Failed to fetch organizations" });
     }
   });
 
-  app.post("/api/affiliations", async (req, res) => {
+  app.post("/api/organizations", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not logged in");
     }
     try {
-      const affiliation = await db.insert(affiliations).values({...req.body, graphId: req.body.graphId}).returning();
-      res.json(affiliation[0]);
+      const org = await db.insert(organizations).values({...req.body, graphId: req.body.graph_id}).returning();
+      res.json(org[0]);
     } catch (error) {
-      res.status(500).json({ error: "Failed to create affiliation" });
+      console.error("Error creating organization:", error);
+      res.status(500).json({ error: "Failed to create organization" });
     }
   });
 
-  app.put("/api/affiliations/:id", async (req, res) => {
+  app.put("/api/organizations/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not logged in");
     }
     try {
       const [updated] = await db
-        .update(affiliations)
-        .set({...req.body, graphId: req.body.graphId})
-        .where(and(eq(affiliations.id, parseInt(req.params.id)), eq(affiliations.graphId, req.body.graphId)))
+        .update(organizations)
+        .set({...req.body, graphId: req.body.graph_id})
+        .where(and(eq(organizations.id, parseInt(req.params.id)), eq(organizations.graphId, req.body.graph_id)))
         .returning();
       res.json(updated);
     } catch (error) {
-      res.status(500).json({ error: "Failed to update affiliation" });
+      res.status(500).json({ error: "Failed to update organization" });
     }
   });
 
-  app.delete("/api/affiliations/:id", async (req, res) => {
+  app.delete("/api/organizations/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not logged in");
     }
     try {
-      await db.delete(affiliations).where(eq(affiliations.id, parseInt(req.params.id)));
+      await db.delete(organizations).where(eq(organizations.id, parseInt(req.params.id)));
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: "Failed to delete affiliation" });
+      res.status(500).json({ error: "Failed to delete organization" });
     }
   });
 
