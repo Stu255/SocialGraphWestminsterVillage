@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Settings2 } from "lucide-react";
+import { Settings2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -28,6 +28,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ContactListDialogProps {
   open: boolean;
@@ -42,15 +43,59 @@ interface EditDialogProps {
   graphId: number;
 }
 
+const STEPS = [
+  {
+    title: "Basic Information",
+    description: "Edit the contact's name and role",
+    fields: ["name", "jobTitle", "organization"]
+  },
+  {
+    title: "Contact Information",
+    description: "Update phone numbers and email addresses",
+    fields: ["officeNumber", "mobileNumber", "email1", "email2"]
+  },
+  {
+    title: "Social Media",
+    description: "Manage social media profiles",
+    fields: ["linkedin", "twitter"]
+  },
+  {
+    title: "Notes",
+    description: "Add detailed notes about this contact",
+    fields: ["notes"]
+  }
+];
+
+const FIELD_LABELS: Record<string, string> = {
+  name: "Name",
+  jobTitle: "Job Title",
+  organization: "Organization",
+  officeNumber: "Office Number",
+  mobileNumber: "Mobile Number",
+  email1: "Email Address 1",
+  email2: "Email Address 2",
+  linkedin: "LinkedIn",
+  twitter: "Twitter",
+  notes: "Notes"
+};
+
 function EditDialog({ contact, open, onOpenChange, graphId }: EditDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [step, setStep] = useState(0);
 
   const form = useForm({
     defaultValues: {
       name: contact?.name || "",
       jobTitle: contact?.jobTitle || "",
       organization: contact?.organization || "",
+      officeNumber: contact?.officeNumber || "",
+      mobileNumber: contact?.mobileNumber || "",
+      email1: contact?.email1 || "",
+      email2: contact?.email2 || "",
+      linkedin: contact?.linkedin || "",
+      twitter: contact?.twitter || "",
+      notes: contact?.notes || ""
     },
   });
 
@@ -90,68 +135,94 @@ function EditDialog({ contact, open, onOpenChange, graphId }: EditDialogProps) {
     mutation.mutate(data);
   };
 
+  const currentStep = STEPS[step];
+  const isLastStep = step === STEPS.length - 1;
+  const isFirstStep = step === 0;
+
+  const handlePrevious = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!isFirstStep) {
+      setStep(s => s - 1);
+    }
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!isLastStep) {
+      setStep(s => s + 1);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Edit Contact</DialogTitle>
+          <DialogTitle>{currentStep.title}</DialogTitle>
           <DialogDescription>
-            Update basic contact information
+            {currentStep.description}
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              rules={{ required: "Name is required" }}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="space-y-4">
+              {currentStep.fields.map((fieldName) => (
+                <FormField
+                  key={fieldName}
+                  control={form.control}
+                  name={fieldName}
+                  rules={{ required: fieldName === "name" ? "Name is required" : false }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{FIELD_LABELS[fieldName]}</FormLabel>
+                      <FormControl>
+                        {fieldName === "notes" ? (
+                          <Textarea 
+                            {...field} 
+                            className="min-h-[200px]"
+                          />
+                        ) : (
+                          <Input {...field} />
+                        )}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ))}
+            </div>
 
-            <FormField
-              control={form.control}
-              name="jobTitle"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Job Title</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="flex justify-between gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={isFirstStep}
+                className="flex-1"
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Previous
+              </Button>
 
-            <FormField
-              control={form.control}
-              name="organization"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Organization</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <Button 
+                type="submit"
+                disabled={mutation.isPending}
+                className="flex-1"
+              >
+                {mutation.isPending ? "Saving..." : "Save"}
+              </Button>
 
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={mutation.isPending}
-            >
-              {mutation.isPending ? "Saving..." : "Save Changes"}
-            </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleNext}
+                disabled={isLastStep}
+                className="flex-1"
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
           </form>
         </Form>
       </DialogContent>
