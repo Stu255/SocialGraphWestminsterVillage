@@ -139,6 +139,10 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
     ...customFields.map(field => ({ ...field, isDefault: false }))
   ];
 
+  const isDefaultField = (fieldName: string) => {
+    return DEFAULT_FIELDS.some(f => f.fieldName === fieldName);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -155,17 +159,17 @@ export function FieldSettingsDialog({ graphId }: FieldSettingsDialogProps) {
         </DialogHeader>
 
         <div className="space-y-4 pt-4">
-          {allFields.map((field, index) => (
+          {allFields.map((field) => (
             <div key={field.fieldName} className="flex items-center justify-between gap-2">
               <div>
                 <p className="font-medium">{field.fieldName}</p>
                 <p className="text-sm text-muted-foreground">{field.fieldType}</p>
               </div>
-              {!field.isDefault && 'id' in field && (
+              {!isDefaultField(field.fieldName) && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => deleteFieldMutation.mutate(field.id)}
+                  onClick={() => field.id && deleteFieldMutation.mutate(field.id)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
