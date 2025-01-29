@@ -310,39 +310,24 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
   };
 
   const renderColumnHeader = (column: string, label: string) => {
-    const isFiltering = activeFilter === column;
-    const currentFilter = filters[column] || "";
-
     return (
       <div className="space-y-2">
-        <div
-          className="flex items-center justify-between cursor-pointer"
-          onClick={() => setActiveFilter(isFiltering ? null : column)}
-        >
-          <span>{label}</span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSort(column);
-              }}
-            >
-              <ArrowUpDown className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        {isFiltering && (
+        <div className="flex items-center gap-2">
           <Input
-            placeholder={`Filter ${label.toLowerCase()}...`}
-            value={currentFilter}
+            placeholder={label}
+            value={filters[column] || ""}
             onChange={(e) => handleFilter(column, e.target.value)}
             className="h-8"
-            autoFocus
           />
-        )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 flex-shrink-0"
+            onClick={() => handleSort(column)}
+          >
+            <ArrowUpDown className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     );
   };
