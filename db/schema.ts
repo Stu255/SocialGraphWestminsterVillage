@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, boolean, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 // Users table for authentication
@@ -17,23 +17,23 @@ export const socialGraphs = pgTable("social_graphs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Affiliations table
+// Affiliations table for organizational groupings
 export const affiliations = pgTable("affiliations", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(),
+  name: text("name").notNull(),
   color: text("color").notNull(),
   graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  nameGraphIdIdx: unique("name_graph_id_idx").on(table.name, table.graphId),
+}));
 
 // Core People table
 export const people = pgTable("people", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  affiliation: text("affiliation")
-    .references(() => affiliations.name)
-    .notNull(),
   roleTitle: text("role_title"),
+  affiliation: text("affiliation"),
   notes: text("notes"),
   graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -42,23 +42,19 @@ export const people = pgTable("people", {
 // Relationship Types table
 export const relationshipTypes = pgTable("relationship_types", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(),
+  name: text("name").notNull(),
   graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  nameGraphIdIdx: unique("rel_type_name_graph_id_idx").on(table.name, table.graphId),
+}));
 
 // Relationships between people
 export const relationships = pgTable("relationships", {
   id: serial("id").primaryKey(),
-  sourcePersonId: integer("source_person_id")
-    .references(() => people.id)
-    .notNull(),
-  targetPersonId: integer("target_person_id")
-    .references(() => people.id)
-    .notNull(),
-  relationshipType: text("relationship_type")
-    .references(() => relationshipTypes.name)
-    .notNull(),
+  sourcePersonId: integer("source_person_id").references(() => people.id).notNull(),
+  targetPersonId: integer("target_person_id").references(() => people.id).notNull(),
+  relationshipType: text("relationship_type"),
   graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -68,10 +64,26 @@ export const customFields = pgTable("custom_fields", {
   id: serial("id").primaryKey(),
   graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
   fieldName: text("field_name").notNull(),
-  fieldType: text("field_type").notNull(), // text, email, phone, etc.
+  fieldType: text("field_type").notNull(),
   isRequired: boolean("is_required").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  fieldNameGraphIdIdx: unique("field_name_graph_id_idx").on(table.fieldName, table.graphId),
+}));
+
+// Schema types
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+export type SocialGraph = typeof socialGraphs.$inferSelect;
+export type InsertSocialGraph = typeof socialGraphs.$inferInsert;
+export type Person = typeof people.$inferSelect;
+export type InsertPerson = typeof people.$inferInsert;
+export type Relationship = typeof relationships.$inferSelect;
+export type RelationshipType = typeof relationshipTypes.$inferSelect;
+export type Affiliation = typeof affiliations.$inferSelect;
+export type InsertAffiliation = typeof affiliations.$inferInsert;
+export type CustomField = typeof customFields.$inferSelect;
+export type InsertCustomField = typeof customFields.$inferInsert;
 
 // Schemas for validation
 export const insertUserSchema = createInsertSchema(users);
@@ -88,17 +100,3 @@ export const insertAffiliationSchema = createInsertSchema(affiliations);
 export const selectAffiliationSchema = createSelectSchema(affiliations);
 export const insertCustomFieldSchema = createInsertSchema(customFields);
 export const selectCustomFieldSchema = createSelectSchema(customFields);
-
-// Types
-export type User = typeof users.$inferSelect;
-export type InsertUser = typeof users.$inferInsert;
-export type SocialGraph = typeof socialGraphs.$inferSelect;
-export type InsertSocialGraph = typeof socialGraphs.$inferInsert;
-export type Person = typeof people.$inferSelect;
-export type InsertPerson = typeof people.$inferInsert;
-export type Relationship = typeof relationships.$inferSelect;
-export type RelationshipType = typeof relationshipTypes.$inferSelect;
-export type Affiliation = typeof affiliations.$inferSelect;
-export type InsertAffiliation = typeof affiliations.$inferInsert;
-export type CustomField = typeof customFields.$inferSelect;
-export type InsertCustomField = typeof customFields.$inferInsert;
