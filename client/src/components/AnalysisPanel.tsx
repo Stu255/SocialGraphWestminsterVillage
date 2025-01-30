@@ -166,29 +166,34 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
   const onSubmit = (data: any) => {
     if (!data.name?.trim()) {
+      console.log('Form validation failed: Empty name');
       return;
     }
     if (!data.relationshipToYou) {
+      console.log('Form validation failed: No relationship type selected');
       return;
     }
     console.log('Form submission data:', data);
     console.log('Relationship value:', data.relationshipToYou);
-    console.log('Relationship ID:', getRelationshipIdByName(data.relationshipToYou));
 
     // Transform the data to match the expected API format
     const transformedData = {
       ...data,
-      job_title: data.jobTitle,
-      office_number: data.officeNumber,
-      mobile_number: data.mobileNumber,
-      email_1: data.email1,
-      email_2: data.email2,
-      last_contact: data.lastContact,
-      relationship_to_you: getRelationshipIdByName(data.relationshipToYou)
+      jobTitle: data.jobTitle,
+      organization: data.organization,
+      relationshipToYou: data.relationshipToYou,
+      lastContact: data.lastContact,
+      officeNumber: data.officeNumber,
+      mobileNumber: data.mobileNumber,
+      email1: data.email1,
+      email2: data.email2,
+      linkedin: data.linkedin,
+      twitter: data.twitter,
+      notes: data.notes,
     };
 
-    console.log('Frontend: Sending update with transformed values:', transformedData);
-    updatePersonMutation.mutate(transformedData); // Use transformedData here
+    console.log('Frontend: Sending update with transformed data:', transformedData);
+    updatePersonMutation.mutate(transformedData);
   };
 
   // Get visible fields in the correct order
