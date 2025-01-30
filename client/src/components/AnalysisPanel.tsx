@@ -114,24 +114,10 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
-      // Transform the relationship type to its numeric value before sending to the API
-      const transformedValues = {
-        ...values,
-        job_title: values.jobTitle,
-        office_number: values.officeNumber,
-        mobile_number: values.mobileNumber,
-        email_1: values.email1,
-        email_2: values.email2,
-        last_contact: values.lastContact,
-        relationship_to_you: values.relationshipToYou ? getRelationshipIdByName(values.relationshipToYou) : null,
-      };
-
-      console.log('Frontend: Sending update with transformed values:', transformedValues);
-
       const res = await fetch(`/api/people/${selectedNode.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...transformedValues, graphId }),
+        body: JSON.stringify({ ...values, graphId }),
       });
 
       if (!res.ok) {
@@ -188,7 +174,21 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     console.log('Form submission data:', data);
     console.log('Relationship value:', data.relationshipToYou);
     console.log('Relationship ID:', getRelationshipIdByName(data.relationshipToYou));
-    updatePersonMutation.mutate(data);
+
+    // Transform the data to match the expected API format
+    const transformedData = {
+      ...data,
+      job_title: data.jobTitle,
+      office_number: data.officeNumber,
+      mobile_number: data.mobileNumber,
+      email_1: data.email1,
+      email_2: data.email2,
+      last_contact: data.lastContact,
+      relationship_to_you: getRelationshipIdByName(data.relationshipToYou)
+    };
+
+    console.log('Frontend: Sending update with transformed values:', transformedData);
+    updatePersonMutation.mutate(transformedData); // Use transformedData here
   };
 
   // Get visible fields in the correct order
@@ -203,18 +203,18 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
           key={fieldName}
           control={form.control}
           name={fieldName}
-          rules={{ 
-            required: fieldName === "name" ? "Name is required" : 
-                     fieldName === "relationshipToYou" ? "Relationship type is required" : 
-                     false 
+          rules={{
+            required: fieldName === "name" ? "Name is required" :
+                     fieldName === "relationshipToYou" ? "Relationship type is required" :
+                     false
           }}
           render={({ field }) => (
             <FormItem>
               <FormLabel>{FIELD_LABELS[fieldName]}</FormLabel>
               <FormControl>
                 {fieldName === "relationshipToYou" ? (
-                  <Select 
-                    onValueChange={field.onChange} 
+                  <Select
+                    onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <SelectTrigger>
@@ -229,7 +229,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
                     </SelectContent>
                   </Select>
                 ) : fieldName === "notes" ? (
-                  <Textarea 
+                  <Textarea
                     {...field}
                     className="min-h-[100px]"
                   />

@@ -184,11 +184,14 @@ export function registerRoutes(app: Express): Server {
       // First, get the relationship ID if a relationship name is provided
       let relationshipId = null;
       if (req.body.relationshipToYou) {
+        console.log('Backend: Looking up relationship type:', req.body.relationshipToYou);
         const relationship = await db.select()
           .from(relationshipTypes)
           .where(eq(relationshipTypes.name, req.body.relationshipToYou))
           .limit(1);
+        console.log('Backend: Found relationship:', relationship);
         relationshipId = relationship[0]?.id;
+        console.log('Backend: Resolved relationshipId:', relationshipId);
       }
 
       // Transform the incoming data to match the schema
