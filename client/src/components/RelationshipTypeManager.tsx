@@ -21,11 +21,19 @@ export const RELATIONSHIP_TYPES = [
 
 // Helper functions for relationship type conversion
 export const getRelationshipNameById = (id: number) => {
-  return RELATIONSHIP_TYPES.find(type => type.id === id)?.name || "Unknown";
+  console.log('Getting relationship name for id:', id);
+  const type = RELATIONSHIP_TYPES.find(type => type.id === id);
+  const name = type?.name || "Unknown";
+  console.log('Found relationship name:', name);
+  return name;
 };
 
 export const getRelationshipIdByName = (name: string) => {
-  return RELATIONSHIP_TYPES.find(type => type.name === name)?.id || null;
+  console.log('Getting relationship id for name:', name);
+  const type = RELATIONSHIP_TYPES.find(type => type.name === name);
+  const id = type?.id || null;
+  console.log('Found relationship id:', id);
+  return id;
 };
 
 function RelationshipTypesDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {

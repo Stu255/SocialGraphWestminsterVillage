@@ -1,0 +1,26 @@
+The above error occurred in the <ContactListDialog> component:
+
+    at ContactListDialog (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/ContactListDialog.tsx:349:37)
+    at div
+    at _c9 (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/ui/card.tsx:106:12)
+    at div
+    at _c (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/ui/card.tsx:20:11)
+    at NodeForm (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/NodeForm.tsx:27:28)
+    at div
+    at div
+    at PanelWithForwardedRef (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-resizable-panels.js?v=bf102d90:40:3)
+    at forwardRef(Panel)
+    at div
+    at PanelGroupWithForwardedRef (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-resizable-panels.js?v=bf102d90:1423:3)
+    at forwardRef(PanelGroup)
+    at ResizablePanelGroup (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/ui/resizable.tsx:21:3)
+    at div
+    at GraphPage (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/pages/GraphPage.tsx:37:37)
+    at Route (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=bf102d90:323:16)
+    at Switch (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=bf102d90:379:17)
+    at App (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/App.tsx:27:31)
+    at QueryClientProvider (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=bf102d90:2805:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+(a[sortConfig.column] || "").toLowerCase is not a function
