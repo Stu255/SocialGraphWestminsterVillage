@@ -117,10 +117,16 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       // Transform the relationship type to its numeric value before sending to the API
       const transformedValues = {
         ...values,
+        job_title: values.jobTitle,
+        office_number: values.officeNumber,
+        mobile_number: values.mobileNumber,
+        email_1: values.email1,
+        email_2: values.email2,
+        last_contact: values.lastContact,
         relationship_to_you: values.relationshipToYou ? getRelationshipIdByName(values.relationshipToYou) : null,
       };
 
-      console.log('Updating person with data:', transformedValues);
+      console.log('Frontend: Sending update with transformed values:', transformedValues);
 
       const res = await fetch(`/api/people/${selectedNode.id}`, {
         method: 'PUT',
@@ -134,7 +140,9 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         throw new Error(errorText || "Failed to update person");
       }
 
-      return res.json();
+      const responseData = await res.json();
+      console.log('Server response data:', responseData);
+      return responseData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
@@ -177,6 +185,9 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     if (!data.relationshipToYou) {
       return;
     }
+    console.log('Form submission data:', data);
+    console.log('Relationship value:', data.relationshipToYou);
+    console.log('Relationship ID:', getRelationshipIdByName(data.relationshipToYou));
     updatePersonMutation.mutate(data);
   };
 

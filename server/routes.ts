@@ -179,6 +179,8 @@ export function registerRoutes(app: Express): Server {
       return res.status(401).send("Not logged in");
     }
     try {
+      console.log('Backend: Received update request body:', req.body);
+
       // Transform the incoming data to match the schema
       const personData = {
         name: req.body.name,
@@ -196,14 +198,17 @@ export function registerRoutes(app: Express): Server {
         notes: req.body.notes,
       };
 
-      console.log('Updating person with data:', personData);
+      console.log('Backend: Transformed person data:', personData);
 
       const result = insertPersonSchema.safeParse(personData);
       if (!result.success) {
+        console.error('Backend: Schema validation failed:', result.error.issues);
         return res.status(400).json({ 
           error: "Invalid input: " + result.error.issues.map(i => i.message).join(", ") 
         });
       }
+
+      console.log('Backend: Validated data:', result.data);
 
       const [updatedPerson] = await db
         .update(people)
@@ -215,6 +220,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "Person not found" });
       }
 
+      console.log('Backend: Updated person:', updatedPerson);
       res.json(updatedPerson);
     } catch (error: any) {
       console.error("Error updating person:", error);
