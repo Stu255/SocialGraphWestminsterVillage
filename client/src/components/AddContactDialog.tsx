@@ -19,16 +19,10 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { RelationshipLevel } from "@db/schema";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RELATIONSHIP_TYPES, getRelationshipIdByName } from "./RelationshipTypeManager";
 
 interface AddContactDialogProps {
   open: boolean;
@@ -39,28 +33,16 @@ interface AddContactDialogProps {
 const STEPS = [
   {
     title: "Basic Information",
-    description: "Enter the contact's name and role",
     fields: ["name", "jobTitle", "organization", "relationshipToYou"]
   },
   {
     title: "Contact Information",
-    description: "Add phone numbers and email addresses",
     fields: ["officeNumber", "mobileNumber", "email1", "email2"]
   },
   {
     title: "Additional Information",
-    description: "Social media and notes",
     fields: ["linkedin", "twitter", "lastContact", "notes"]
   }
-];
-
-// Available relationship types for the UI
-const RELATIONSHIP_OPTIONS = [
-  { value: RelationshipLevel.ALLIED.toString(), label: "Allied" },
-  { value: RelationshipLevel.TRUSTED.toString(), label: "Trusted" },
-  { value: RelationshipLevel.CLOSE.toString(), label: "Close" },
-  { value: RelationshipLevel.CONNECTED.toString(), label: "Connected" },
-  { value: RelationshipLevel.ACQUAINTED.toString(), label: "Acquainted" },
 ];
 
 export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDialogProps) {
@@ -91,7 +73,7 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
         name: values.name,
         job_title: values.jobTitle || null,
         organization: values.organization || null,
-        relationship_to_you: values.relationshipToYou ? parseInt(values.relationshipToYou) : null,
+        relationship_to_you: values.relationshipToYou ? getRelationshipIdByName(values.relationshipToYou) : null,
         last_contact: values.lastContact ? new Date(values.lastContact).toISOString() : null,
         office_number: values.officeNumber || null,
         mobile_number: values.mobileNumber || null,
@@ -119,7 +101,7 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
 
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
       onOpenChange(false);
       form.reset();
@@ -180,7 +162,7 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
         <DialogHeader>
           <DialogTitle>{currentStep.title}</DialogTitle>
           <DialogDescription>
-            {currentStep.description}
+            Add a new contact to your network
           </DialogDescription>
         </DialogHeader>
 
@@ -191,7 +173,7 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                 <FormField
                   key={field}
                   control={form.control}
-                  name={field as any}
+                  name={field}
                   rules={{
                     required: field === "name" ? "Name is required" :
                              field === "relationshipToYou" ? "Relationship type is required" :
@@ -215,9 +197,9 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                               <SelectValue placeholder="Select relationship type" />
                             </SelectTrigger>
                             <SelectContent>
-                              {RELATIONSHIP_OPTIONS.map(type => (
-                                <SelectItem key={type.value} value={type.value}>
-                                  {type.label}
+                              {RELATIONSHIP_TYPES.map(type => (
+                                <SelectItem key={type.id} value={type.name}>
+                                  {type.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>

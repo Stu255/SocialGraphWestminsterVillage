@@ -2,39 +2,6 @@ import { pgTable, text, serial, integer, timestamp, boolean, unique, jsonb, date
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Relationship Level Type
-export const RelationshipLevel = {
-  ACQUAINTED: 1,
-  CONNECTED: 2,
-  CLOSE: 3,
-  TRUSTED: 4,
-  ALLIED: 5,
-} as const;
-
-// Helper function to get relationship label
-export function getRelationshipLabel(level: number): string {
-  switch (level) {
-    case RelationshipLevel.ALLIED: return "Allied";
-    case RelationshipLevel.TRUSTED: return "Trusted";
-    case RelationshipLevel.CLOSE: return "Close";
-    case RelationshipLevel.CONNECTED: return "Connected";
-    case RelationshipLevel.ACQUAINTED: return "Acquainted";
-    default: return "Unknown";
-  }
-}
-
-// Helper function to get relationship level from label
-export function getRelationshipLevel(label: string): number {
-  switch (label.toLowerCase()) {
-    case "allied": return RelationshipLevel.ALLIED;
-    case "trusted": return RelationshipLevel.TRUSTED;
-    case "close": return RelationshipLevel.CLOSE;
-    case "connected": return RelationshipLevel.CONNECTED;
-    case "acquainted": return RelationshipLevel.ACQUAINTED;
-    default: return RelationshipLevel.ACQUAINTED;
-  }
-}
-
 // Users table for authentication
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -57,7 +24,7 @@ export const people = pgTable("people", {
   name: text("name").notNull(),
   jobTitle: text("job_title"),
   organization: text("organization"),
-  relationshipToYou: integer("relationship_to_you"), // 1-5 scale: 1=acquainted, 2=connected, 3=close, 4=trusted, 5=allied
+  relationshipToYou: integer("relationship_to_you"), // Added this field
   lastContact: date("last_contact"),
   officeNumber: text("office_number"),
   mobileNumber: text("mobile_number"),
@@ -69,6 +36,7 @@ export const people = pgTable("people", {
   graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
 
 // Organizations table replaces affiliations
 export const organizations = pgTable("organizations", {
@@ -85,23 +53,22 @@ export const organizations = pgTable("organizations", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Relationship Types table (now using integer IDs 1-5)
+// Relationship Types table
 export const relationshipTypes = pgTable("relationship_types", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  level: integer("level").notNull(), // 1-5 scale matching relationshipToYou
   graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({
   nameGraphIdIdx: unique("rel_type_name_graph_id_idx").on(table.name, table.graphId),
 }));
 
-// Relationships between people (using integer levels)
+// Relationships between people
 export const relationships = pgTable("relationships", {
   id: serial("id").primaryKey(),
   sourcePersonId: integer("source_person_id").references(() => people.id).notNull(),
   targetPersonId: integer("target_person_id").references(() => people.id).notNull(),
-  level: integer("level").notNull(), // 1-5 scale
+  relationshipType: text("relationship_type"),
   graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -130,6 +97,32 @@ export const fieldPreferences = pgTable("field_preferences", {
 }, (table) => ({
   graphIdIdx: unique("graph_id_idx").on(table.graphId),
 }));
+
+// Custom insert schema for people to handle date conversion
+const insertPeopleSchema = createInsertSchema(people, {
+  lastContact: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
+    .transform(val => val ? new Date(val) : null)
+    .nullable(),
+});
+
+// Export the schemas
+export const insertUserSchema = createInsertSchema(users);
+export const selectUserSchema = createSelectSchema(users);
+export const insertSocialGraphSchema = createInsertSchema(socialGraphs);
+export const selectSocialGraphSchema = createSelectSchema(socialGraphs);
+export const insertPersonSchema = insertPeopleSchema;
+export const selectPersonSchema = createSelectSchema(people);
+export const insertRelationshipSchema = createInsertSchema(relationships);
+export const selectRelationshipSchema = createSelectSchema(relationships);
+export const insertRelationshipTypeSchema = createInsertSchema(relationshipTypes);
+export const selectRelationshipTypeSchema = createSelectSchema(relationshipTypes);
+export const insertOrganizationSchema = createInsertSchema(organizations);
+export const selectOrganizationSchema = createSelectSchema(organizations);
+export const insertCustomFieldSchema = createInsertSchema(customFields);
+export const selectCustomFieldSchema = createSelectSchema(customFields);
+export const insertFieldPreferenceSchema = createInsertSchema(fieldPreferences);
+export const selectFieldPreferenceSchema = createSelectSchema(fieldPreferences);
 
 // Schema types
 export type User = typeof users.$inferSelect;
