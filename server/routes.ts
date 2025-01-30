@@ -182,17 +182,18 @@ export function registerRoutes(app: Express): Server {
       console.log('Backend: Received update request body:', req.body);
 
       // Transform the incoming data to match the schema
+      const relationshipId = await getRelationshipIdByName(req.body.relationshipToYou);
       const personData = {
         name: req.body.name,
         graphId: req.body.graphId,
-        jobTitle: req.body.jobTitle,  // Changed from job_title
+        jobTitle: req.body.jobTitle,
         organization: req.body.organization,
-        relationshipToYou: getRelationshipIdByName(req.body.relationshipToYou),  // Transform the relationship name to ID
+        relationshipToYou: relationshipId,
         lastContact: req.body.lastContact ? req.body.lastContact.split('T')[0] : null,
-        officeNumber: req.body.officeNumber,  // Changed from office_number
-        mobileNumber: req.body.mobileNumber,  // Changed from mobile_number
-        email1: req.body.email1,  // Changed from email_1
-        email2: req.body.email2,  // Changed from email_2
+        officeNumber: req.body.officeNumber,
+        mobileNumber: req.body.mobileNumber,
+        email1: req.body.email1,
+        email2: req.body.email2,
         linkedin: req.body.linkedin,
         twitter: req.body.twitter,
         notes: req.body.notes,
@@ -562,8 +563,11 @@ export function registerRoutes(app: Express): Server {
   async function getRelationshipIdByName(relationshipName: string | undefined): Promise<number | undefined> {
     if (!relationshipName) return undefined;
     try {
-      const relationship = await db.select().from(relationshipTypes).where(eq(relationshipTypes.name, relationshipName)).limit(1).first();
-      return relationship?.id;
+      const relationship = await db.select()
+        .from(relationshipTypes)
+        .where(eq(relationshipTypes.name, relationshipName))
+        .limit(1);
+      return relationship[0]?.id;
     } catch (error) {
       console.error("Error getting relationship ID:", error);
       return undefined;
