@@ -15,6 +15,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -26,6 +33,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useForm } from "react-hook-form";
+import { RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
 
 interface AnalysisPanelProps {
   selectedNode: any;
@@ -39,6 +47,7 @@ const FIELD_LABELS: Record<string, string> = {
   name: "Name",
   jobTitle: "Job Title",
   organization: "Organization",
+  relationshipToYou: "Relationship To You",
   lastContact: "Last Contact",
   officeNumber: "Office Number",
   mobileNumber: "Mobile Number",
@@ -59,6 +68,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       name: "",
       jobTitle: "",
       organization: "",
+      relationshipToYou: "",
       lastContact: "",
       officeNumber: "",
       mobileNumber: "",
@@ -77,6 +87,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         name: selectedNode.name || "",
         jobTitle: selectedNode.jobTitle || "",
         organization: selectedNode.organization || "",
+        relationshipToYou: selectedNode.relationshipToYou || "",
         lastContact: selectedNode.lastContact ? new Date(selectedNode.lastContact).toISOString().split('T')[0] : "",
         officeNumber: selectedNode.officeNumber || "",
         mobileNumber: selectedNode.mobileNumber || "",
@@ -89,16 +100,6 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       form.reset(formValues);
     }
   }, [selectedNode, isEditing, form]);
-
-  const { data: centrality } = useQuery({
-    queryKey: ["/api/analysis/centrality", graphId],
-    enabled: !!nodes.length,
-  });
-
-  // Display top 10 people by centrality
-  const topPeople = centrality
-    ?.sort((a: any, b: any) => b.centrality - a.centrality)
-    .slice(0, 10) || [];
 
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
@@ -131,20 +132,13 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     },
   });
 
-  const deleteRelationshipMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const res = await fetch(`/api/relationships/${id}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error("Failed to delete relationship");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
-    },
-  });
-
   const onSubmit = (data: any) => {
+    if (!data.name?.trim()) {
+      return;
+    }
+    if (!data.relationshipToYou) {
+      return;
+    }
     updatePersonMutation.mutate(data);
   };
 
@@ -152,6 +146,71 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   const visibleFields = fieldPreferences?.order.filter(
     field => !fieldPreferences.hidden.includes(field)
   ) || Object.keys(FIELD_LABELS);
+
+  const renderField = (fieldName: string) => {
+    if (isEditing) {
+      return (
+        <FormField
+          key={fieldName}
+          control={form.control}
+          name={fieldName}
+          rules={{ 
+            required: fieldName === "name" ? "Name is required" : 
+                     fieldName === "relationshipToYou" ? "Relationship type is required" : 
+                     false 
+          }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{FIELD_LABELS[fieldName]}</FormLabel>
+              <FormControl>
+                {fieldName === "relationshipToYou" ? (
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select relationship type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RELATIONSHIP_TYPES.map(type => (
+                        <SelectItem key={type.id} value={type.name}>
+                          {type.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : fieldName === "notes" ? (
+                  <Textarea 
+                    {...field}
+                    className="min-h-[100px]"
+                  />
+                ) : fieldName === "lastContact" ? (
+                  <Input
+                    {...field}
+                    type="date"
+                  />
+                ) : (
+                  <Input {...field} />
+                )}
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+    }
+
+    let value = selectedNode[fieldName];
+    if (fieldName === "lastContact" && value) {
+      value = new Date(value).toLocaleDateString();
+    }
+
+    return (
+      <p key={fieldName}>
+        <strong>{FIELD_LABELS[fieldName]}:</strong> {value || "Not specified"}
+      </p>
+    );
+  };
 
   if (!selectedNode) {
     return (
@@ -185,50 +244,6 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     r.sourcePersonId === selectedNode.id ||
     r.targetPersonId === selectedNode.id
   );
-
-  const renderField = (fieldName: string) => {
-    if (isEditing) {
-      return (
-        <FormField
-          key={fieldName}
-          control={form.control}
-          name={fieldName}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{FIELD_LABELS[fieldName]}</FormLabel>
-              <FormControl>
-                {fieldName === "notes" ? (
-                  <Textarea 
-                    {...field}
-                    className="min-h-[100px]"
-                  />
-                ) : fieldName === "lastContact" ? (
-                  <Input
-                    {...field}
-                    type="date"
-                  />
-                ) : (
-                  <Input {...field} />
-                )}
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      );
-    }
-
-    let value = selectedNode[fieldName];
-    if (fieldName === "lastContact" && value) {
-      value = new Date(value).toLocaleDateString();
-    }
-
-    return (
-      <p key={fieldName}>
-        <strong>{FIELD_LABELS[fieldName]}:</strong> {value || "Not specified"}
-      </p>
-    );
-  };
 
   return (
     <div className="space-y-4">
