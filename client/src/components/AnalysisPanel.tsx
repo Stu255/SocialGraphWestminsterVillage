@@ -62,17 +62,20 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const { data: fieldPreferences } = useFieldPreferences(graphId);
+  const [currentRelationshipType, setCurrentRelationshipType] = useState<string>("");
 
-  // Get centrality data for the network
+  // Get visible fields in the correct order
+  const visibleFields = fieldPreferences?.order?.filter(
+    field => !fieldPreferences?.hidden?.includes(field)
+  ) || Object.keys(FIELD_LABELS);
+  console.log("Visible fields:", visibleFields);
+  console.log("Field Preferences:", fieldPreferences);
+
+  // Query centrality data
   const { data: centrality } = useQuery({
     queryKey: ["/api/analysis/centrality", graphId],
     enabled: !!nodes.length,
   });
-
-  // Calculate top 10 people by centrality
-  const topPeople = centrality
-    ?.sort((a: any, b: any) => b.centrality - a.centrality)
-    .slice(0, 10) || [];
 
   const form = useForm({
     defaultValues: {
@@ -93,6 +96,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
+      console.log('Frontend: Starting update mutation with values:', values);
       const res = await fetch(`/api/people/${selectedNode.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -101,12 +105,12 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
       if (!res.ok) {
         const errorText = await res.text();
-        console.error('Server response:', errorText);
+        console.error('Frontend: Server error response:', errorText);
         throw new Error(errorText || "Failed to update person");
       }
 
       const responseData = await res.json();
-      console.log('Server response data:', responseData);
+      console.log('Frontend: Server response data:', responseData);
       return responseData;
     },
     onSuccess: () => {
@@ -114,6 +118,45 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       setIsEditing(false);
     },
   });
+
+  const onSubmit = (data: any) => {
+    if (!data.name?.trim()) {
+      console.log('Form validation failed: Empty name');
+      return;
+    }
+    if (!data.relationshipToYou) {
+      console.log('Form validation failed: No relationship type selected');
+      return;
+    }
+    console.log('Form submission data:', data);
+    console.log('Relationship value:', data.relationshipToYou);
+
+    updatePersonMutation.mutate(data);
+  };
+
+  // Initialize form values when node is selected or editing mode changes
+  useEffect(() => {
+    if (selectedNode) {
+      console.log('Loading node data:', selectedNode);
+      const formValues = {
+        name: selectedNode.name || "",
+        jobTitle: selectedNode.jobTitle || "",
+        organization: selectedNode.organization || "",
+        relationshipToYou: selectedNode.relationshipToYou || "",
+        lastContact: selectedNode.lastContact ? new Date(selectedNode.lastContact).toISOString().split('T')[0] : "",
+        officeNumber: selectedNode.officeNumber || "",
+        mobileNumber: selectedNode.mobileNumber || "",
+        email1: selectedNode.email1 || "",
+        email2: selectedNode.email2 || "",
+        linkedin: selectedNode.linkedin || "",
+        twitter: selectedNode.twitter || "",
+        notes: selectedNode.notes || ""
+      };
+      console.log('Setting form values:', formValues);
+      form.reset(formValues);
+      setCurrentRelationshipType(formValues.relationshipToYou);
+    }
+  }, [selectedNode, isEditing, form]);
 
   const deletePersonMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -142,61 +185,6 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
     },
   });
-
-  const onSubmit = (data: any) => {
-    if (!data.name?.trim()) {
-      console.log('Form validation failed: Empty name');
-      return;
-    }
-    if (!data.relationshipToYou) {
-      console.log('Form validation failed: No relationship type selected');
-      return;
-    }
-    console.log('Form submission data:', data);
-    console.log('Relationship value:', data.relationshipToYou);
-
-    // Transform the data to match the expected API format
-    const transformedData = {
-      ...data,
-      jobTitle: data.jobTitle,
-      organization: data.organization,
-      relationshipToYou: data.relationshipToYou,
-      lastContact: data.lastContact,
-      officeNumber: data.officeNumber,
-      mobileNumber: data.mobileNumber,
-      email1: data.email1,
-      email2: data.email2,
-      linkedin: data.linkedin,
-      twitter: data.twitter,
-      notes: data.notes,
-    };
-
-    console.log('Frontend: Sending update with transformed data:', transformedData);
-    updatePersonMutation.mutate(transformedData);
-  };
-
-  // Initialize form values when node is selected or editing mode changes
-  useEffect(() => {
-    if (selectedNode) {
-      console.log('Loading node data:', selectedNode);
-      const formValues = {
-        name: selectedNode.name || "",
-        jobTitle: selectedNode.jobTitle || "",
-        organization: selectedNode.organization || "",
-        relationshipToYou: selectedNode.relationshipToYou ? getRelationshipNameById(selectedNode.relationshipToYou) : "",
-        lastContact: selectedNode.lastContact ? new Date(selectedNode.lastContact).toISOString().split('T')[0] : "",
-        officeNumber: selectedNode.officeNumber || "",
-        mobileNumber: selectedNode.mobileNumber || "",
-        email1: selectedNode.email1 || "",
-        email2: selectedNode.email2 || "",
-        linkedin: selectedNode.linkedin || "",
-        twitter: selectedNode.twitter || "",
-        notes: selectedNode.notes || ""
-      };
-      console.log('Setting form values:', formValues);
-      form.reset(formValues);
-    }
-  }, [selectedNode, isEditing, form]);
 
   const renderField = (fieldName: string) => {
     if (isEditing) {
@@ -291,6 +279,10 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       </Card>
     );
   }
+
+  const topPeople = centrality
+    ?.sort((a: any, b: any) => b.centrality - a.centrality)
+    .slice(0, 10) || [];
 
   const nodeMetrics = centrality?.find((c: any) => c.id === selectedNode.id);
   const nodeRelationships = relationships.filter(r =>
