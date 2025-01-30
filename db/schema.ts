@@ -24,7 +24,8 @@ export const people = pgTable("people", {
   name: text("name").notNull(),
   jobTitle: text("job_title"),
   organization: text("organization"),
-  lastContact: date("last_contact"), // Changed from timestamp to date
+  relationshipToYou: integer("relationship_to_you"), // Added this field
+  lastContact: date("last_contact"),
   officeNumber: text("office_number"),
   mobileNumber: text("mobile_number"),
   email1: text("email_1"),
@@ -96,7 +97,6 @@ export const fieldPreferences = pgTable("field_preferences", {
 }, (table) => ({
   graphIdIdx: unique("graph_id_idx").on(table.graphId),
 }));
-
 
 // Custom insert schema for people to handle date conversion
 const insertPeopleSchema = createInsertSchema(people, {

@@ -120,12 +120,20 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         relationship_to_you: values.relationshipToYou ? getRelationshipIdByName(values.relationshipToYou) : null,
       };
 
+      console.log('Updating person with data:', transformedValues);
+
       const res = await fetch(`/api/people/${selectedNode.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...transformedValues, graphId }),
       });
-      if (!res.ok) throw new Error("Failed to update person");
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Server response:', errorText);
+        throw new Error(errorText || "Failed to update person");
+      }
+
       return res.json();
     },
     onSuccess: () => {
