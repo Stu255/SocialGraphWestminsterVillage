@@ -33,11 +33,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useForm } from "react-hook-form";
-import { getRelationshipLabel, RelationshipLevel, type Person } from "@db/schema";
+import { getRelationshipLabel, getRelationshipLevel, RelationshipLevel } from "@db/schema";
 
 interface AnalysisPanelProps {
-  selectedNode: Person | null;
-  nodes: Person[];
+  selectedNode: any;
+  nodes: any[];
   relationships: any[];
   onNodeDeleted?: () => void;
   graphId: number;
@@ -67,34 +67,30 @@ const RELATIONSHIP_OPTIONS = [
   { value: RelationshipLevel.ACQUAINTED.toString(), label: "Acquainted" },
 ];
 
-interface CentralityData {
-  id: number;
-  name: string;
-  centrality: number;
-}
-
 export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDeleted, graphId }: AnalysisPanelProps) {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const { data: fieldPreferences } = useFieldPreferences(graphId);
+  const [currentRelationshipType, setCurrentRelationshipType] = useState<string>("");
 
-  // Get visible fields in the correct order, with a default if preferences aren't loaded
-  const defaultFields = Object.keys(FIELD_LABELS);
+  // Get visible fields in the correct order
   const visibleFields = fieldPreferences?.order?.filter(
     field => !fieldPreferences?.hidden?.includes(field)
-  ) || defaultFields;
+  ) || Object.keys(FIELD_LABELS);
+  console.log("Visible fields:", visibleFields);
+  console.log("Field Preferences:", fieldPreferences);
 
-  // Initialize centrality data with proper typing
-  const { data: centrality = [] } = useQuery<CentralityData[]>({
+  // Query centrality data and calculate top people
+  const { data: centrality } = useQuery({
     queryKey: ["/api/analysis/centrality", graphId],
     enabled: !!nodes.length,
   });
 
-  const topPeople = [...centrality]
-    .sort((a, b) => b.centrality - a.centrality)
-    .slice(0, 10);
+  const topPeople = centrality
+    ?.sort((a: any, b: any) => b.centrality - a.centrality)
+    .slice(0, 10) || [];
 
-  const nodeMetrics = centrality.find(c => c.id === selectedNode?.id);
+  const nodeMetrics = centrality?.find((c: any) => c.id === selectedNode?.id);
   const nodeRelationships = relationships.filter(r =>
     r.sourcePersonId === selectedNode?.id ||
     r.targetPersonId === selectedNode?.id
@@ -119,12 +115,15 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
+      console.log('Frontend: Starting update mutation with values:', values);
+
+      // Convert relationshipToYou from string to number
       const transformedValues = {
         ...values,
         relationshipToYou: values.relationshipToYou ? parseInt(values.relationshipToYou) : null
       };
 
-      const res = await fetch(`/api/people/${selectedNode!.id}`, {
+      const res = await fetch(`/api/people/${selectedNode.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...transformedValues, graphId }),
@@ -132,10 +131,13 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
       if (!res.ok) {
         const errorText = await res.text();
+        console.error('Frontend: Server error response:', errorText);
         throw new Error(errorText || "Failed to update person");
       }
 
-      return res.json();
+      const responseData = await res.json();
+      console.log('Frontend: Server response data:', responseData);
+      return responseData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
@@ -145,14 +147,19 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
   const onSubmit = (data: any) => {
     if (!data.name?.trim()) {
+      console.log('Form validation failed: Empty name');
       return;
     }
+    console.log('Form submission data:', data);
+    console.log('Relationship value:', data.relationshipToYou);
+
     updatePersonMutation.mutate(data);
   };
 
   // Initialize form values when node is selected or editing mode changes
   useEffect(() => {
     if (selectedNode) {
+      console.log('Loading node data:', selectedNode);
       const formValues = {
         name: selectedNode.name || "",
         jobTitle: selectedNode.jobTitle || "",
@@ -167,7 +174,9 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         twitter: selectedNode.twitter || "",
         notes: selectedNode.notes || ""
       };
+      console.log('Setting form values:', formValues);
       form.reset(formValues);
+      setCurrentRelationshipType(formValues.relationshipToYou);
     }
   }, [selectedNode, isEditing, form]);
 
@@ -199,7 +208,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     },
   });
 
-  const renderField = (fieldName: keyof typeof FIELD_LABELS) => {
+  const renderField = (fieldName: string) => {
     if (isEditing) {
       return (
         <FormField
@@ -247,7 +256,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       );
     }
 
-    let value = selectedNode?.[fieldName];
+    let value = selectedNode[fieldName];
     if (fieldName === "lastContact" && value) {
       value = new Date(value).toLocaleDateString();
     } else if (fieldName === "relationshipToYou" && value) {
@@ -275,7 +284,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
             <div className="space-y-2">
               <h3 className="text-sm font-medium">Top 10 Most Connected People</h3>
-              {topPeople.map((person, index) => (
+              {topPeople.map((person: any, index: number) => (
                 <div key={person.id} className="flex justify-between items-center text-sm">
                   <span>{index + 1}. {person.name}</span>
                   <span className="text-muted-foreground">{person.centrality.toFixed(3)}</span>
@@ -363,7 +372,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {visibleFields.map(field => renderField(field as keyof typeof FIELD_LABELS))}
+              {visibleFields.map(field => renderField(field))}
             </form>
           </Form>
         </CardContent>
