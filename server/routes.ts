@@ -179,14 +179,46 @@ export function registerRoutes(app: Express): Server {
       return res.status(401).send("Not logged in");
     }
     try {
+      // Transform the incoming data to match the schema
+      const personData = {
+        name: req.body.name,
+        graphId: req.body.graphId,
+        jobTitle: req.body.job_title,
+        organization: req.body.organization,
+        relationshipToYou: req.body.relationship_to_you,
+        lastContact: req.body.last_contact ? req.body.last_contact.split('T')[0] : null,
+        officeNumber: req.body.office_number,
+        mobileNumber: req.body.mobile_number,
+        email1: req.body.email_1,
+        email2: req.body.email_2,
+        linkedin: req.body.linkedin,
+        twitter: req.body.twitter,
+        notes: req.body.notes,
+      };
+
+      console.log('Updating person with data:', personData);
+
+      const result = insertPersonSchema.safeParse(personData);
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: "Invalid input: " + result.error.issues.map(i => i.message).join(", ") 
+        });
+      }
+
       const [updatedPerson] = await db
         .update(people)
-        .set(req.body)
+        .set(result.data)
         .where(and(eq(people.id, parseInt(req.params.id)), eq(people.graphId, req.body.graphId)))
         .returning();
+
+      if (!updatedPerson) {
+        return res.status(404).json({ error: "Person not found" });
+      }
+
       res.json(updatedPerson);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to update person" });
+    } catch (error: any) {
+      console.error("Error updating person:", error);
+      res.status(500).json({ error: error?.message || "Failed to update person" });
     }
   });
 
