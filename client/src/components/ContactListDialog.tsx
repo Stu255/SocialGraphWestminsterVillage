@@ -1,18 +1,5 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Settings2, ChevronLeft, ChevronRight, ArrowUpDown, ChevronFirst, ChevronLast } from "lucide-react";
@@ -20,16 +7,12 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
+
 
 interface ContactListDialogProps {
   open: boolean;
@@ -48,7 +31,7 @@ const STEPS = [
   {
     title: "Basic Information",
     description: "Edit the contact's name and role",
-    fields: ["name", "jobTitle", "organization"]
+    fields: ["name", "jobTitle", "organization", "relationshipToYou"]
   },
   {
     title: "Contact Information",
@@ -71,6 +54,7 @@ const FIELD_LABELS: Record<string, string> = {
   name: "Name",
   jobTitle: "Job Title",
   organization: "Organization",
+  relationshipToYou: "Relationship To You",
   officeNumber: "Office Number",
   mobileNumber: "Mobile Number",
   email1: "Email Address 1",
@@ -90,6 +74,7 @@ function EditDialog({ contact, open, onOpenChange, graphId }: EditDialogProps) {
       name: contact?.name || "",
       jobTitle: contact?.jobTitle || "",
       organization: contact?.organization || "",
+      relationshipToYou: contact?.relationshipToYou || "",
       officeNumber: contact?.officeNumber || "",
       mobileNumber: contact?.mobileNumber || "",
       email1: contact?.email1 || "",
@@ -172,12 +157,32 @@ function EditDialog({ contact, open, onOpenChange, graphId }: EditDialogProps) {
                   key={fieldName}
                   control={form.control}
                   name={fieldName}
-                  rules={{ required: fieldName === "name" ? "Name is required" : false }}
+                  rules={{ 
+                    required: fieldName === "name" ? "Name is required" : 
+                             fieldName === "relationshipToYou" ? "Relationship type is required" : 
+                             false 
+                  }}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>{FIELD_LABELS[fieldName]}</FormLabel>
                       <FormControl>
-                        {fieldName === "notes" ? (
+                        {fieldName === "relationshipToYou" ? (
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select relationship type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {RELATIONSHIP_TYPES.map(type => (
+                                <SelectItem key={type.id} value={type.name}>
+                                  {type.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : fieldName === "notes" ? (
                           <Textarea
                             {...field}
                             className="min-h-[200px]"
@@ -335,7 +340,7 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[725px]">
+        <DialogContent className="sm:max-w-[825px]">
           <DialogHeader>
             <DialogTitle>Contacts</DialogTitle>
             <DialogDescription>
@@ -357,6 +362,9 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
                     <TableHead>
                       {renderColumnHeader("jobTitle", "Job Title")}
                     </TableHead>
+                    <TableHead>
+                      {renderColumnHeader("relationshipToYou", "Relationship To You")}
+                    </TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -366,6 +374,7 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
                       <TableCell className="font-medium">{person.name}</TableCell>
                       <TableCell>{person.organization || "—"}</TableCell>
                       <TableCell>{person.jobTitle || "—"}</TableCell>
+                      <TableCell>{person.relationshipToYou || "—"}</TableCell>
                       <TableCell>
                         <Button
                           variant="ghost"

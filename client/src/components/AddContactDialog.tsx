@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
 
 interface AddContactDialogProps {
   open: boolean;
@@ -31,7 +33,7 @@ interface AddContactDialogProps {
 const STEPS = [
   {
     title: "Basic Information",
-    fields: ["name", "jobTitle", "organization"]
+    fields: ["name", "jobTitle", "organization", "relationshipToYou"]
   },
   {
     title: "Contact Information",
@@ -53,6 +55,7 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
       name: "",
       jobTitle: "",
       organization: "",
+      relationshipToYou: "",
       lastContact: "",
       officeNumber: "",
       mobileNumber: "",
@@ -71,6 +74,7 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
         name: values.name,
         job_title: values.jobTitle || null,
         organization: values.organization || null,
+        relationship_to_you: values.relationshipToYou || null,
         last_contact: values.lastContact ? new Date(values.lastContact).toISOString() : null,
         office_number: values.officeNumber || null,
         mobile_number: values.mobileNumber || null,
@@ -131,6 +135,14 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
           });
           return;
         }
+        if (!data.relationshipToYou) {
+          toast({
+            title: "Error",
+            description: "Relationship type is required",
+            variant: "destructive",
+          });
+          return;
+        }
         await mutation.mutateAsync(data);
       } catch (error) {
         // Error is handled by mutation's onError
@@ -163,16 +175,37 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                   key={field}
                   control={form.control}
                   name={field}
-                  rules={{ required: field === "name" ? "Name is required" : false }}
+                  rules={{ 
+                    required: field === "name" ? "Name is required" : 
+                             field === "relationshipToYou" ? "Relationship type is required" :
+                             false 
+                  }}
                   render={({ field: formField }) => (
                     <FormItem>
                       <FormLabel className="capitalize">
                         {field === "email1" ? "Email Address 1" :
                          field === "email2" ? "Email Address 2" :
+                         field === "relationshipToYou" ? "Relationship To You" :
                          field.replace(/([A-Z])/g, ' $1').trim()}
                       </FormLabel>
                       <FormControl>
-                        {field === "notes" ? (
+                        {field === "relationshipToYou" ? (
+                          <Select 
+                            onValueChange={formField.onChange} 
+                            defaultValue={formField.value}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select relationship type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {RELATIONSHIP_TYPES.map(type => (
+                                <SelectItem key={type.id} value={type.name}>
+                                  {type.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : field === "notes" ? (
                           <Textarea {...formField} className="min-h-[100px]" />
                         ) : field === "lastContact" ? (
                           <Input {...formField} type="date" />
