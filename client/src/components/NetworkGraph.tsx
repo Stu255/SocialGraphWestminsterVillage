@@ -30,7 +30,7 @@ const RELATIONSHIP_ICONS = {
   star: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z", // Trusted
   doubleRing: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12z", // Close
   circle: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z", // Connected
-  dottedCircle: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z" // Acquainted (will be rendered with dashed style)
+  smallCircle: "M12 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10z" // Acquainted (smaller solid circle)
 };
 
 // Map relationship IDs to icon types
@@ -40,8 +40,8 @@ const getRelationshipIcon = (relationshipId: number | undefined) => {
     case 4: return 'star'; // Trusted
     case 3: return 'doubleRing'; // Close
     case 2: return 'circle'; // Connected
-    case 1: return 'dottedCircle'; // Acquainted
-    default: return 'dottedCircle';
+    case 1: return 'smallCircle'; // Acquainted
+    default: return 'smallCircle';
   }
 };
 
@@ -153,11 +153,14 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
     // Add relationship icons
     nodeGroup.append("path")
       .attr("d", d => RELATIONSHIP_ICONS[getRelationshipIcon(d.relationshipToYou)])
-      .attr("transform", "scale(0.8)") // Scale down the icons slightly
+      .attr("transform", d => {
+        // Scale up small circle to maintain clickable area
+        const isSmallCircle = getRelationshipIcon(d.relationshipToYou) === 'smallCircle';
+        return `translate(12,${isSmallCircle ? '7' : '12'}) scale(${isSmallCircle ? '1.6' : '0.8'})`;
+      })
       .attr("fill", d => getNodeColor(d.affiliation))
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.5)
-      .style("stroke-dasharray", d => getRelationshipIcon(d.relationshipToYou) === 'dottedCircle' ? "3,3" : "none")
       .on("click", (_event, d) => onNodeSelect(d));
 
     // Add labels
