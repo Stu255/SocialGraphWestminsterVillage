@@ -36,12 +36,12 @@ function RelationshipTypesDialog({ open, onOpenChange }: { open: boolean, onOpen
                 <h4 className="font-medium">{type.name}</h4>
                 <p className="text-sm text-muted-foreground">{type.description}</p>
               </div>
-              <div className={`w-16 h-px bg-foreground ${
-                type.style === 'heavy-line' ? 'h-0.5' :
-                type.style === 'double-line' ? 'border-t border-b h-1.5' :
-                type.style === 'standard-line' ? '' :
-                type.style === 'thin-line' ? 'h-px opacity-60' :
-                'border-dashed border-t opacity-60'
+              <div className={`w-24 ${
+                type.style === 'heavy-line' ? 'h-1.5 bg-foreground' :
+                type.style === 'double-line' ? 'h-2.5 border-t-2 border-b-2 border-foreground' :
+                type.style === 'standard-line' ? 'h-0.5 bg-foreground' :
+                type.style === 'thin-line' ? 'h-px bg-foreground/60' :
+                'h-0 border-t border-dashed border-foreground/40 [border-width:1px] [border-spacing:4px]'
               }`} />
             </div>
           ))}
