@@ -3,15 +3,31 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Settings2, ChevronLeft, ChevronRight, ArrowUpDown, ChevronFirst, ChevronLast } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
+import { getRelationshipLabel, getRelationshipLevel, RelationshipLevel } from "@db/schema";
+
+// Available relationship types for the UI
+const RELATIONSHIP_OPTIONS = [
+  { value: RelationshipLevel.ALLIED.toString(), label: "Allied" },
+  { value: RelationshipLevel.TRUSTED.toString(), label: "Trusted" },
+  { value: RelationshipLevel.CLOSE.toString(), label: "Close" },
+  { value: RelationshipLevel.CONNECTED.toString(), label: "Connected" },
+  { value: RelationshipLevel.ACQUAINTED.toString(), label: "Acquainted" },
+];
+
+// Sort helper function to handle different field types
+const getSortValue = (item: any, field: string) => {
+  if (field === "relationshipToYou") {
+    return item[field] || 0; // Handle numeric relationship values
+  }
+  return (item[field] || "").toLowerCase();
+};
 
 
 interface ContactListDialogProps {
@@ -157,27 +173,27 @@ function EditDialog({ contact, open, onOpenChange, graphId }: EditDialogProps) {
                   key={fieldName}
                   control={form.control}
                   name={fieldName}
-                  rules={{ 
-                    required: fieldName === "name" ? "Name is required" : 
-                             fieldName === "relationshipToYou" ? "Relationship type is required" : 
-                             false 
+                  rules={{
+                    required: fieldName === "name" ? "Name is required" :
+                      fieldName === "relationshipToYou" ? "Relationship type is required" :
+                        false
                   }}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>{FIELD_LABELS[fieldName]}</FormLabel>
                       <FormControl>
                         {fieldName === "relationshipToYou" ? (
-                          <Select 
-                            onValueChange={field.onChange} 
+                          <Select
+                            onValueChange={field.onChange}
                             defaultValue={field.value}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Select relationship type" />
                             </SelectTrigger>
                             <SelectContent>
-                              {RELATIONSHIP_TYPES.map(type => (
-                                <SelectItem key={type.id} value={type.name}>
-                                  {type.name}
+                              {RELATIONSHIP_OPTIONS.map(type => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.label}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -276,13 +292,16 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
       return a.name.localeCompare(b.name);
     }
 
-    const aValue = (a[sortConfig.column] || "").toLowerCase();
-    const bValue = (b[sortConfig.column] || "").toLowerCase();
+    const aValue = getSortValue(a, sortConfig.column);
+    const bValue = getSortValue(b, sortConfig.column);
 
-    if (sortConfig.direction === "asc") {
-      return aValue.localeCompare(bValue);
+    if (sortConfig.column === "relationshipToYou") {
+      return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
     }
-    return bValue.localeCompare(aValue);
+
+    return sortConfig.direction === "asc"
+      ? String(aValue).localeCompare(String(bValue))
+      : String(bValue).localeCompare(String(aValue));
   });
 
   // Paginate the sorted and filtered results
@@ -374,7 +393,9 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
                       <TableCell className="font-medium">{person.name}</TableCell>
                       <TableCell>{person.organization || "—"}</TableCell>
                       <TableCell>{person.jobTitle || "—"}</TableCell>
-                      <TableCell>{person.relationshipToYou || "—"}</TableCell>
+                      <TableCell>
+                        {person.relationshipToYou ? getRelationshipLabel(person.relationshipToYou) : "—"}
+                      </TableCell>
                       <TableCell>
                         <Button
                           variant="ghost"

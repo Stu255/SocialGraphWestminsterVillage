@@ -33,7 +33,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useForm } from "react-hook-form";
-import { RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
+import { getRelationshipLabel, getRelationshipLevel, RelationshipLevel } from "@db/schema";
 
 interface AnalysisPanelProps {
   selectedNode: any;
@@ -57,6 +57,15 @@ const FIELD_LABELS: Record<string, string> = {
   twitter: "Twitter",
   notes: "Notes"
 };
+
+// Available relationship types for the UI
+const RELATIONSHIP_OPTIONS = [
+  { value: RelationshipLevel.ALLIED.toString(), label: "Allied" },
+  { value: RelationshipLevel.TRUSTED.toString(), label: "Trusted" },
+  { value: RelationshipLevel.CLOSE.toString(), label: "Close" },
+  { value: RelationshipLevel.CONNECTED.toString(), label: "Connected" },
+  { value: RelationshipLevel.ACQUAINTED.toString(), label: "Acquainted" },
+];
 
 export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDeleted, graphId }: AnalysisPanelProps) {
   const queryClient = useQueryClient();
@@ -107,10 +116,17 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
       console.log('Frontend: Starting update mutation with values:', values);
+
+      // Convert relationshipToYou from string to number
+      const transformedValues = {
+        ...values,
+        relationshipToYou: values.relationshipToYou ? parseInt(values.relationshipToYou) : null
+      };
+
       const res = await fetch(`/api/people/${selectedNode.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...values, graphId }),
+        body: JSON.stringify({ ...transformedValues, graphId }),
       });
 
       if (!res.ok) {
@@ -134,10 +150,6 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       console.log('Form validation failed: Empty name');
       return;
     }
-    if (!data.relationshipToYou) {
-      console.log('Form validation failed: No relationship type selected');
-      return;
-    }
     console.log('Form submission data:', data);
     console.log('Relationship value:', data.relationshipToYou);
 
@@ -152,7 +164,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         name: selectedNode.name || "",
         jobTitle: selectedNode.jobTitle || "",
         organization: selectedNode.organization || "",
-        relationshipToYou: selectedNode.relationshipToYou || "",
+        relationshipToYou: selectedNode.relationshipToYou ? selectedNode.relationshipToYou.toString() : "",
         lastContact: selectedNode.lastContact ? new Date(selectedNode.lastContact).toISOString().split('T')[0] : "",
         officeNumber: selectedNode.officeNumber || "",
         mobileNumber: selectedNode.mobileNumber || "",
@@ -216,9 +228,9 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
                       <SelectValue placeholder="Select relationship type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {RELATIONSHIP_TYPES.map(type => (
-                        <SelectItem key={type.id} value={type.name}>
-                          {type.name}
+                      {RELATIONSHIP_OPTIONS.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -247,6 +259,8 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     let value = selectedNode[fieldName];
     if (fieldName === "lastContact" && value) {
       value = new Date(value).toLocaleDateString();
+    } else if (fieldName === "relationshipToYou" && value) {
+      value = getRelationshipLabel(value);
     }
 
     return (
@@ -394,7 +408,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
                 <div key={rel.id} className="flex items-center justify-between">
                   <span>
                     {rel.sourcePersonId === selectedNode.id ? "→" : "←"} {otherNode?.name}
-                    ({rel.relationshipType})
+                    ({getRelationshipLabel(rel.level)})
                   </span>
                   <Button
                     variant="ghost"
