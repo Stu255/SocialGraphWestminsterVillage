@@ -276,8 +276,16 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
       return a.name.localeCompare(b.name);
     }
 
-    const aValue = (a[sortConfig.column] || "").toLowerCase();
-    const bValue = (b[sortConfig.column] || "").toLowerCase();
+    // Special handling for relationshipToYou field
+    if (sortConfig.column === 'relationshipToYou') {
+      const aId = a.relationshipToYou || 0;
+      const bId = b.relationshipToYou || 0;
+      return sortConfig.direction === "asc" ? aId - bId : bId - aId;
+    }
+
+    // Handle other text fields
+    const aValue = String(a[sortConfig.column] || '').toLowerCase();
+    const bValue = String(b[sortConfig.column] || '').toLowerCase();
 
     if (sortConfig.direction === "asc") {
       return aValue.localeCompare(bValue);
