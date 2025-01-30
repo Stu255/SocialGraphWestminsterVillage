@@ -2,6 +2,39 @@ import { pgTable, text, serial, integer, timestamp, boolean, unique, jsonb, date
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Relationship Level Type
+export const RelationshipLevel = {
+  ACQUAINTED: 1,
+  CONNECTED: 2,
+  CLOSE: 3,
+  TRUSTED: 4,
+  ALLIED: 5,
+} as const;
+
+// Helper function to get relationship label
+export function getRelationshipLabel(level: number): string {
+  switch (level) {
+    case RelationshipLevel.ALLIED: return "Allied";
+    case RelationshipLevel.TRUSTED: return "Trusted";
+    case RelationshipLevel.CLOSE: return "Close";
+    case RelationshipLevel.CONNECTED: return "Connected";
+    case RelationshipLevel.ACQUAINTED: return "Acquainted";
+    default: return "Unknown";
+  }
+}
+
+// Helper function to get relationship level from label
+export function getRelationshipLevel(label: string): number {
+  switch (label.toLowerCase()) {
+    case "allied": return RelationshipLevel.ALLIED;
+    case "trusted": return RelationshipLevel.TRUSTED;
+    case "close": return RelationshipLevel.CLOSE;
+    case "connected": return RelationshipLevel.CONNECTED;
+    case "acquainted": return RelationshipLevel.ACQUAINTED;
+    default: return RelationshipLevel.ACQUAINTED;
+  }
+}
+
 // Users table for authentication
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -113,36 +146,3 @@ export type CustomField = typeof customFields.$inferSelect;
 export type InsertCustomField = typeof customFields.$inferInsert;
 export type FieldPreference = typeof fieldPreferences.$inferSelect;
 export type InsertFieldPreference = typeof fieldPreferences.$inferInsert;
-
-// Relationship Level Type
-export const RelationshipLevel = {
-  ACQUAINTED: 1,
-  CONNECTED: 2,
-  CLOSE: 3,
-  TRUSTED: 4,
-  ALLIED: 5,
-} as const;
-
-// Helper function to get relationship label
-export function getRelationshipLabel(level: number): string {
-  switch (level) {
-    case RelationshipLevel.ALLIED: return "Allied";
-    case RelationshipLevel.TRUSTED: return "Trusted";
-    case RelationshipLevel.CLOSE: return "Close";
-    case RelationshipLevel.CONNECTED: return "Connected";
-    case RelationshipLevel.ACQUAINTED: return "Acquainted";
-    default: return "Unknown";
-  }
-}
-
-// Helper function to get relationship level from label
-export function getRelationshipLevel(label: string): number {
-  switch (label.toLowerCase()) {
-    case "allied": return RelationshipLevel.ALLIED;
-    case "trusted": return RelationshipLevel.TRUSTED;
-    case "close": return RelationshipLevel.CLOSE;
-    case "connected": return RelationshipLevel.CONNECTED;
-    case "acquainted": return RelationshipLevel.ACQUAINTED;
-    default: return RelationshipLevel.ACQUAINTED;
-  }
-}

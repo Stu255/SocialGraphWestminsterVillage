@@ -33,7 +33,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useForm } from "react-hook-form";
-import { getRelationshipLabel, getRelationshipLevel, RelationshipLevel } from "@db/schema";
+import { RelationshipLevel, getRelationshipLabel } from "@db/schema";
 
 interface AnalysisPanelProps {
   selectedNode: any;
@@ -58,7 +58,6 @@ const FIELD_LABELS: Record<string, string> = {
   notes: "Notes"
 };
 
-// Available relationship types for the UI
 const RELATIONSHIP_OPTIONS = [
   { value: RelationshipLevel.ALLIED.toString(), label: "Allied" },
   { value: RelationshipLevel.TRUSTED.toString(), label: "Trusted" },
@@ -67,30 +66,42 @@ const RELATIONSHIP_OPTIONS = [
   { value: RelationshipLevel.ACQUAINTED.toString(), label: "Acquainted" },
 ];
 
+const DEFAULT_FIELD_ORDER = [
+  "name",
+  "jobTitle",
+  "organization",
+  "relationshipToYou",
+  "lastContact",
+  "officeNumber",
+  "mobileNumber",
+  "email1",
+  "email2",
+  "linkedin",
+  "twitter",
+  "notes"
+];
+
 export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDeleted, graphId }: AnalysisPanelProps) {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const { data: fieldPreferences } = useFieldPreferences(graphId);
-  const [currentRelationshipType, setCurrentRelationshipType] = useState<string>("");
 
   // Get visible fields in the correct order
-  const visibleFields = fieldPreferences?.order?.filter(
-    field => !fieldPreferences?.hidden?.includes(field)
-  ) || Object.keys(FIELD_LABELS);
-  console.log("Visible fields:", visibleFields);
-  console.log("Field Preferences:", fieldPreferences);
+  const visibleFields = fieldPreferences?.preferences?.order?.filter(
+    field => !fieldPreferences?.preferences?.hidden?.includes(field)
+  ) || DEFAULT_FIELD_ORDER;
 
   // Query centrality data and calculate top people
-  const { data: centrality } = useQuery({
+  const { data: centrality = [] } = useQuery({
     queryKey: ["/api/analysis/centrality", graphId],
     enabled: !!nodes.length,
   });
 
-  const topPeople = centrality
-    ?.sort((a: any, b: any) => b.centrality - a.centrality)
-    .slice(0, 10) || [];
+  const topPeople = [...centrality]
+    .sort((a: any, b: any) => b.centrality - a.centrality)
+    .slice(0, 10);
 
-  const nodeMetrics = centrality?.find((c: any) => c.id === selectedNode?.id);
+  const nodeMetrics = centrality.find((c: any) => c.id === selectedNode?.id);
   const nodeRelationships = relationships.filter(r =>
     r.sourcePersonId === selectedNode?.id ||
     r.targetPersonId === selectedNode?.id
@@ -117,7 +128,6 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     mutationFn: async (values: any) => {
       console.log('Frontend: Starting update mutation with values:', values);
 
-      // Convert relationshipToYou from string to number
       const transformedValues = {
         ...values,
         relationshipToYou: values.relationshipToYou ? parseInt(values.relationshipToYou) : null
@@ -176,7 +186,6 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       };
       console.log('Setting form values:', formValues);
       form.reset(formValues);
-      setCurrentRelationshipType(formValues.relationshipToYou);
     }
   }, [selectedNode, isEditing, form]);
 
@@ -208,7 +217,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     },
   });
 
-  const renderField = (fieldName: string) => {
+  const renderField = (fieldName: keyof typeof FIELD_LABELS) => {
     if (isEditing) {
       return (
         <FormField
@@ -372,7 +381,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {visibleFields.map(field => renderField(field))}
+              {visibleFields.map(field => renderField(field as keyof typeof FIELD_LABELS))}
             </form>
           </Form>
         </CardContent>
