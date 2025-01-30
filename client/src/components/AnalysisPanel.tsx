@@ -33,7 +33,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useForm } from "react-hook-form";
-import { getRelationshipNameById, getRelationshipIdByName, RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
+import { RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
 
 interface AnalysisPanelProps {
   selectedNode: any;
@@ -71,11 +71,21 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   console.log("Visible fields:", visibleFields);
   console.log("Field Preferences:", fieldPreferences);
 
-  // Query centrality data
+  // Query centrality data and calculate top people
   const { data: centrality } = useQuery({
     queryKey: ["/api/analysis/centrality", graphId],
     enabled: !!nodes.length,
   });
+
+  const topPeople = centrality
+    ?.sort((a: any, b: any) => b.centrality - a.centrality)
+    .slice(0, 10) || [];
+
+  const nodeMetrics = centrality?.find((c: any) => c.id === selectedNode?.id);
+  const nodeRelationships = relationships.filter(r =>
+    r.sourcePersonId === selectedNode?.id ||
+    r.targetPersonId === selectedNode?.id
+  );
 
   const form = useForm({
     defaultValues: {
@@ -193,11 +203,6 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
           key={fieldName}
           control={form.control}
           name={fieldName}
-          rules={{
-            required: fieldName === "name" ? "Name is required" :
-                     fieldName === "relationshipToYou" ? "Relationship type is required" :
-                     false
-          }}
           render={({ field }) => (
             <FormItem>
               <FormLabel>{FIELD_LABELS[fieldName]}</FormLabel>
@@ -242,8 +247,6 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     let value = selectedNode[fieldName];
     if (fieldName === "lastContact" && value) {
       value = new Date(value).toLocaleDateString();
-    } else if (fieldName === "relationshipToYou" && value) {
-      value = getRelationshipNameById(value);
     }
 
     return (
@@ -279,16 +282,6 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       </Card>
     );
   }
-
-  const topPeople = centrality
-    ?.sort((a: any, b: any) => b.centrality - a.centrality)
-    .slice(0, 10) || [];
-
-  const nodeMetrics = centrality?.find((c: any) => c.id === selectedNode.id);
-  const nodeRelationships = relationships.filter(r =>
-    r.sourcePersonId === selectedNode.id ||
-    r.targetPersonId === selectedNode.id
-  );
 
   return (
     <div className="space-y-4">
