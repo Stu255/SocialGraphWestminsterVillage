@@ -181,14 +181,23 @@ export function registerRoutes(app: Express): Server {
     try {
       console.log('Backend: Received update request body:', req.body);
 
+      // First, get the relationship ID if a relationship name is provided
+      let relationshipId = null;
+      if (req.body.relationshipToYou) {
+        const relationship = await db.select()
+          .from(relationshipTypes)
+          .where(eq(relationshipTypes.name, req.body.relationshipToYou))
+          .limit(1);
+        relationshipId = relationship[0]?.id;
+      }
+
       // Transform the incoming data to match the schema
-      const relationshipId = await getRelationshipIdByName(req.body.relationshipToYou);
       const personData = {
         name: req.body.name,
         graphId: req.body.graphId,
         jobTitle: req.body.jobTitle,
         organization: req.body.organization,
-        relationshipToYou: relationshipId,
+        relationshipToYou: relationshipId,  // Use the found ID
         lastContact: req.body.lastContact ? req.body.lastContact.split('T')[0] : null,
         officeNumber: req.body.officeNumber,
         mobileNumber: req.body.mobileNumber,
@@ -559,20 +568,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: "Failed to update field preferences" });
     }
   });
-
-  async function getRelationshipIdByName(relationshipName: string | undefined): Promise<number | undefined> {
-    if (!relationshipName) return undefined;
-    try {
-      const relationship = await db.select()
-        .from(relationshipTypes)
-        .where(eq(relationshipTypes.name, relationshipName))
-        .limit(1);
-      return relationship[0]?.id;
-    } catch (error) {
-      console.error("Error getting relationship ID:", error);
-      return undefined;
-    }
-  }
 
   return httpServer;
 }
