@@ -91,27 +91,6 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     }
   });
 
-  // Initialize form values when node is selected or editing mode changes
-  useEffect(() => {
-    if (selectedNode) {
-      const formValues = {
-        name: selectedNode.name || "",
-        jobTitle: selectedNode.jobTitle || "",
-        organization: selectedNode.organization || "",
-        relationshipToYou: selectedNode.relationshipToYou ? getRelationshipNameById(selectedNode.relationshipToYou) : "",
-        lastContact: selectedNode.lastContact ? new Date(selectedNode.lastContact).toISOString().split('T')[0] : "",
-        officeNumber: selectedNode.officeNumber || "",
-        mobileNumber: selectedNode.mobileNumber || "",
-        email1: selectedNode.email1 || "",
-        email2: selectedNode.email2 || "",
-        linkedin: selectedNode.linkedin || "",
-        twitter: selectedNode.twitter || "",
-        notes: selectedNode.notes || ""
-      };
-      form.reset(formValues);
-    }
-  }, [selectedNode, isEditing, form]);
-
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
       const res = await fetch(`/api/people/${selectedNode.id}`, {
@@ -196,10 +175,28 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     updatePersonMutation.mutate(transformedData);
   };
 
-  // Get visible fields in the correct order
-  const visibleFields = fieldPreferences?.order.filter(
-    field => !fieldPreferences.hidden.includes(field)
-  ) || Object.keys(FIELD_LABELS);
+  // Initialize form values when node is selected or editing mode changes
+  useEffect(() => {
+    if (selectedNode) {
+      console.log('Loading node data:', selectedNode);
+      const formValues = {
+        name: selectedNode.name || "",
+        jobTitle: selectedNode.jobTitle || "",
+        organization: selectedNode.organization || "",
+        relationshipToYou: selectedNode.relationshipToYou ? getRelationshipNameById(selectedNode.relationshipToYou) : "",
+        lastContact: selectedNode.lastContact ? new Date(selectedNode.lastContact).toISOString().split('T')[0] : "",
+        officeNumber: selectedNode.officeNumber || "",
+        mobileNumber: selectedNode.mobileNumber || "",
+        email1: selectedNode.email1 || "",
+        email2: selectedNode.email2 || "",
+        linkedin: selectedNode.linkedin || "",
+        twitter: selectedNode.twitter || "",
+        notes: selectedNode.notes || ""
+      };
+      console.log('Setting form values:', formValues);
+      form.reset(formValues);
+    }
+  }, [selectedNode, isEditing, form]);
 
   const renderField = (fieldName: string) => {
     if (isEditing) {
