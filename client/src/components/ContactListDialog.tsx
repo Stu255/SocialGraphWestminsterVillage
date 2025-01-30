@@ -12,7 +12,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
-
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { AddOrganizationDialog } from "./AddOrganizationDialog";
 
 interface ContactListDialogProps {
   open: boolean;
@@ -68,6 +81,18 @@ function EditDialog({ contact, open, onOpenChange, graphId }: EditDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [step, setStep] = useState(0);
+  const [showAddOrg, setShowAddOrg] = useState(false);
+  const [openCombobox, setOpenCombobox] = useState(false);
+
+  // Fetch organizations
+  const { data: organizations = [] } = useQuery({
+    queryKey: ["/api/organizations", graphId],
+    queryFn: async () => {
+      const res = await fetch(`/api/organizations?graphId=${graphId}`);
+      if (!res.ok) throw new Error("Failed to fetch organizations");
+      return res.json();
+    },
+  });
 
   const form = useForm({
     defaultValues: {
@@ -87,6 +112,14 @@ function EditDialog({ contact, open, onOpenChange, graphId }: EditDialogProps) {
 
   const mutation = useMutation({
     mutationFn: async (values: any) => {
+      // Check if organization exists
+      const orgExists = organizations.some((org: any) => org.name === values.organization);
+
+      if (!orgExists && values.organization) {
+        setShowAddOrg(true);
+        throw new Error("Organization needs to be created first");
+      }
+
       const res = await fetch(`/api/people/${contact.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -109,11 +142,13 @@ function EditDialog({ contact, open, onOpenChange, graphId }: EditDialogProps) {
       });
     },
     onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error.message !== "Organization needs to be created first") {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -140,99 +175,158 @@ function EditDialog({ contact, open, onOpenChange, graphId }: EditDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{currentStep.title}</DialogTitle>
-          <DialogDescription>
-            {currentStep.description}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{currentStep.title}</DialogTitle>
+            <DialogDescription>
+              {currentStep.description}
+            </DialogDescription>
+          </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-4">
-              {currentStep.fields.map((fieldName) => (
-                <FormField
-                  key={fieldName}
-                  control={form.control}
-                  name={fieldName}
-                  rules={{ 
-                    required: fieldName === "name" ? "Name is required" : 
-                             fieldName === "relationshipToYou" ? "Relationship type is required" : 
-                             false 
-                  }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{FIELD_LABELS[fieldName]}</FormLabel>
-                      <FormControl>
-                        {fieldName === "relationshipToYou" ? (
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select relationship type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {RELATIONSHIP_TYPES.map(type => (
-                                <SelectItem key={type.id} value={type.name}>
-                                  {type.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : fieldName === "notes" ? (
-                          <Textarea
-                            {...field}
-                            className="min-h-[200px]"
-                          />
-                        ) : (
-                          <Input {...field} />
-                        )}
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ))}
-            </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="space-y-4">
+                {currentStep.fields.map((fieldName) => (
+                  <FormField
+                    key={fieldName}
+                    control={form.control}
+                    name={fieldName}
+                    rules={{ 
+                      required: fieldName === "name" ? "Name is required" : 
+                               fieldName === "relationshipToYou" ? "Relationship type is required" : 
+                               false 
+                    }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{FIELD_LABELS[fieldName]}</FormLabel>
+                        <FormControl>
+                          {fieldName === "relationshipToYou" ? (
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select relationship type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {RELATIONSHIP_TYPES.map(type => (
+                                  <SelectItem key={type.id} value={type.name}>
+                                    {type.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : fieldName === "organization" ? (
+                            <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={openCombobox}
+                                    className="w-full justify-between"
+                                  >
+                                    {field.value
+                                      ? field.value
+                                      : "Select organization..."}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-full p-0">
+                                <Command>
+                                  <CommandInput placeholder="Search organization..." />
+                                  <CommandEmpty>No organization found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {organizations.map((org: any) => (
+                                      <CommandItem
+                                        key={org.id}
+                                        value={org.name}
+                                        onSelect={(currentValue) => {
+                                          field.onChange(currentValue);
+                                          setOpenCombobox(false);
+                                        }}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            field.value === org.name ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+                                        {org.name}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                          ) : fieldName === "notes" ? (
+                            <Textarea
+                              {...field}
+                              className="min-h-[200px]"
+                            />
+                          ) : (
+                            <Input {...field} />
+                          )}
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </div>
 
-            <div className="flex justify-between gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handlePrevious}
-                disabled={isFirstStep}
-                className="flex-1"
-              >
-                <ChevronLeft className="h-4 w-4 mr-2" />
-                Previous
-              </Button>
+              <div className="flex justify-between gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handlePrevious}
+                  disabled={isFirstStep}
+                  className="flex-1"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  Previous
+                </Button>
 
-              <Button
-                type="submit"
-                disabled={mutation.isPending}
-                className="flex-1"
-              >
-                {mutation.isPending ? "Saving..." : "Save"}
-              </Button>
+                <Button
+                  type="submit"
+                  disabled={mutation.isPending}
+                  className="flex-1"
+                >
+                  {mutation.isPending ? "Saving..." : "Save"}
+                </Button>
 
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleNext}
-                disabled={isLastStep}
-                className="flex-1"
-              >
-                Next
-                <ChevronRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleNext}
+                  disabled={isLastStep}
+                  className="flex-1"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <AddOrganizationDialog 
+        open={showAddOrg}
+        onOpenChange={(open) => {
+          setShowAddOrg(open);
+          if (!open) {
+            // Retry contact update after organization is added
+            mutation.mutate(form.getValues());
+          }
+        }}
+        defaultName={form.getValues().organization}
+        graphId={graphId}
+      />
+    </>
   );
 }
 
