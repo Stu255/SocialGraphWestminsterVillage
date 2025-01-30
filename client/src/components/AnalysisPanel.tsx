@@ -63,6 +63,17 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   const [isEditing, setIsEditing] = useState(false);
   const { data: fieldPreferences } = useFieldPreferences(graphId);
 
+  // Get centrality data for the network
+  const { data: centrality } = useQuery({
+    queryKey: ["/api/analysis/centrality", graphId],
+    enabled: !!nodes.length,
+  });
+
+  // Calculate top 10 people by centrality
+  const topPeople = centrality
+    ?.sort((a: any, b: any) => b.centrality - a.centrality)
+    .slice(0, 10) || [];
+
   const form = useForm({
     defaultValues: {
       name: "",
@@ -129,6 +140,19 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
       queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
       if (onNodeDeleted) onNodeDeleted();
+    },
+  });
+
+  const deleteRelationshipMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/relationships/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error("Failed to delete relationship");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
     },
   });
 
