@@ -33,7 +33,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useForm } from "react-hook-form";
-import { RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
+import { getRelationshipNameById, getRelationshipIdByName, RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
 
 interface AnalysisPanelProps {
   selectedNode: any;
@@ -98,7 +98,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         name: selectedNode.name || "",
         jobTitle: selectedNode.jobTitle || "",
         organization: selectedNode.organization || "",
-        relationshipToYou: selectedNode.relationshipToYou || "",
+        relationshipToYou: selectedNode.relationshipToYou ? getRelationshipNameById(selectedNode.relationshipToYou) : "",
         lastContact: selectedNode.lastContact ? new Date(selectedNode.lastContact).toISOString().split('T')[0] : "",
         officeNumber: selectedNode.officeNumber || "",
         mobileNumber: selectedNode.mobileNumber || "",
@@ -114,10 +114,16 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
+      // Transform the relationship type to its numeric value before sending to the API
+      const transformedValues = {
+        ...values,
+        relationship_to_you: values.relationshipToYou ? getRelationshipIdByName(values.relationshipToYou) : null,
+      };
+
       const res = await fetch(`/api/people/${selectedNode.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...values, graphId }),
+        body: JSON.stringify({ ...transformedValues, graphId }),
       });
       if (!res.ok) throw new Error("Failed to update person");
       return res.json();
@@ -227,6 +233,8 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     let value = selectedNode[fieldName];
     if (fieldName === "lastContact" && value) {
       value = new Date(value).toLocaleDateString();
+    } else if (fieldName === "relationshipToYou" && value) {
+      value = getRelationshipNameById(value);
     }
 
     return (

@@ -10,14 +10,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-// Define relationship types and their line styles
+// Define relationship types with scores and their line styles
 export const RELATIONSHIP_TYPES = [
-  { id: 1, name: "Allied", style: "heavy-line", description: "Heavy line" },
-  { id: 2, name: "Trusted", style: "double-line", description: "Double line" },
+  { id: 5, name: "Allied", style: "heavy-line", description: "Heavy line" },
+  { id: 4, name: "Trusted", style: "double-line", description: "Double line" },
   { id: 3, name: "Close", style: "standard-line", description: "Standard line" },
-  { id: 4, name: "Connected", style: "thin-line", description: "Thin line" },
-  { id: 5, name: "Acquainted", style: "dashed-line", description: "Thin dashed line" }
+  { id: 2, name: "Connected", style: "thin-line", description: "Thin line" },
+  { id: 1, name: "Acquainted", style: "dashed-line", description: "Thin dashed line" }
 ];
+
+// Helper functions for relationship type conversion
+export const getRelationshipNameById = (id: number) => {
+  return RELATIONSHIP_TYPES.find(type => type.id === id)?.name || "Unknown";
+};
+
+export const getRelationshipIdByName = (name: string) => {
+  return RELATIONSHIP_TYPES.find(type => type.name === name)?.id || null;
+};
 
 function RelationshipTypesDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
   return (
@@ -37,11 +46,11 @@ function RelationshipTypesDialog({ open, onOpenChange }: { open: boolean, onOpen
                 <p className="text-sm text-muted-foreground">{type.description}</p>
               </div>
               <div className={`w-24 ${
-                type.style === 'heavy-line' ? 'h-1.5 bg-foreground' :
-                type.style === 'double-line' ? 'h-2.5 border-t-2 border-b-2 border-foreground' :
-                type.style === 'standard-line' ? 'h-0.5 bg-foreground' :
-                type.style === 'thin-line' ? 'h-px bg-foreground/60' :
-                'h-0 border-t border-dashed border-foreground/40 [border-width:1px] [border-spacing:4px]'
+                type.style === 'heavy-line' ? 'h-2 bg-foreground' :
+                type.style === 'double-line' ? 'h-3 border-t-2 border-b-2 border-foreground' :
+                type.style === 'standard-line' ? 'h-1 bg-foreground' :
+                type.style === 'thin-line' ? 'h-px bg-foreground/70' :
+                'h-0 border-t border-dashed border-foreground/50 [border-width:1px] [border-spacing:6px]'
               }`} />
             </div>
           ))}

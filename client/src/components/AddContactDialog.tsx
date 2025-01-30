@@ -22,7 +22,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
+import { RELATIONSHIP_TYPES, getRelationshipIdByName } from "./RelationshipTypeManager";
 
 interface AddContactDialogProps {
   open: boolean;
@@ -69,12 +69,11 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
 
   const mutation = useMutation({
     mutationFn: async (values: any) => {
-      // Transform form values to match database schema
       const transformedData = {
         name: values.name,
         job_title: values.jobTitle || null,
         organization: values.organization || null,
-        relationship_to_you: values.relationshipToYou || null,
+        relationship_to_you: values.relationshipToYou ? getRelationshipIdByName(values.relationshipToYou) : null,
         last_contact: values.lastContact ? new Date(values.lastContact).toISOString() : null,
         office_number: values.officeNumber || null,
         mobile_number: values.mobileNumber || null,
@@ -175,10 +174,10 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                   key={field}
                   control={form.control}
                   name={field}
-                  rules={{ 
-                    required: field === "name" ? "Name is required" : 
+                  rules={{
+                    required: field === "name" ? "Name is required" :
                              field === "relationshipToYou" ? "Relationship type is required" :
-                             false 
+                             false
                   }}
                   render={({ field: formField }) => (
                     <FormItem>
@@ -190,8 +189,8 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                       </FormLabel>
                       <FormControl>
                         {field === "relationshipToYou" ? (
-                          <Select 
-                            onValueChange={formField.onChange} 
+                          <Select
+                            onValueChange={formField.onChange}
                             defaultValue={formField.value}
                           >
                             <SelectTrigger>
