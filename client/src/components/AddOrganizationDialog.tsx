@@ -17,14 +17,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { UseMutationResult } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface AddOrganizationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   graphId: number;
-  mutation: UseMutationResult<any, Error, any>;
+  defaultName?: string;
 }
 
 const STEPS = [
@@ -49,13 +50,15 @@ export function AddOrganizationDialog({
   open, 
   onOpenChange, 
   graphId,
-  mutation 
+  defaultName = ""
 }: AddOrganizationDialogProps) {
   const [step, setStep] = useState(0);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const form = useForm({
     defaultValues: {
-      name: "",
+      name: defaultName,
       brandColor: "#000000",
       accentColor: "#000000",
       website: "",
@@ -63,6 +66,40 @@ export function AddOrganizationDialog({
       hqCity: "",
       headcount: "",
       turnover: ""
+    },
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (values: any) => {
+      const res = await fetch("/api/organizations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...values, graph_id: graphId }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Failed to create organization");
+      }
+
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/organizations", graphId] });
+      onOpenChange(false);
+      setStep(0);
+      form.reset();
+      toast({
+        title: "Success",
+        description: "Organization added successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -106,7 +143,7 @@ export function AddOrganizationDialog({
                 <FormField
                   key={field}
                   control={form.control}
-                  name={field}
+                  name={field as keyof typeof form.formState.defaultValues}
                   rules={{ required: field === "name" ? "Name is required" : false }}
                   render={({ field: formField }) => (
                     <FormItem>
