@@ -63,6 +63,11 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   const [isEditing, setIsEditing] = useState(false);
   const { data: fieldPreferences } = useFieldPreferences(graphId);
 
+  // Define visibleFields based on fieldPreferences
+  const visibleFields = fieldPreferences?.order.filter(
+    field => !fieldPreferences?.hidden.includes(field)
+  ) || Object.keys(FIELD_LABELS);
+
   // Get centrality data for the network
   const { data: centrality } = useQuery({
     queryKey: ["/api/analysis/centrality", graphId],
@@ -93,6 +98,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
+      console.log('Backend: Sending update request:', values);
       const res = await fetch(`/api/people/${selectedNode.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

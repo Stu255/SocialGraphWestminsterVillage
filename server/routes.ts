@@ -185,10 +185,15 @@ export function registerRoutes(app: Express): Server {
       let relationshipId = null;
       if (req.body.relationshipToYou) {
         console.log('Backend: Looking up relationship type:', req.body.relationshipToYou);
-        const relationship = await db.select()
+        const relationship = await db
+          .select()
           .from(relationshipTypes)
-          .where(eq(relationshipTypes.name, req.body.relationshipToYou))
+          .where(and(
+            eq(relationshipTypes.name, req.body.relationshipToYou),
+            eq(relationshipTypes.graphId, req.body.graphId)
+          ))
           .limit(1);
+
         console.log('Backend: Found relationship:', relationship);
         relationshipId = relationship[0]?.id;
         console.log('Backend: Resolved relationshipId:', relationshipId);
@@ -226,7 +231,7 @@ export function registerRoutes(app: Express): Server {
       const [updatedPerson] = await db
         .update(people)
         .set(result.data)
-        .where(and(eq(people.id, parseInt(req.params.id)), eq(people.graphId, req.body.graphId)))
+        .where(eq(people.id, parseInt(req.params.id)))
         .returning();
 
       if (!updatedPerson) {
