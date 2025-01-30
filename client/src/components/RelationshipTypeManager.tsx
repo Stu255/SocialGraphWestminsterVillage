@@ -1,63 +1,58 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Trash2 } from "lucide-react";
+import { Users } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+// Define relationship types and their line styles
+export const RELATIONSHIP_TYPES = [
+  { id: 1, name: "Allied", style: "heavy-line", description: "Heavy line" },
+  { id: 2, name: "Trusted", style: "double-line", description: "Double line" },
+  { id: 3, name: "Close", style: "standard-line", description: "Standard line" },
+  { id: 4, name: "Connected", style: "thin-line", description: "Thin line" },
+  { id: 5, name: "Acquainted", style: "dashed-line", description: "Thin dashed line" }
+];
+
+function RelationshipTypesDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Relationship Types</DialogTitle>
+          <DialogDescription>
+            Available relationship types and their visual representations
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          {RELATIONSHIP_TYPES.map((type) => (
+            <div key={type.id} className="flex items-center justify-between p-2 rounded-lg border">
+              <div>
+                <h4 className="font-medium">{type.name}</h4>
+                <p className="text-sm text-muted-foreground">{type.description}</p>
+              </div>
+              <div className={`w-16 h-px bg-foreground ${
+                type.style === 'heavy-line' ? 'h-0.5' :
+                type.style === 'double-line' ? 'border-t border-b h-1.5' :
+                type.style === 'standard-line' ? '' :
+                type.style === 'thin-line' ? 'h-px opacity-60' :
+                'border-dashed border-t opacity-60'
+              }`} />
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export function RelationshipTypeManager() {
-  const queryClient = useQueryClient();
-  const [newType, setNewType] = useState("");
-
-  const { data: relationshipTypes = [] } = useQuery({
-    queryKey: ["/api/relationship-types"],
-  });
-
-  const { data: relationships = [] } = useQuery({
-    queryKey: ["/api/relationships"],
-  });
-
-  // Calculate relationship counts for each type
-  const relationshipCounts = relationships.reduce((acc: Record<string, number>, rel: any) => {
-    acc[rel.relationshipType] = (acc[rel.relationshipType] || 0) + 1;
-    return acc;
-  }, {});
-
-  const createMutation = useMutation({
-    mutationFn: async (name: string) => {
-      const res = await fetch("/api/relationship-types", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-      if (!res.ok) throw new Error("Failed to create relationship type");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/relationship-types"] });
-      setNewType("");
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const res = await fetch(`/api/relationship-types/${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Failed to delete relationship type");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/relationship-types"] });
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newType.trim()) {
-      createMutation.mutate(newType.trim());
-    }
-  };
+  const [showDialog, setShowDialog] = useState(false);
 
   return (
     <Card>
@@ -65,34 +60,19 @@ export function RelationshipTypeManager() {
         <CardTitle>Relationship Types</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
-          <Input
-            value={newType}
-            onChange={(e) => setNewType(e.target.value)}
-            placeholder="New relationship type..."
-          />
-          <Button type="submit">Add</Button>
-        </form>
+        <Button 
+          className="w-full"
+          variant="outline"
+          onClick={() => setShowDialog(true)}
+        >
+          <Users className="h-4 w-4 mr-2" />
+          See Relationships
+        </Button>
 
-        <div className="space-y-2">
-          {relationshipTypes.map((type: any) => (
-            <div key={type.id} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span>{type.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  ({relationshipCounts[type.name] || 0})
-                </span>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => deleteMutation.mutate(type.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
+        <RelationshipTypesDialog
+          open={showDialog}
+          onOpenChange={setShowDialog}
+        />
       </CardContent>
     </Card>
   );
