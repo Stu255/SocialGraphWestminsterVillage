@@ -7,6 +7,7 @@ interface Node {
   id: number;
   name: string;
   affiliation: string;
+  relationshipToYou?: number;
   currentRole?: string;
 }
 
@@ -23,6 +24,27 @@ interface Props {
   onNodeSelect: (node: Node | null) => void;
 }
 
+// SVG paths for relationship icons
+const RELATIONSHIP_ICONS = {
+  shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z", // Allied
+  star: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z", // Trusted
+  doubleRing: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12z", // Close
+  circle: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z", // Connected
+  dottedCircle: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z" // Acquainted (will be rendered with dashed style)
+};
+
+// Map relationship IDs to icon types
+const getRelationshipIcon = (relationshipId: number | undefined) => {
+  switch(relationshipId) {
+    case 5: return 'shield'; // Allied
+    case 4: return 'star'; // Trusted
+    case 3: return 'doubleRing'; // Close
+    case 2: return 'circle'; // Connected
+    case 1: return 'dottedCircle'; // Acquainted
+    default: return 'dottedCircle';
+  }
+};
+
 export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -33,7 +55,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
 
   // Create a map of affiliation colors
   const affiliationColors = Object.fromEntries(
-    affiliations.map((a: any) => [a.name, a.color])
+    (affiliations as any[]).map((a: any) => [a.name, a.color])
   );
 
   const getNodeColor = (affiliation: string) => {
@@ -78,7 +100,6 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
     // Transform links data for D3
     const filteredLinks = links.filter(link => {
       if (filters.relationshipType && link.relationshipType !== filters.relationshipType) return false;
-      // Only include links where both nodes are in the filtered set
       const sourceExists = filteredNodes.some(n => n.id === link.sourcePersonId);
       const targetExists = filteredNodes.some(n => n.id === link.targetPersonId);
       return sourceExists && targetExists;
@@ -89,7 +110,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
     }));
 
     // Create force simulation
-    const simulation = d3.forceSimulation(filteredNodes as any)
+    const simulation = d3.forceSimulation(filteredNodes)
       .force("link", d3.forceLink(filteredLinks)
         .id((d: any) => d.id)
         .distance(100))
@@ -97,7 +118,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collision", d3.forceCollide().radius(30));
 
-    // Draw links first (so they appear behind nodes)
+    // Draw links first
     const link = g.append("g")
       .attr("class", "links")
       .selectAll("line")
@@ -129,13 +150,17 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
           d.fy = null;
         }));
 
-    // Add circles to node groups
-    nodeGroup.append("circle")
-      .attr("r", 8)
+    // Add relationship icons
+    nodeGroup.append("path")
+      .attr("d", d => RELATIONSHIP_ICONS[getRelationshipIcon(d.relationshipToYou)])
+      .attr("transform", "scale(0.8)") // Scale down the icons slightly
       .attr("fill", d => getNodeColor(d.affiliation))
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 1.5)
+      .style("stroke-dasharray", d => getRelationshipIcon(d.relationshipToYou) === 'dottedCircle' ? "3,3" : "none")
       .on("click", (_event, d) => onNodeSelect(d));
 
-    // Add labels to node groups
+    // Add labels
     nodeGroup.append("text")
       .text(d => d.name)
       .attr("font-size", "12px")
@@ -151,7 +176,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
         .attr("x2", d => (d.target as any).x)
         .attr("y2", d => (d.target as any).y);
 
-      nodeGroup.attr("transform", d => `translate(${(d as any).x},${(d as any).y})`);
+      nodeGroup.attr("transform", d => `translate(${(d as any).x - 12},${(d as any).y - 12})`);
     });
 
     return () => {
