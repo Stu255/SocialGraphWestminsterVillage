@@ -185,14 +185,14 @@ export function registerRoutes(app: Express): Server {
       const personData = {
         name: req.body.name,
         graphId: req.body.graphId,
-        jobTitle: req.body.job_title,
+        jobTitle: req.body.jobTitle,  // Changed from job_title
         organization: req.body.organization,
-        relationshipToYou: req.body.relationship_to_you,
-        lastContact: req.body.last_contact ? req.body.last_contact.split('T')[0] : null,
-        officeNumber: req.body.office_number,
-        mobileNumber: req.body.mobile_number,
-        email1: req.body.email_1,
-        email2: req.body.email_2,
+        relationshipToYou: getRelationshipIdByName(req.body.relationshipToYou),  // Transform the relationship name to ID
+        lastContact: req.body.lastContact ? req.body.lastContact.split('T')[0] : null,
+        officeNumber: req.body.officeNumber,  // Changed from office_number
+        mobileNumber: req.body.mobileNumber,  // Changed from mobile_number
+        email1: req.body.email1,  // Changed from email_1
+        email2: req.body.email2,  // Changed from email_2
         linkedin: req.body.linkedin,
         twitter: req.body.twitter,
         notes: req.body.notes,
@@ -558,6 +558,17 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: "Failed to update field preferences" });
     }
   });
+
+  async function getRelationshipIdByName(relationshipName: string | undefined): Promise<number | undefined> {
+    if (!relationshipName) return undefined;
+    try {
+      const relationship = await db.select().from(relationshipTypes).where(eq(relationshipTypes.name, relationshipName)).limit(1).first();
+      return relationship?.id;
+    } catch (error) {
+      console.error("Error getting relationship ID:", error);
+      return undefined;
+    }
+  }
 
   return httpServer;
 }
