@@ -173,6 +173,7 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
             description: "Relationship type is required",
             variant: "destructive",
           });
+          setStep(0); 
           return;
         }
         await mutation.mutateAsync(data);
@@ -180,6 +181,14 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
         // Error is handled by mutation's onError
       }
     } else {
+      if (step === 0 && !form.getValues().relationshipToYou) {
+        toast({
+          title: "Error",
+          description: "Please select a relationship type",
+          variant: "destructive",
+        });
+        return;
+      }
       setStep(s => s + 1);
     }
   };
@@ -210,8 +219,8 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                     name={field}
                     rules={{
                       required: field === "name" ? "Name is required" :
-                               field === "relationshipToYou" ? "Relationship type is required" :
-                               false
+                                field === "relationshipToYou" ? "Relationship type is required" :
+                                false
                     }}
                     render={({ field: formField }) => (
                       <FormItem>
