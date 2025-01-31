@@ -113,7 +113,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
     }));
 
     // Create force simulation
-    const simulation = d3.forceSimulation(filteredNodes)
+    const simulation = d3.forceSimulation(filteredNodes as any)
       .force("link", d3.forceLink(filteredLinks)
         .id((d: any) => d.id)
         .distance(100))
