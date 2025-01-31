@@ -127,14 +127,20 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
 
     svg.call(zoom);
 
-    // Filter nodes and links based on filters
+    // Filter nodes based on filters
     const filteredNodes = nodes.filter((node) => {
       if (filters.affiliation && node.affiliation !== filters.affiliation) return false;
       return true;
     });
 
+    // Deduplicate links (only keep one direction for each relationship)
+    const uniqueLinks = links.filter((link) => {
+      // Only keep links where sourcePersonId < targetPersonId to ensure uniqueness
+      return link.sourcePersonId < link.targetPersonId;
+    });
+
     // Transform links data for D3
-    const filteredLinks = links
+    const filteredLinks = uniqueLinks
       .filter((link) => {
         if (filters.relationshipType && link.relationshipType !== filters.relationshipType) return false;
         const sourceExists = filteredNodes.some((n) => n.id === link.sourcePersonId);
@@ -161,7 +167,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collision", d3.forceCollide().radius(30));
 
-    // Draw links first
+    // Draw links
     const link = g
       .append("g")
       .attr("class", "links")
