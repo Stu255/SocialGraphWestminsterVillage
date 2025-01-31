@@ -304,13 +304,30 @@ export function registerRoutes(app: Express): Server {
       return res.status(401).send("Not logged in");
     }
     try {
+      // Handle both graphId and graph_id formats
+      const graphId = req.body.graphId || req.body.graph_id;
+      const updateData = {
+        ...req.body,
+        graphId: graphId
+      };
+      delete updateData.graph_id; // Remove graph_id if it exists
+
       const [updated] = await db
         .update(organizations)
-        .set({...req.body, graphId: req.body.graph_id})
-        .where(and(eq(organizations.id, parseInt(req.params.id)), eq(organizations.graphId, req.body.graph_id)))
+        .set(updateData)
+        .where(and(
+          eq(organizations.id, parseInt(req.params.id)), 
+          eq(organizations.graphId, graphId)
+        ))
         .returning();
+
+      if (!updated) {
+        return res.status(404).json({ error: "Organization not found" });
+      }
+
       res.json(updated);
     } catch (error) {
+      console.error("Error updating organization:", error);
       res.status(500).json({ error: "Failed to update organization" });
     }
   });

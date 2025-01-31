@@ -46,6 +46,17 @@ const STEPS = [
   }
 ];
 
+const FIELD_LABELS: Record<string, string> = {
+  name: "Organization Name",
+  brandColor: "Brand Color",
+  accentColor: "Accent Color",
+  website: "Website",
+  industry: "Industry",
+  hqCity: "Headquarters City",
+  headcount: "Employee Count",
+  turnover: "Annual Turnover"
+};
+
 export function EditOrganizationDialog({
   organization,
   open,
@@ -71,6 +82,7 @@ export function EditOrganizationDialog({
 
   const mutation = useMutation({
     mutationFn: async (values: any) => {
+      console.log("Sending update request with values:", { ...values, graphId });
       const res = await fetch(`/api/organizations/${organization.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -82,7 +94,8 @@ export function EditOrganizationDialog({
         throw new Error(errorText || "Failed to update organization");
       }
 
-      return res.json();
+      const data = await res.json();
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/organizations", graphId] });
@@ -93,6 +106,7 @@ export function EditOrganizationDialog({
       });
     },
     onError: (error: Error) => {
+      console.error("Update error:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -139,12 +153,12 @@ export function EditOrganizationDialog({
                 <FormField
                   key={field}
                   control={form.control}
-                  name={field}
+                  name={field as keyof typeof FIELD_LABELS}
                   rules={{ required: field === "name" ? "Name is required" : false }}
                   render={({ field: formField }) => (
                     <FormItem>
-                      <FormLabel className="capitalize">
-                        {field.replace(/([A-Z])/g, ' $1').trim()}
+                      <FormLabel>
+                        {FIELD_LABELS[field]}
                       </FormLabel>
                       <FormControl>
                         {field === "brandColor" || field === "accentColor" ? (
