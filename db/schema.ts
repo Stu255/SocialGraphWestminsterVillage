@@ -103,7 +103,20 @@ const insertPeopleSchema = createInsertSchema(people, {
   lastContact: z.string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
     .transform(val => val ? new Date(val) : null)
+    .optional()
     .nullable(),
+  relationshipToYou: z.number().nullable(),
+  graphId: z.number(),
+  name: z.string().min(1, "Name is required"),
+  jobTitle: z.string().nullable(),
+  organization: z.string().nullable(),
+  officeNumber: z.string().nullable(),
+  mobileNumber: z.string().nullable(),
+  email1: z.string().nullable(),
+  email2: z.string().nullable(),
+  linkedin: z.string().nullable(),
+  twitter: z.string().nullable(),
+  notes: z.string().nullable(),
 });
 
 // Export the schemas
