@@ -102,18 +102,18 @@ export function ContactFormDialog({ contact, open, onOpenChange, graphId }: Cont
     mutationFn: async (values: any) => {
       // Transform the data to match the backend expectations
       const transformedData = {
-        name: values.name,
-        jobTitle: values.jobTitle,
-        organization: values.organization,
+        name: values.name.trim(),
+        graphId: graphId, // Ensure graphId is passed correctly
+        jobTitle: values.jobTitle?.trim() || null,
+        organization: values.organization?.trim() || null,
         relationshipToYou: values.relationshipToYou ? getRelationshipIdByName(values.relationshipToYou) : null,
-        officeNumber: values.officeNumber || null,
-        mobileNumber: values.mobileNumber || null,
-        email1: values.email1 || null,
-        email2: values.email2 || null,
-        linkedin: values.linkedin || null,
-        twitter: values.twitter || null,
-        notes: values.notes || null,
-        graphId: graphId  // Use graphId directly, not graph_id
+        officeNumber: values.officeNumber?.trim() || null,
+        mobileNumber: values.mobileNumber?.trim() || null,
+        email1: values.email1?.trim() || null,
+        email2: values.email2?.trim() || null,
+        linkedin: values.linkedin?.trim() || null,
+        twitter: values.twitter?.trim() || null,
+        notes: values.notes?.trim() || null,
       };
 
       console.log("Sending contact data:", transformedData);

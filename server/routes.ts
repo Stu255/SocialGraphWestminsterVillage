@@ -143,24 +143,29 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
+      console.log("Received person data:", req.body);
+
       // Transform the incoming data to match the schema
       const personData = {
         name: req.body.name,
-        graphId: req.body.graph_id,
-        jobTitle: req.body.job_title,
+        graphId: req.body.graphId,
+        jobTitle: req.body.jobTitle,
         organization: req.body.organization,
-        lastContact: req.body.last_contact ? req.body.last_contact.split('T')[0] : null, // Extract YYYY-MM-DD
-        officeNumber: req.body.office_number,
-        mobileNumber: req.body.mobile_number,
-        email1: req.body.email_1,
-        email2: req.body.email_2,
+        relationshipToYou: req.body.relationshipToYou,
+        officeNumber: req.body.officeNumber,
+        mobileNumber: req.body.mobileNumber,
+        email1: req.body.email1,
+        email2: req.body.email2,
         linkedin: req.body.linkedin,
         twitter: req.body.twitter,
         notes: req.body.notes,
       };
 
+      console.log("Transformed person data:", personData);
+
       const result = insertPersonSchema.safeParse(personData);
       if (!result.success) {
+        console.error("Validation failed:", result.error.issues);
         return res.status(400).json({ 
           error: "Invalid input: " + result.error.issues.map(i => i.message).join(", ") 
         });
