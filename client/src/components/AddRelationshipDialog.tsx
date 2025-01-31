@@ -71,23 +71,23 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
   const mutation = useMutation({
     mutationFn: async ({ sourceId, targetId, relationshipType }: any) => {
       const res = await fetch("/api/relationships", {
-        method: "POST",
+        method: relationshipType === "none" ? "DELETE" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sourcePersonId: sourceId,
           targetPersonId: targetId,
-          relationshipType,
+          relationshipType: relationshipType === "none" ? null : relationshipType,
           graphId,
         }),
       });
-      if (!res.ok) throw new Error("Failed to create relationship");
+      if (!res.ok) throw new Error("Failed to update relationship");
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
       toast({
         title: "Success",
-        description: "Relationship created successfully",
+        description: "Relationship updated successfully",
       });
     },
     onError: (error: Error) => {
@@ -158,6 +158,9 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
         targetId: targetPerson.id,
         relationshipType,
       });
+
+      // Update the local state to reflect the change
+      targetPerson.relationshipToYou = relationshipType === "none" ? undefined : relationshipType;
     } catch (error) {
       // Error is handled by mutation's onError
     }
@@ -246,12 +249,13 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
                       <TableCell>
                         <Select
                           onValueChange={(value) => handleRelationshipSelect(person, value)}
-                          value={person.relationshipToYou}
+                          value={person.relationshipToYou || "none"}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="None" />
+                            <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
                             {RELATIONSHIP_TYPES.map(type => (
                               <SelectItem key={type.id} value={type.name}>
                                 {type.name}
