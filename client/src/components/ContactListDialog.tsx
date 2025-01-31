@@ -1,5 +1,5 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Settings2, ChevronLeft, ChevronRight, ArrowUpDown, ChevronFirst, ChevronLast } from "lucide-react";
@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/popover";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { AddOrganizationDialog } from "./AddOrganizationDialog";
+import { ContactFormDialog } from "./ContactFormDialog";
 
 interface ContactListDialogProps {
   open: boolean;
@@ -193,18 +194,18 @@ function EditDialog({ contact, open, onOpenChange, graphId }: EditDialogProps) {
                     key={fieldName}
                     control={form.control}
                     name={fieldName}
-                    rules={{ 
-                      required: fieldName === "name" ? "Name is required" : 
-                               fieldName === "relationshipToYou" ? "Relationship type is required" : 
-                               false 
+                    rules={{
+                      required: fieldName === "name" ? "Name is required" :
+                                fieldName === "relationshipToYou" ? "Relationship type is required" :
+                                false
                     }}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>{FIELD_LABELS[fieldName]}</FormLabel>
                         <FormControl>
                           {fieldName === "relationshipToYou" ? (
-                            <Select 
-                              onValueChange={field.onChange} 
+                            <Select
+                              onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
                               <SelectTrigger>
@@ -314,7 +315,7 @@ function EditDialog({ contact, open, onOpenChange, graphId }: EditDialogProps) {
         </DialogContent>
       </Dialog>
 
-      <AddOrganizationDialog 
+      <AddOrganizationDialog
         open={showAddOrg}
         onOpenChange={(open) => {
           setShowAddOrg(open);
@@ -541,7 +542,7 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
       </Dialog>
 
       {editingContact && (
-        <EditDialog
+        <ContactFormDialog
           contact={editingContact}
           open={!!editingContact}
           onOpenChange={(open) => !open && setEditingContact(null)}
