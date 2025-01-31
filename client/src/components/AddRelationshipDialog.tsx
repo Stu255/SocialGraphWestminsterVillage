@@ -70,18 +70,28 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
 
   const mutation = useMutation({
     mutationFn: async ({ sourceId, targetId, relationshipType }: any) => {
-      const res = await fetch("/api/relationships", {
-        method: relationshipType === "none" ? "DELETE" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sourcePersonId: sourceId,
-          targetPersonId: targetId,
-          relationshipType: relationshipType === "none" ? null : relationshipType,
-          graphId,
-        }),
-      });
-      if (!res.ok) throw new Error("Failed to update relationship");
-      return res.json();
+      if (relationshipType === "none") {
+        // For DELETE requests, send parameters as query parameters
+        const res = await fetch(`/api/relationships?sourcePersonId=${sourceId}&targetPersonId=${targetId}&graphId=${graphId}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) throw new Error("Failed to remove relationship");
+        return { message: "Relationship removed" };
+      } else {
+        // For POST requests, send parameters in the body
+        const res = await fetch("/api/relationships", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sourcePersonId: sourceId,
+            targetPersonId: targetId,
+            relationshipType,
+            graphId,
+          }),
+        });
+        if (!res.ok) throw new Error("Failed to update relationship");
+        return res.json();
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
@@ -252,7 +262,7 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
                           value={person.relationshipToYou || "none"}
                         >
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue defaultValue="none" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">None</SelectItem>
