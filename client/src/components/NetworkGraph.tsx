@@ -7,6 +7,7 @@ interface Node {
   id: number;
   name: string;
   affiliation: string;
+  organization?: string;
   relationshipToYou?: number;
   currentRole?: string;
 }
@@ -48,25 +49,27 @@ const getRelationshipIcon = (relationshipId: number | undefined) => {
 export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // Fetch affiliations data to get colors
-  const { data: affiliations = [] } = useQuery({
-    queryKey: ["/api/affiliations"],
+  // Fetch organizations data to get colors
+  const { data: organizations = [] } = useQuery({
+    queryKey: ["/api/organizations"],
   });
 
-  // Create a map of affiliation colors
-  const affiliationColors = Object.fromEntries(
-    (affiliations as any[]).map((a: any) => [a.name, a.color])
+  // Create a map of organization colors
+  const organizationColors = Object.fromEntries(
+    (organizations as any[]).map((org: any) => [org.name, org.brandColor])
   );
 
-  const getNodeColor = (affiliation: string) => {
-    return affiliationColors[affiliation] || "#808080"; // Default gray if no color found
+  const getNodeColor = (node: Node) => {
+    return node.organization && organizationColors[node.organization] 
+      ? organizationColors[node.organization] 
+      : "#808080"; // Default gray if no organization or color found
   };
 
   const getEdgeColor = (source: Node, target: Node) => {
-    if (source.affiliation === target.affiliation) {
-      return getNodeColor(source.affiliation);
+    if (source.organization && target.organization && source.organization === target.organization) {
+      return getNodeColor(source);
     }
-    return "#999"; // Gray for inter-affiliation connections
+    return "#999"; // Gray for inter-organization connections
   };
 
   useEffect(() => {
@@ -158,7 +161,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
         const isSmallCircle = getRelationshipIcon(d.relationshipToYou) === 'smallCircle';
         return `translate(12,${isSmallCircle ? '7' : '12'}) scale(${isSmallCircle ? '1.6' : '0.8'})`;
       })
-      .attr("fill", d => getNodeColor(d.affiliation))
+      .attr("fill", d => getNodeColor(d))
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.5)
       .on("click", (_event, d) => onNodeSelect(d));
@@ -185,7 +188,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
     return () => {
       simulation.stop();
     };
-  }, [nodes, links, filters, onNodeSelect, affiliationColors]);
+  }, [nodes, links, filters, onNodeSelect, organizationColors]);
 
   return (
     <Card className="h-full w-full">
