@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users } from "lucide-react";
+import { Users, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { AddRelationshipDialog } from "./AddRelationshipDialog";
 
 // Define relationship types with scores and their line styles
 export const RELATIONSHIP_TYPES = [
@@ -36,12 +37,17 @@ export const getRelationshipIdByName = (name: string) => {
   return id;
 };
 
-function RelationshipTypesDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
+interface RelationshipDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+function RelationshipListDialog({ open, onOpenChange }: RelationshipDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Relationship Types</DialogTitle>
+          <DialogTitle>Relationships</DialogTitle>
           <DialogDescription>
             Available relationship types and their visual representations
           </DialogDescription>
@@ -68,27 +74,42 @@ function RelationshipTypesDialog({ open, onOpenChange }: { open: boolean, onOpen
   );
 }
 
-export function RelationshipTypeManager() {
-  const [showDialog, setShowDialog] = useState(false);
+export function RelationshipTypeManager({ graphId }: { graphId: number }) {
+  const [showListDialog, setShowListDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Relationship Types</CardTitle>
+        <CardTitle>Relationships</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-2">
+        <Button 
+          className="w-full"
+          onClick={() => setShowAddDialog(true)}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Relationship
+        </Button>
+
         <Button 
           className="w-full"
           variant="outline"
-          onClick={() => setShowDialog(true)}
+          onClick={() => setShowListDialog(true)}
         >
           <Users className="h-4 w-4 mr-2" />
           See Relationships
         </Button>
 
-        <RelationshipTypesDialog
-          open={showDialog}
-          onOpenChange={setShowDialog}
+        <RelationshipListDialog
+          open={showListDialog}
+          onOpenChange={setShowListDialog}
+        />
+
+        <AddRelationshipDialog
+          open={showAddDialog}
+          onOpenChange={setShowAddDialog}
+          graphId={graphId}
         />
       </CardContent>
     </Card>
