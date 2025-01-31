@@ -41,19 +41,22 @@ interface AddRelationshipDialogProps {
   graphId: number;
 }
 
+type SortField = "name" | "organization" | "jobTitle";
+type SortDirection = "asc" | "desc";
+
 export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelationshipDialogProps) {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch people for the table
   const { data: people = [] } = useQuery<Person[]>({
     queryKey: ["/api/people", graphId],
     enabled: !!graphId,
   });
 
-  // Create relationship mutation
   const mutation = useMutation({
     mutationFn: async ({ sourceId, targetId, relationshipType }: any) => {
       const res = await fetch("/api/relationships", {
@@ -85,12 +88,27 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
     },
   });
 
-  // Filter people based on search term
-  const filteredPeople = people.filter(person =>
-    person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    person.organization?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    person.jobTitle?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const sortedAndFilteredPeople = [...people]
+    .filter(person =>
+      person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      person.organization?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      person.jobTitle?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      const direction = sortDirection === "asc" ? 1 : -1;
+      const aValue = (a[sortField] || "").toLowerCase();
+      const bValue = (b[sortField] || "").toLowerCase();
+      return aValue.localeCompare(bValue) * direction;
+    });
+
+  const handleSort = (field: SortField) => {
+    if (field === sortField) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
 
   const handleConnect = (person: Person) => {
     setSelectedPerson(person);
@@ -98,7 +116,7 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
 
   const handleRelationshipSelect = async (targetPerson: Person, relationshipType: string) => {
     if (!selectedPerson) return;
-    
+
     try {
       await mutation.mutateAsync({
         sourceId: selectedPerson.id,
@@ -139,7 +157,7 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
 
         <div className="space-y-4">
           <Input
-            placeholder="Search people..."
+            placeholder="Search by name, organization, or position..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -147,14 +165,29 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Organization</TableHead>
-                <TableHead>Position</TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort("name")}
+                >
+                  Name {sortField === "name" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort("organization")}
+                >
+                  Organization {sortField === "organization" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort("jobTitle")}
+                >
+                  Position {sortField === "jobTitle" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
                 <TableHead className="w-[100px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPeople
+              {sortedAndFilteredPeople
                 .filter(person => !selectedPerson || person.id !== selectedPerson.id)
                 .map((person) => (
                   <TableRow key={person.id}>
