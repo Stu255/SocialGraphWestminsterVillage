@@ -17,7 +17,7 @@ export function NodeForm({ graphId }: NodeFormProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle>Manage Contacts</CardTitle>
+        <CardTitle>People</CardTitle>
         <FieldSettingsDialog graphId={graphId} />
       </CardHeader>
       <CardContent className="space-y-2">
@@ -26,7 +26,7 @@ export function NodeForm({ graphId }: NodeFormProps) {
           onClick={() => setShowAddDialog(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add Contact
+          Add Person
         </Button>
 
         <Button 
@@ -35,7 +35,7 @@ export function NodeForm({ graphId }: NodeFormProps) {
           onClick={() => setShowListDialog(true)}
         >
           <Users className="h-4 w-4 mr-2" />
-          See Contacts
+          See People
         </Button>
 
         <ContactFormDialog

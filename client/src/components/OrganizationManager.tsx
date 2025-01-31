@@ -52,7 +52,7 @@ export function OrganizationManager({ graphId }: OrganizationManagerProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle>Add Organization</CardTitle>
+        <CardTitle>Organizations</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         <Button 
@@ -76,7 +76,6 @@ export function OrganizationManager({ graphId }: OrganizationManagerProps) {
           open={showAddDialog}
           onOpenChange={setShowAddDialog}
           graphId={graphId}
-          mutation={mutation}
         />
 
         <OrganizationListDialog

@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/resizable";
 import { FilterPanel } from "@/components/FilterPanel";
 import { NodeForm } from "@/components/NodeForm";
-import { RelationshipForm } from "@/components/RelationshipForm";
 import { OrganizationManager } from "@/components/OrganizationManager";
 import { RelationshipTypeManager } from "@/components/RelationshipTypeManager";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
@@ -105,7 +104,6 @@ export default function GraphPage({ params }: Props) {
           <div className="h-full p-6 border-r overflow-y-auto space-y-6">
             <FilterPanel filters={filters} onFilterChange={setFilters} />
             <NodeForm graphId={graphId} />
-            <RelationshipForm graphId={graphId} />
             <OrganizationManager graphId={graphId} />
             <RelationshipTypeManager graphId={graphId} />
           </div>
