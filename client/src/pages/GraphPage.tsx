@@ -29,7 +29,7 @@ export default function GraphPage({ params }: Props) {
   const [, setLocation] = useLocation();
   const [selectedNode, setSelectedNode] = useState<any>(null);
   const [filters, setFilters] = useState({
-    affiliation: null,
+    organization: null,
     relationshipType: null,
   });
 
@@ -67,6 +67,7 @@ export default function GraphPage({ params }: Props) {
       links={relationships || []}
       filters={filters}
       onNodeSelect={setSelectedNode}
+      graphId={graphId}
     />
   );
 

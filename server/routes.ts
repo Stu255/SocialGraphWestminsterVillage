@@ -87,33 +87,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/graphs", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).send("Not logged in");
-    }
-
-    try {
-      const result = insertSocialGraphSchema.safeParse({
-        ...req.body,
-        userId: req.user.id
-      });
-
-      if (!result.success) {
-        return res.status(400).json({ 
-          error: "Invalid input: " + result.error.issues.map(i => i.message).join(", ") 
-        });
-      }
-
-      const [graph] = await db
-        .insert(socialGraphs)
-        .values(result.data)
-        .returning();
-      res.json(graph);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to create graph" });
-    }
-  });
-
   // People
   app.get("/api/people", async (req, res) => {
     if (!req.isAuthenticated()) {
