@@ -33,6 +33,7 @@ interface Person {
   name: string;
   organization: string;
   jobTitle: string;
+  relationshipToYou?: string;
 }
 
 interface AddRelationshipDialogProps {
@@ -41,12 +42,18 @@ interface AddRelationshipDialogProps {
   graphId: number;
 }
 
-type SortField = "name" | "organization" | "jobTitle";
+type SortField = "name" | "organization" | "jobTitle" | "relationshipToYou";
 type SortDirection = "asc" | "desc";
 type FilterValues = Record<string, string>;
 type SortConfig = {
   column: string | null;
   direction: SortDirection | null;
+};
+
+const getRelationshipStrength = (relationshipName: string | undefined) => {
+  if (!relationshipName) return -1;
+  const type = RELATIONSHIP_TYPES.find(t => t.name === relationshipName);
+  return type ? type.id : -1;
 };
 
 export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelationshipDialogProps) {
@@ -103,6 +110,14 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
   const sortedPeople = [...filteredPeople].sort((a, b) => {
     if (!sortConfig.column || !sortConfig.direction) {
       return a.name.localeCompare(b.name);
+    }
+
+    if (sortConfig.column === "relationshipToYou") {
+      const aStrength = getRelationshipStrength(a.relationshipToYou);
+      const bStrength = getRelationshipStrength(b.relationshipToYou);
+      return sortConfig.direction === "asc" 
+        ? aStrength - bStrength 
+        : bStrength - aStrength;
     }
 
     const aValue = (a[sortConfig.column as keyof Person] || "").toLowerCase();
@@ -211,6 +226,11 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
                 <TableHead>
                   {renderColumnHeader("jobTitle", "Position")}
                 </TableHead>
+                {selectedPerson && (
+                  <TableHead>
+                    {renderColumnHeader("relationshipToYou", "Relationship")}
+                  </TableHead>
+                )}
                 <TableHead className="w-[100px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -222,13 +242,14 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
                     <TableCell>{person.name}</TableCell>
                     <TableCell>{person.organization || "—"}</TableCell>
                     <TableCell>{person.jobTitle || "—"}</TableCell>
-                    <TableCell>
-                      {selectedPerson ? (
+                    {selectedPerson && (
+                      <TableCell>
                         <Select
                           onValueChange={(value) => handleRelationshipSelect(person, value)}
+                          value={person.relationshipToYou}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Type" />
+                            <SelectValue placeholder="None" />
                           </SelectTrigger>
                           <SelectContent>
                             {RELATIONSHIP_TYPES.map(type => (
@@ -238,7 +259,10 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
                             ))}
                           </SelectContent>
                         </Select>
-                      ) : (
+                      </TableCell>
+                    )}
+                    <TableCell>
+                      {!selectedPerson && (
                         <Button
                           variant="outline"
                           size="sm"
