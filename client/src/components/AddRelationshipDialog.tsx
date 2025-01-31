@@ -71,33 +71,61 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
   const mutation = useMutation({
     mutationFn: async ({ sourceId, targetId, relationshipType }: any) => {
       if (relationshipType === "none") {
-        // For DELETE requests, send parameters as query parameters
-        const res = await fetch(`/api/relationships?sourcePersonId=${sourceId}&targetPersonId=${targetId}&graphId=${graphId}`, {
-          method: "DELETE",
-        });
-        if (!res.ok) throw new Error("Failed to remove relationship");
-        return { message: "Relationship removed" };
-      } else {
-        // For POST requests, send parameters in the body
-        const res = await fetch("/api/relationships", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sourcePersonId: sourceId,
-            targetPersonId: targetId,
-            relationshipType,
-            graphId,
+        // Delete relationships in both directions
+        const promises = [
+          fetch(`/api/relationships?sourcePersonId=${sourceId}&targetPersonId=${targetId}&graphId=${graphId}`, {
+            method: "DELETE",
           }),
-        });
-        if (!res.ok) throw new Error("Failed to update relationship");
-        return res.json();
+          fetch(`/api/relationships?sourcePersonId=${targetId}&targetPersonId=${sourceId}&graphId=${graphId}`, {
+            method: "DELETE",
+          })
+        ];
+
+        const results = await Promise.all(promises);
+        const failed = results.some(res => !res.ok);
+        if (failed) throw new Error("Failed to remove relationships");
+        return { message: "Relationships removed" };
+      } else {
+        // Create relationships in both directions
+        const payload = {
+          relationshipType,
+          graphId,
+        };
+
+        const promises = [
+          fetch("/api/relationships", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...payload,
+              sourcePersonId: sourceId,
+              targetPersonId: targetId,
+            }),
+          }),
+          fetch("/api/relationships", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...payload,
+              sourcePersonId: targetId,
+              targetPersonId: sourceId,
+            }),
+          })
+        ];
+
+        const results = await Promise.all(promises);
+        const failed = results.some(res => !res.ok);
+        if (failed) throw new Error("Failed to update relationships");
+
+        // Return the first result as the response
+        return results[0].json();
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
       toast({
         title: "Success",
-        description: "Relationship updated successfully",
+        description: "Relationships updated successfully",
       });
     },
     onError: (error: Error) => {
@@ -169,8 +197,12 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
         relationshipType,
       });
 
-      // Update the local state to reflect the change
+      // Update the local state to reflect the change for both parties
       targetPerson.relationshipToYou = relationshipType === "none" ? undefined : relationshipType;
+      const selectedPersonInList = people.find(p => p.id === selectedPerson.id);
+      if (selectedPersonInList) {
+        selectedPersonInList.relationshipToYou = relationshipType === "none" ? undefined : relationshipType;
+      }
     } catch (error) {
       // Error is handled by mutation's onError
     }
