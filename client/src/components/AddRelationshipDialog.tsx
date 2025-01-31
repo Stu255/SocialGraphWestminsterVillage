@@ -137,6 +137,34 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
     },
   });
 
+  const handleRelationshipSelect = async (targetPerson: Person, relationshipType: string) => {
+    if (!selectedPerson) return;
+
+    try {
+      await mutation.mutateAsync({
+        sourceId: selectedPerson.id,
+        targetId: targetPerson.id,
+        relationshipType,
+      });
+
+      // Only update the relationship between these two specific people
+      const updatedPeople = people.map(p => {
+        if (p.id === targetPerson.id) {
+          return { ...p, relationshipToYou: relationshipType === "none" ? undefined : relationshipType };
+        }
+        if (p.id === selectedPerson.id) {
+          return { ...p, relationshipToYou: relationshipType === "none" ? undefined : relationshipType };
+        }
+        return p;
+      });
+
+      // Update the local state with the new people array
+      queryClient.setQueryData(["/api/people", graphId], updatedPeople);
+    } catch (error) {
+      // Error is handled by mutation's onError
+    }
+  };
+
   const filteredPeople = people.filter((person) => {
     return Object.entries(filters).every(([key, value]) => {
       if (!value) return true;
@@ -185,27 +213,6 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
 
   const handleConnect = (person: Person) => {
     setSelectedPerson(person);
-  };
-
-  const handleRelationshipSelect = async (targetPerson: Person, relationshipType: string) => {
-    if (!selectedPerson) return;
-
-    try {
-      await mutation.mutateAsync({
-        sourceId: selectedPerson.id,
-        targetId: targetPerson.id,
-        relationshipType,
-      });
-
-      // Update the local state to reflect the change for both parties
-      targetPerson.relationshipToYou = relationshipType === "none" ? undefined : relationshipType;
-      const selectedPersonInList = people.find(p => p.id === selectedPerson.id);
-      if (selectedPersonInList) {
-        selectedPersonInList.relationshipToYou = relationshipType === "none" ? undefined : relationshipType;
-      }
-    } catch (error) {
-      // Error is handled by mutation's onError
-    }
   };
 
   const renderColumnHeader = (column: string, label: string) => {
