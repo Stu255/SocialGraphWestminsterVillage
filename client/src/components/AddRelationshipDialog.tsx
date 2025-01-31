@@ -68,64 +68,53 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
     enabled: !!graphId,
   });
 
+  const { data: organizations = [] } = useQuery({
+    queryKey: ["/api/organizations", graphId],
+    enabled: !!graphId,
+  });
+
+  const organizationColors = new Map(
+    organizations.map((org: any) => [org.name, org.brandColor])
+  );
+
   const mutation = useMutation({
     mutationFn: async ({ sourceId, targetId, relationshipType }: any) => {
       if (relationshipType === "none") {
-        // Delete relationships in both directions
-        const promises = [
-          fetch(`/api/relationships?sourcePersonId=${sourceId}&targetPersonId=${targetId}&graphId=${graphId}`, {
-            method: "DELETE",
-          }),
-          fetch(`/api/relationships?sourcePersonId=${targetId}&targetPersonId=${sourceId}&graphId=${graphId}`, {
-            method: "DELETE",
-          })
-        ];
+        const res = await fetch(`/api/relationships?sourcePersonId=${sourceId}&targetPersonId=${targetId}&graphId=${graphId}`, {
+          method: "DELETE",
+        });
 
-        const results = await Promise.all(promises);
-        const failed = results.some(res => !res.ok);
-        if (failed) throw new Error("Failed to remove relationships");
-        return { message: "Relationships removed" };
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText || "Failed to remove relationship");
+        }
+
+        return { message: "Relationship removed" };
       } else {
-        // Create relationships in both directions
-        const payload = {
-          relationshipType,
-          graphId,
-        };
-
-        const promises = [
-          fetch("/api/relationships", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ...payload,
-              sourcePersonId: sourceId,
-              targetPersonId: targetId,
-            }),
+        const res = await fetch("/api/relationships", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sourcePersonId: sourceId,
+            targetPersonId: targetId,
+            relationshipType,
+            graphId,
           }),
-          fetch("/api/relationships", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ...payload,
-              sourcePersonId: targetId,
-              targetPersonId: sourceId,
-            }),
-          })
-        ];
+        });
 
-        const results = await Promise.all(promises);
-        const failed = results.some(res => !res.ok);
-        if (failed) throw new Error("Failed to update relationships");
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText || "Failed to create relationship");
+        }
 
-        // Return the first result as the response
-        return results[0].json();
+        return res.json();
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
       toast({
         title: "Success",
-        description: "Relationships updated successfully",
+        description: "Relationship updated successfully",
       });
     },
     onError: (error: Error) => {
@@ -147,22 +136,24 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
         relationshipType,
       });
 
-      // Only update the relationship between these two specific people
       const updatedPeople = people.map(p => {
-        if (p.id === targetPerson.id) {
-          return { ...p, relationshipToYou: relationshipType === "none" ? undefined : relationshipType };
-        }
-        if (p.id === selectedPerson.id) {
-          return { ...p, relationshipToYou: relationshipType === "none" ? undefined : relationshipType };
+        if (p.id === targetPerson.id || p.id === selectedPerson.id) {
+          return {
+            ...p,
+            relationshipToYou: relationshipType === "none" ? undefined : relationshipType
+          };
         }
         return p;
       });
 
-      // Update the local state with the new people array
       queryClient.setQueryData(["/api/people", graphId], updatedPeople);
     } catch (error) {
       // Error is handled by mutation's onError
     }
+  };
+
+  const getOrganizationColor = (organizationName: string) => {
+    return organizationColors.get(organizationName) || "hsl(var(--primary))";
   };
 
   const filteredPeople = people.filter((person) => {
@@ -230,6 +221,11 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
             size="sm"
             className="h-8 w-8 p-0 flex-shrink-0"
             onClick={() => handleSort(column)}
+            style={{
+              color: column === "organization" && filters[column] 
+                ? getOrganizationColor(filters[column]) 
+                : undefined
+            }}
           >
             <ArrowUpDown className="h-4 w-4" />
           </Button>
@@ -248,6 +244,9 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
                 variant="ghost"
                 size="icon"
                 onClick={() => setSelectedPerson(null)}
+                style={{
+                  color: getOrganizationColor(selectedPerson.organization)
+                }}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -292,7 +291,9 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
                 .map((person) => (
                   <TableRow key={person.id}>
                     <TableCell>{person.name}</TableCell>
-                    <TableCell>{person.organization || "—"}</TableCell>
+                    <TableCell style={{ color: getOrganizationColor(person.organization) }}>
+                      {person.organization || "—"}
+                    </TableCell>
                     <TableCell>{person.jobTitle || "—"}</TableCell>
                     {selectedPerson && (
                       <TableCell>
@@ -300,7 +301,7 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
                           onValueChange={(value) => handleRelationshipSelect(person, value)}
                           value={person.relationshipToYou || "none"}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger style={{ color: getOrganizationColor(person.organization) }}>
                             <SelectValue defaultValue="none" />
                           </SelectTrigger>
                           <SelectContent>
@@ -320,6 +321,7 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
                           variant="outline"
                           size="sm"
                           onClick={() => handleConnect(person)}
+                          style={{ color: getOrganizationColor(person.organization) }}
                         >
                           Connect
                         </Button>

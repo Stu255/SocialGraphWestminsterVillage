@@ -148,9 +148,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // The rest of the routes from the original file remain here (People Update, Delete, Organizations, etc.)
-  // For brevity, I'll continue with the Relationships routes
-
   app.get("/api/relationships", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not logged in");
@@ -172,9 +169,31 @@ export function registerRoutes(app: Express): Server {
       return res.status(401).send("Not logged in");
     }
     try {
-      const relationship = await db.insert(relationships).values({...req.body, graphId: req.body.graphId}).returning();
-      res.json(relationship[0]);
+      const { sourcePersonId, targetPersonId, relationshipType, graphId } = req.body;
+
+      // Create bidirectional relationship in a single transaction
+      const relationship = await db.transaction(async (tx) => {
+        const [forward] = await tx
+          .insert(relationships)
+          .values({ sourcePersonId, targetPersonId, relationshipType, graphId })
+          .returning();
+
+        const [reverse] = await tx
+          .insert(relationships)
+          .values({ 
+            sourcePersonId: targetPersonId, 
+            targetPersonId: sourcePersonId, 
+            relationshipType, 
+            graphId 
+          })
+          .returning();
+
+        return forward;
+      });
+
+      res.json(relationship);
     } catch (error) {
+      console.error("Error creating relationship:", error);
       res.status(500).json({ error: "Failed to create relationship" });
     }
   });
@@ -189,12 +208,22 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Source ID, Target ID and Graph ID are required" });
       }
 
-      await db.delete(relationships)
-        .where(and(
-          eq(relationships.sourcePersonId, parseInt(sourcePersonId as string)),
-          eq(relationships.targetPersonId, parseInt(targetPersonId as string)),
-          eq(relationships.graphId, parseInt(graphId as string))
-        ));
+      // Delete both directions of the relationship in a single transaction
+      await db.transaction(async (tx) => {
+        await tx.delete(relationships)
+          .where(and(
+            eq(relationships.sourcePersonId, parseInt(sourcePersonId as string)),
+            eq(relationships.targetPersonId, parseInt(targetPersonId as string)),
+            eq(relationships.graphId, parseInt(graphId as string))
+          ));
+
+        await tx.delete(relationships)
+          .where(and(
+            eq(relationships.sourcePersonId, parseInt(targetPersonId as string)),
+            eq(relationships.targetPersonId, parseInt(sourcePersonId as string)),
+            eq(relationships.graphId, parseInt(graphId as string))
+          ));
+      });
 
       res.json({ success: true });
     } catch (error) {
@@ -214,9 +243,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: "Failed to delete relationship" });
     }
   });
-
-  // The rest of the original routes (analysis, custom fields, etc.) would continue here
-  // For brevity, I've truncated the full implementation
 
   return httpServer;
 }
