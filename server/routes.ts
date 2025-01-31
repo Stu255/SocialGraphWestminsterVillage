@@ -187,22 +187,22 @@ export function registerRoutes(app: Express): Server {
       console.log('Backend: Received update request body:', req.body);
 
       // First, get the relationship ID if a relationship name is provided
-      let relationshipId = null;
-      if (req.body.relationshipToYou) {
-        console.log('Backend: Looking up relationship type:', req.body.relationshipToYou);
+      let relationshipToYou = req.body.relationshipToYou;
+      if (typeof relationshipToYou === 'string') {
+        console.log('Backend: Looking up relationship type:', relationshipToYou);
         const relationship = await db
           .select()
           .from(relationshipTypes)
           .where(and(
-            eq(relationshipTypes.name, req.body.relationshipToYou),
+            eq(relationshipTypes.name, relationshipToYou),
             eq(relationshipTypes.graphId, req.body.graphId)
           ))
           .limit(1);
 
         console.log('Backend: Found relationship:', relationship);
-        relationshipId = relationship[0]?.id;
-        console.log('Backend: Resolved relationshipId:', relationshipId);
+        relationshipToYou = relationship[0]?.id;
       }
+      console.log('Backend: Resolved relationshipId:', relationshipToYou);
 
       // Transform the incoming data to match the schema
       const personData = {
@@ -210,8 +210,7 @@ export function registerRoutes(app: Express): Server {
         graphId: req.body.graphId,
         jobTitle: req.body.jobTitle,
         organization: req.body.organization,
-        relationshipToYou: relationshipId,  // Use the found ID
-        lastContact: req.body.lastContact ? req.body.lastContact.split('T')[0] : null,
+        relationshipToYou: relationshipToYou,
         officeNumber: req.body.officeNumber,
         mobileNumber: req.body.mobileNumber,
         email1: req.body.email1,
