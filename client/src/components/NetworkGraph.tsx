@@ -59,6 +59,24 @@ const getRelationshipIcon = (relationshipId: number | undefined) => {
   }
 };
 
+// Define line styles for different relationship types
+const getRelationshipLineStyle = (relationshipType: string) => {
+  switch (relationshipType) {
+    case "Allied":
+      return { strokeWidth: 4, strokeDasharray: "none" }; // Heavy line
+    case "Trusted":
+      return { strokeWidth: 3, strokeDasharray: "none" }; // Double line
+    case "Close":
+      return { strokeWidth: 2, strokeDasharray: "none" }; // Standard line
+    case "Connected":
+      return { strokeWidth: 1, strokeDasharray: "none" }; // Thin line
+    case "Acquainted":
+      return { strokeWidth: 1, strokeDasharray: "4,4" }; // Thin dashed line
+    default:
+      return { strokeWidth: 1, strokeDasharray: "none" };
+  }
+};
+
 export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -73,19 +91,11 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
     organizations.map(org => [org.name, org.brandColor])
   );
 
-  // Debug log the organization colors
-  console.log("Organization colors map:", Object.fromEntries(organizationColors));
-
   const getNodeColor = (node: Node) => {
     if (!node.organization) {
-      console.log(`No organization for node: ${node.name}`);
       return "hsl(var(--primary))";
     }
-
-    const color = organizationColors.get(node.organization);
-    console.log(`Color for ${node.name} (${node.organization}):`, color);
-
-    return color || "hsl(var(--primary))";
+    return organizationColors.get(node.organization) || "hsl(var(--primary))";
   };
 
   const getEdgeColor = (source: Node, target: Node) => {
@@ -160,7 +170,12 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       .join("line")
       .attr("stroke", d => getEdgeColor(d.source, d.target))
       .attr("stroke-opacity", 0.6)
-      .attr("stroke-width", 2);
+      .each(function(d: any) {
+        const style = getRelationshipLineStyle(d.type);
+        d3.select(this)
+          .attr("stroke-width", style.strokeWidth)
+          .attr("stroke-dasharray", style.strokeDasharray);
+      });
 
     // Create node group
     const nodeGroup = g
@@ -196,11 +211,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
         const isSmallCircle = getRelationshipIcon(d.relationshipToYou) === "smallCircle";
         return `translate(12,${isSmallCircle ? "7" : "12"}) scale(${isSmallCircle ? "1.6" : "0.8"})`;
       })
-      .attr("fill", d => {
-        const color = getNodeColor(d);
-        console.log(`Setting color for ${d.name}:`, color);
-        return color;
-      })
+      .attr("fill", d => getNodeColor(d))
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.5)
       .style("cursor", "pointer")
