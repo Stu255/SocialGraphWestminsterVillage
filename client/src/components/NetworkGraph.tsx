@@ -23,6 +23,7 @@ interface Props {
   links: Link[];
   filters: any;
   onNodeSelect: (node: Node | null) => void;
+  graphId: number;
 }
 
 // SVG paths for relationship icons
@@ -46,12 +47,13 @@ const getRelationshipIcon = (relationshipId: number | undefined) => {
   }
 };
 
-export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
+export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // Fetch organizations data to get colors
+  // Fetch organizations data to get brand colors
   const { data: organizations = [] } = useQuery({
-    queryKey: ["/api/organizations"],
+    queryKey: ["/api/organizations", graphId],
+    enabled: !!graphId,
   });
 
   // Create a map of organization colors
@@ -60,9 +62,10 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
   );
 
   const getNodeColor = (node: Node) => {
-    return node.organization && organizationColors[node.organization] 
-      ? organizationColors[node.organization] 
-      : "#808080"; // Default gray if no organization or color found
+    if (node.organization && organizationColors[node.organization]) {
+      return organizationColors[node.organization];
+    }
+    return "#808080"; // Default gray if no organization or color found
   };
 
   const getEdgeColor = (source: Node, target: Node) => {
@@ -161,7 +164,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
         const isSmallCircle = getRelationshipIcon(d.relationshipToYou) === 'smallCircle';
         return `translate(12,${isSmallCircle ? '7' : '12'}) scale(${isSmallCircle ? '1.6' : '0.8'})`;
       })
-      .attr("fill", d => getNodeColor(d))
+      .attr("fill", d => getNodeColor(d)) // Use organization's brand color for the icon
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.5)
       .on("click", (_event, d) => onNodeSelect(d));
@@ -188,7 +191,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect }: Props) {
     return () => {
       simulation.stop();
     };
-  }, [nodes, links, filters, onNodeSelect, organizationColors]);
+  }, [nodes, links, filters, onNodeSelect, organizationColors, graphId]);
 
   return (
     <Card className="h-full w-full">
