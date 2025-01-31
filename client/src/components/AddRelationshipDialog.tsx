@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, ArrowUpDown } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -43,12 +43,16 @@ interface AddRelationshipDialogProps {
 
 type SortField = "name" | "organization" | "jobTitle";
 type SortDirection = "asc" | "desc";
+type FilterValues = Record<string, string>;
+type SortConfig = {
+  column: string | null;
+  direction: SortDirection | null;
+};
 
 export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelationshipDialogProps) {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortField, setSortField] = useState<SortField>("name");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ column: null, direction: null });
+  const [filters, setFilters] = useState<FilterValues>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -88,26 +92,42 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
     },
   });
 
-  const sortedAndFilteredPeople = [...people]
-    .filter(person =>
-      person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      person.organization?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      person.jobTitle?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
-      const direction = sortDirection === "asc" ? 1 : -1;
-      const aValue = (a[sortField] || "").toLowerCase();
-      const bValue = (b[sortField] || "").toLowerCase();
-      return aValue.localeCompare(bValue) * direction;
+  const filteredPeople = people.filter((person) => {
+    return Object.entries(filters).every(([key, value]) => {
+      if (!value) return true;
+      const fieldValue = person[key as keyof Person]?.toLowerCase() || "";
+      return fieldValue.includes(value.toLowerCase());
     });
+  });
 
-  const handleSort = (field: SortField) => {
-    if (field === sortField) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
+  const sortedPeople = [...filteredPeople].sort((a, b) => {
+    if (!sortConfig.column || !sortConfig.direction) {
+      return a.name.localeCompare(b.name);
     }
+
+    const aValue = (a[sortConfig.column as keyof Person] || "").toLowerCase();
+    const bValue = (b[sortConfig.column as keyof Person] || "").toLowerCase();
+
+    return sortConfig.direction === "asc"
+      ? aValue.localeCompare(bValue)
+      : bValue.localeCompare(aValue);
+  });
+
+  const handleSort = (column: string) => {
+    setSortConfig(current => ({
+      column,
+      direction:
+        current.column === column && current.direction === "asc"
+          ? "desc"
+          : "asc"
+    }));
+  };
+
+  const handleFilter = (column: string, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [column]: value
+    }));
   };
 
   const handleConnect = (person: Person) => {
@@ -126,6 +146,29 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
     } catch (error) {
       // Error is handled by mutation's onError
     }
+  };
+
+  const renderColumnHeader = (column: string, label: string) => {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder={label}
+            value={filters[column] || ""}
+            onChange={(e) => handleFilter(column, e.target.value)}
+            className="h-8"
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 flex-shrink-0"
+            onClick={() => handleSort(column)}
+          >
+            <ArrowUpDown className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -156,44 +199,29 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
         </DialogHeader>
 
         <div className="space-y-4">
-          <Input
-            placeholder="Search by name, organization, or position..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead 
-                  className="cursor-pointer"
-                  onClick={() => handleSort("name")}
-                >
-                  Name {sortField === "name" && (sortDirection === "asc" ? "↑" : "↓")}
+                <TableHead className="w-[200px]">
+                  {renderColumnHeader("name", "Name")}
                 </TableHead>
-                <TableHead 
-                  className="cursor-pointer"
-                  onClick={() => handleSort("organization")}
-                >
-                  Organization {sortField === "organization" && (sortDirection === "asc" ? "↑" : "↓")}
+                <TableHead>
+                  {renderColumnHeader("organization", "Organization")}
                 </TableHead>
-                <TableHead 
-                  className="cursor-pointer"
-                  onClick={() => handleSort("jobTitle")}
-                >
-                  Position {sortField === "jobTitle" && (sortDirection === "asc" ? "↑" : "↓")}
+                <TableHead>
+                  {renderColumnHeader("jobTitle", "Position")}
                 </TableHead>
                 <TableHead className="w-[100px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedAndFilteredPeople
+              {sortedPeople
                 .filter(person => !selectedPerson || person.id !== selectedPerson.id)
                 .map((person) => (
                   <TableRow key={person.id}>
                     <TableCell>{person.name}</TableCell>
-                    <TableCell>{person.organization}</TableCell>
-                    <TableCell>{person.jobTitle}</TableCell>
+                    <TableCell>{person.organization || "—"}</TableCell>
+                    <TableCell>{person.jobTitle || "—"}</TableCell>
                     <TableCell>
                       {selectedPerson ? (
                         <Select
