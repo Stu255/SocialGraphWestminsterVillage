@@ -63,6 +63,18 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   const [isEditing, setIsEditing] = useState(false);
   const { data: fieldPreferences } = useFieldPreferences(graphId);
 
+  // Add query for organizations to get brand colors
+  const { data: organizations = [] } = useQuery({
+    queryKey: ["/api/organizations", graphId],
+    enabled: !!graphId,
+  });
+
+  // Get the organization color for the current node
+  const getOrganizationColor = () => {
+    const org = organizations.find((o: any) => o.name === selectedNode?.organization);
+    return org?.brandColor || 'hsl(var(--primary))';
+  };
+
   // Define visibleFields based on fieldPreferences
   const visibleFields = fieldPreferences?.order.filter(
     field => !fieldPreferences?.hidden.includes(field)
@@ -328,7 +340,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
                   size="icon"
                   onClick={() => setIsEditing(false)}
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4 w-4" style={{ color: getOrganizationColor() }} />
                 </Button>
                 <Button
                   variant="default"
@@ -336,7 +348,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
                   onClick={form.handleSubmit(onSubmit)}
                   disabled={updatePersonMutation.isPending}
                 >
-                  <Check className="h-4 w-4" />
+                  <Check className="h-4 w-4" style={{ color: getOrganizationColor() }} />
                 </Button>
               </>
             ) : (
@@ -346,12 +358,12 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
                   size="icon"
                   onClick={() => setIsEditing(true)}
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className="h-4 w-4" style={{ color: getOrganizationColor() }} />
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" size="icon">
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" style={{ color: getOrganizationColor() }} />
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -422,7 +434,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
                     size="icon"
                     onClick={() => deleteRelationshipMutation.mutate(rel.id)}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" style={{ color: getOrganizationColor() }} />
                   </Button>
                 </div>
               );
