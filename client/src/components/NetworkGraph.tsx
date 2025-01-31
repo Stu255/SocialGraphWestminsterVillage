@@ -18,6 +18,12 @@ interface Link {
   relationshipType: string;
 }
 
+interface Organization {
+  id: number;
+  name: string;
+  brandColor: string;
+}
+
 interface Props {
   nodes: Node[];
   links: Link[];
@@ -57,14 +63,14 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Fetch organizations data to get brand colors
-  const { data: organizations = [] } = useQuery({
+  const { data: organizations = [] } = useQuery<Organization[]>({
     queryKey: ["/api/organizations", graphId],
     enabled: !!graphId,
   });
 
   // Create a map of organization colors
   const organizationColors = new Map(
-    organizations.map((org: any) => [org.name, org.brandColor])
+    organizations.map(org => [org.name, org.brandColor])
   );
 
   // Debug log the organization colors
@@ -126,14 +132,14 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
         return sourceExists && targetExists;
       })
       .map((link) => ({
-        source: filteredNodes.find((n) => n.id === link.sourcePersonId),
-        target: filteredNodes.find((n) => n.id === link.targetPersonId),
+        source: filteredNodes.find((n) => n.id === link.sourcePersonId)!,
+        target: filteredNodes.find((n) => n.id === link.targetPersonId)!,
         type: link.relationshipType,
       }));
 
     // Create force simulation
     const simulation = d3
-      .forceSimulation(filteredNodes as any)
+      .forceSimulation(filteredNodes)
       .force(
         "link",
         d3
@@ -152,7 +158,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       .selectAll("line")
       .data(filteredLinks)
       .join("line")
-      .attr("stroke", (d) => getEdgeColor(d.source as Node, d.target as Node))
+      .attr("stroke", d => getEdgeColor(d.source, d.target))
       .attr("stroke-opacity", 0.6)
       .attr("stroke-width", 2);
 
@@ -185,12 +191,12 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
     // Add relationship icons with organization colors
     nodeGroup
       .append("path")
-      .attr("d", (d) => RELATIONSHIP_ICONS[getRelationshipIcon(d.relationshipToYou)])
-      .attr("transform", (d) => {
+      .attr("d", d => RELATIONSHIP_ICONS[getRelationshipIcon(d.relationshipToYou)])
+      .attr("transform", d => {
         const isSmallCircle = getRelationshipIcon(d.relationshipToYou) === "smallCircle";
         return `translate(12,${isSmallCircle ? "7" : "12"}) scale(${isSmallCircle ? "1.6" : "0.8"})`;
       })
-      .attr("fill", (d) => {
+      .attr("fill", d => {
         const color = getNodeColor(d);
         console.log(`Setting color for ${d.name}:`, color);
         return color;
@@ -203,7 +209,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
     // Add labels
     nodeGroup
       .append("text")
-      .text((d) => d.name)
+      .text(d => d.name)
       .attr("font-size", "12px")
       .attr("dx", 12)
       .attr("dy", 4)
@@ -212,12 +218,12 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
     // Update positions on each tick
     simulation.on("tick", () => {
       link
-        .attr("x1", (d) => (d.source as any).x)
-        .attr("y1", (d) => (d.source as any).y)
-        .attr("x2", (d) => (d.target as any).x)
-        .attr("y2", (d) => (d.target as any).y);
+        .attr("x1", d => (d.source as any).x)
+        .attr("y1", d => (d.source as any).y)
+        .attr("x2", d => (d.target as any).x)
+        .attr("y2", d => (d.target as any).y);
 
-      nodeGroup.attr("transform", (d) => `translate(${(d as any).x - 12},${(d as any).y - 12})`);
+      nodeGroup.attr("transform", d => `translate(${(d as any).x - 12},${(d as any).y - 12})`);
     });
 
     return () => {
