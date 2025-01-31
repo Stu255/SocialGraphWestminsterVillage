@@ -37,13 +37,19 @@ const RELATIONSHIP_ICONS = {
 
 // Map relationship IDs to icon types
 const getRelationshipIcon = (relationshipId: number | undefined) => {
-  switch(relationshipId) {
-    case 5: return 'shield'; // Allied
-    case 4: return 'star'; // Trusted
-    case 3: return 'doubleRing'; // Close
-    case 2: return 'circle'; // Connected
-    case 1: return 'smallCircle'; // Acquainted
-    default: return 'smallCircle';
+  switch (relationshipId) {
+    case 5:
+      return "shield"; // Allied
+    case 4:
+      return "star"; // Trusted
+    case 3:
+      return "doubleRing"; // Close
+    case 2:
+      return "circle"; // Connected
+    case 1:
+      return "smallCircle"; // Acquainted
+    default:
+      return "smallCircle";
   }
 };
 
@@ -65,7 +71,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
     if (node.organization && organizationColors[node.organization]) {
       return organizationColors[node.organization];
     }
-    return "#808080"; // Default gray if no organization or color found
+    return "hsl(var(--primary))"; // Use theme primary color as fallback
   };
 
   const getEdgeColor = (source: Node, target: Node) => {
@@ -98,80 +104,94 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
     svg.call(zoom);
 
     // Filter nodes and links based on filters
-    const filteredNodes = nodes.filter(node => {
+    const filteredNodes = nodes.filter((node) => {
       if (filters.affiliation && node.affiliation !== filters.affiliation) return false;
       return true;
     });
 
     // Transform links data for D3
-    const filteredLinks = links.filter(link => {
-      if (filters.relationshipType && link.relationshipType !== filters.relationshipType) return false;
-      const sourceExists = filteredNodes.some(n => n.id === link.sourcePersonId);
-      const targetExists = filteredNodes.some(n => n.id === link.targetPersonId);
-      return sourceExists && targetExists;
-    }).map(link => ({
-      source: filteredNodes.find(n => n.id === link.sourcePersonId),
-      target: filteredNodes.find(n => n.id === link.targetPersonId),
-      type: link.relationshipType
-    }));
+    const filteredLinks = links
+      .filter((link) => {
+        if (filters.relationshipType && link.relationshipType !== filters.relationshipType) return false;
+        const sourceExists = filteredNodes.some((n) => n.id === link.sourcePersonId);
+        const targetExists = filteredNodes.some((n) => n.id === link.targetPersonId);
+        return sourceExists && targetExists;
+      })
+      .map((link) => ({
+        source: filteredNodes.find((n) => n.id === link.sourcePersonId),
+        target: filteredNodes.find((n) => n.id === link.targetPersonId),
+        type: link.relationshipType,
+      }));
 
     // Create force simulation
-    const simulation = d3.forceSimulation(filteredNodes as any)
-      .force("link", d3.forceLink(filteredLinks)
-        .id((d: any) => d.id)
-        .distance(100))
+    const simulation = d3
+      .forceSimulation(filteredNodes as any)
+      .force(
+        "link",
+        d3
+          .forceLink(filteredLinks)
+          .id((d: any) => d.id)
+          .distance(100)
+      )
       .force("charge", d3.forceManyBody().strength(-300))
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collision", d3.forceCollide().radius(30));
 
     // Draw links first
-    const link = g.append("g")
+    const link = g
+      .append("g")
       .attr("class", "links")
       .selectAll("line")
       .data(filteredLinks)
       .join("line")
-      .attr("stroke", d => getEdgeColor(d.source as Node, d.target as Node))
+      .attr("stroke", (d) => getEdgeColor(d.source as Node, d.target as Node))
       .attr("stroke-opacity", 0.6)
       .attr("stroke-width", 2);
 
     // Create node group
-    const nodeGroup = g.append("g")
+    const nodeGroup = g
+      .append("g")
       .attr("class", "nodes")
       .selectAll("g")
       .data(filteredNodes)
       .join("g")
-      .call(d3.drag<any, any>()
-        .on("start", (event, d) => {
-          if (!event.active) simulation.alphaTarget(0.3).restart();
-          d.fx = d.x;
-          d.fy = d.y;
-        })
-        .on("drag", (event, d) => {
-          d.fx = event.x;
-          d.fy = event.y;
-        })
-        .on("end", (event, d) => {
-          if (!event.active) simulation.alphaTarget(0);
-          d.fx = null;
-          d.fy = null;
-        }));
+      .call(
+        d3
+          .drag<any, any>()
+          .on("start", (event, d) => {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+          })
+          .on("drag", (event, d) => {
+            d.fx = event.x;
+            d.fy = event.y;
+          })
+          .on("end", (event, d) => {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+          })
+      );
 
-    // Add relationship icons
-    nodeGroup.append("path")
-      .attr("d", d => RELATIONSHIP_ICONS[getRelationshipIcon(d.relationshipToYou)])
-      .attr("transform", d => {
-        // Scale up small circle to maintain clickable area
-        const isSmallCircle = getRelationshipIcon(d.relationshipToYou) === 'smallCircle';
-        return `translate(12,${isSmallCircle ? '7' : '12'}) scale(${isSmallCircle ? '1.6' : '0.8'})`;
+    // Add relationship icons with organization colors
+    nodeGroup
+      .append("path")
+      .attr("d", (d) => RELATIONSHIP_ICONS[getRelationshipIcon(d.relationshipToYou)])
+      .attr("transform", (d) => {
+        const isSmallCircle = getRelationshipIcon(d.relationshipToYou) === "smallCircle";
+        return `translate(12,${isSmallCircle ? "7" : "12"}) scale(${isSmallCircle ? "1.6" : "0.8"})`;
       })
-      .attr("fill", d => getNodeColor(d)) // Use organization's brand color for the icon
+      .attr("fill", (d) => getNodeColor(d)) // Use organization's brand color
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.5)
+      .style("cursor", "pointer")
       .on("click", (_event, d) => onNodeSelect(d));
 
     // Add labels
-    nodeGroup.append("text")
-      .text(d => d.name)
+    nodeGroup
+      .append("text")
+      .text((d) => d.name)
       .attr("font-size", "12px")
       .attr("dx", 12)
       .attr("dy", 4)
@@ -180,12 +200,12 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
     // Update positions on each tick
     simulation.on("tick", () => {
       link
-        .attr("x1", d => (d.source as any).x)
-        .attr("y1", d => (d.source as any).y)
-        .attr("x2", d => (d.target as any).x)
-        .attr("y2", d => (d.target as any).y);
+        .attr("x1", (d) => (d.source as any).x)
+        .attr("y1", (d) => (d.source as any).y)
+        .attr("x2", (d) => (d.target as any).x)
+        .attr("y2", (d) => (d.target as any).y);
 
-      nodeGroup.attr("transform", d => `translate(${(d as any).x - 12},${(d as any).y - 12})`);
+      nodeGroup.attr("transform", (d) => `translate(${(d as any).x - 12},${(d as any).y - 12})`);
     });
 
     return () => {
@@ -195,11 +215,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
 
   return (
     <Card className="h-full w-full">
-      <svg
-        ref={svgRef}
-        className="w-full h-full min-h-[600px]"
-        style={{ background: 'white' }}
-      />
+      <svg ref={svgRef} className="w-full h-full min-h-[600px]" style={{ background: "white" }} />
     </Card>
   );
 }
