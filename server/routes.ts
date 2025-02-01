@@ -263,5 +263,88 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add organization routes
+  app.get("/api/organizations", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+
+    const { graphId } = req.query;
+    if (!graphId) {
+      return res.status(400).json({ error: "Graph ID is required" });
+    }
+
+    try {
+      const allOrganizations = await db
+        .select()
+        .from(organizations)
+        .where(eq(organizations.graphId, Number(graphId)));
+      res.json(allOrganizations);
+    } catch (error) {
+      console.error("Error fetching organizations:", error);
+      res.status(500).json({ error: "Failed to fetch organizations" });
+    }
+  });
+
+  app.post("/api/organizations", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+
+    try {
+      const [organization] = await db
+        .insert(organizations)
+        .values({
+          name: req.body.name,
+          graphId: req.body.graphId,
+          industry: req.body.industry || null,
+          hqCity: req.body.hqCity || null,
+          brandColor: req.body.brandColor || "#000000",
+          accentColor: req.body.accentColor || "#000000",
+          website: req.body.website || null,
+          headcount: req.body.headcount || null,
+          turnover: req.body.turnover || null,
+        })
+        .returning();
+
+      res.json(organization);
+    } catch (error) {
+      console.error("Error creating organization:", error);
+      res.status(500).json({ error: "Failed to create organization" });
+    }
+  });
+
+  app.put("/api/organizations/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+
+    try {
+      const [organization] = await db
+        .update(organizations)
+        .set({
+          name: req.body.name,
+          industry: req.body.industry || null,
+          hqCity: req.body.hqCity || null,
+          brandColor: req.body.brandColor || "#000000",
+          accentColor: req.body.accentColor || "#000000",
+          website: req.body.website || null,
+          headcount: req.body.headcount || null,
+          turnover: req.body.turnover || null,
+        })
+        .where(eq(organizations.id, parseInt(req.params.id)))
+        .returning();
+
+      if (!organization) {
+        return res.status(404).json({ error: "Organization not found" });
+      }
+
+      res.json(organization);
+    } catch (error) {
+      console.error("Error updating organization:", error);
+      res.status(500).json({ error: "Failed to update organization" });
+    }
+  });
+
   return httpServer;
 }
