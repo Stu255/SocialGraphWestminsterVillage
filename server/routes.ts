@@ -91,9 +91,11 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
+      const now = new Date();
       const graphData = {
         name: req.body.name,
         userId: req.user.id,
+        modifiedAt: now,
       };
 
       const result = insertSocialGraphSchema.safeParse(graphData);
@@ -405,6 +407,7 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
+      const now = new Date();
       // Get the original graph
       const [originalGraph] = await db
         .select()
@@ -415,11 +418,6 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "Graph not found" });
       }
 
-      // Update original graph's modified time
-      await db
-        .update(socialGraphs)
-        .set({ modifiedAt: new Date() })
-        .where(eq(socialGraphs.id, originalGraph.id));
 
       // Create new graph with copied name and current timestamp
       const [newGraph] = await db
@@ -427,7 +425,7 @@ export function registerRoutes(app: Express): Server {
         .values({
           name: `${originalGraph.name} (Copy)`,
           userId: req.user.id,
-          modifiedAt: new Date()
+          modifiedAt: now,
         })
         .returning();
 

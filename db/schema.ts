@@ -16,6 +16,8 @@ export const socialGraphs = pgTable("social_graphs", {
   name: text("name").notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  modifiedAt: timestamp("modified_at").defaultNow().notNull(),
+  deleteAt: timestamp("delete_at"),
 });
 
 // Core People table with all the fields from FieldSettingsDialog

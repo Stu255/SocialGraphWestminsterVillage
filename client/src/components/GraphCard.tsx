@@ -128,9 +128,9 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     if (
-      !target.closest('button') && 
-      !target.closest('input') && 
-      !isEditing && 
+      !target.closest('button') &&
+      !target.closest('input') &&
+      !isEditing &&
       onClick
     ) {
       onClick();
@@ -138,10 +138,20 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
   };
 
   const formatModifiedDate = (date: string) => {
-    if (!date || date === 'null') return "Never";
+    if (!date) {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      return `${year}/${month}/${day} ${hours}:${minutes}`;
+    }
 
     const d = new Date(date);
-    if (isNaN(d.getTime())) return "Never";
+    if (isNaN(d.getTime())) {
+      return formatModifiedDate("");
+    }
 
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');

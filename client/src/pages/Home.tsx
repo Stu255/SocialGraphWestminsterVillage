@@ -11,6 +11,7 @@ interface Graph {
   id: number;
   name: string;
   createdAt: string;
+  modifiedAt: string;
   deleteAt: string | null;
 }
 
@@ -79,6 +80,7 @@ export default function Home() {
             id={graph.id}
             name={graph.name}
             createdAt={graph.createdAt}
+            modifiedAt={graph.modifiedAt}
             deleteAt={graph.deleteAt}
           />
         ))}
