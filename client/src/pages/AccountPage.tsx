@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,6 +35,17 @@ export default function AccountPage() {
       });
     }
   });
+
+  // Handle error state using useEffect
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Error",
+        description: (error as Error)?.message || "Failed to fetch graphs",
+        variant: "destructive",
+      });
+    }
+  }, [isError, error, toast]);
 
   const createGraphMutation = useMutation({
     mutationFn: async (name: string) => {
@@ -85,15 +96,6 @@ export default function AccountPage() {
       createGraphMutation.mutate(newGraphName.trim());
     }
   };
-
-  // Show error state if query failed
-  if (isError) {
-    toast({
-      title: "Error",
-      description: (error as Error)?.message || "Failed to fetch graphs",
-      variant: "destructive",
-    });
-  }
 
   return (
     <div className="min-h-screen w-full bg-background p-8">
