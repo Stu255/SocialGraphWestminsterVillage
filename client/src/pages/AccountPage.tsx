@@ -13,6 +13,7 @@ interface SocialGraph {
   name: string;
   userId: number;
   createdAt: string;
+  deleteAt: string | null;
 }
 
 export default function AccountPage() {
@@ -113,6 +114,11 @@ export default function AccountPage() {
                     <p className="text-sm text-muted-foreground">
                       Created {new Date(graph.createdAt).toLocaleDateString()}
                     </p>
+                    {graph.deleteAt && (
+                      <p className="text-sm text-red-500 mt-1">
+                        Deleting in {new Date(graph.deleteAt).toLocaleDateString()}
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               ))}

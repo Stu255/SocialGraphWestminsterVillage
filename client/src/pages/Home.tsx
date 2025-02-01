@@ -7,12 +7,19 @@ import { GraphCard } from "@/components/GraphCard";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
+interface Graph {
+  id: number;
+  name: string;
+  createdAt: string;
+  deleteAt: string | null;
+}
+
 export default function Home() {
   const [newGraphName, setNewGraphName] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: graphs = [] } = useQuery({
+  const { data: graphs = [] } = useQuery<Graph[]>({
     queryKey: ["/api/graphs"],
     queryFn: async () => {
       const res = await fetch("/api/graphs");
@@ -66,12 +73,13 @@ export default function Home() {
       </form>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {graphs.map((graph: any) => (
+        {graphs.map((graph) => (
           <GraphCard
             key={graph.id}
             id={graph.id}
             name={graph.name}
             createdAt={graph.createdAt}
+            deleteAt={graph.deleteAt}
           />
         ))}
       </div>

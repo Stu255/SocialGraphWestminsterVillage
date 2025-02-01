@@ -3,16 +3,41 @@ import { Button } from "@/components/ui/button";
 import { Copy, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
 
 interface GraphCardProps {
   id: number;
   name: string;
   createdAt: string;
+  deleteAt?: string | null;
 }
 
-export function GraphCard({ id, name, createdAt }: GraphCardProps) {
+export function GraphCard({ id, name, createdAt, deleteAt }: GraphCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
+  const [newName, setNewName] = useState(name);
+
+  const renameGraphMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/graphs/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName }),
+      });
+      if (!res.ok) throw new Error("Failed to rename network");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
+      setIsEditing(false);
+      toast({
+        title: "Success",
+        description: "Network renamed successfully",
+      });
+    },
+  });
 
   const duplicateGraphMutation = useMutation({
     mutationFn: async () => {
@@ -51,17 +76,82 @@ export function GraphCard({ id, name, createdAt }: GraphCardProps) {
     },
   });
 
+  const cancelDeleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/graphs/${id}/delete-timer`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error("Failed to cancel delete timer");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
+      toast({
+        title: "Delete Cancelled",
+        description: "Network delete timer has been cancelled",
+      });
+    },
+  });
+
+  const handleRename = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newName.trim() && newName !== name) {
+      renameGraphMutation.mutate();
+    } else {
+      setIsEditing(false);
+    }
+  };
+
+  const getTimeRemaining = () => {
+    if (!deleteAt) return null;
+    const remaining = new Date(deleteAt).getTime() - Date.now();
+    if (remaining <= 0) return "Deleting soon...";
+    const hours = Math.floor(remaining / (1000 * 60 * 60));
+    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
+  };
+
+  const timeRemaining = deleteAt ? getTimeRemaining() : null;
+
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-medium">{name}</h3>
-          <p className="text-sm text-muted-foreground">
-            Created {new Date(createdAt).toLocaleDateString()}
-          </p>
+          {isEditing ? (
+            <form onSubmit={handleRename} className="flex items-center gap-2">
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="h-8"
+                autoFocus
+                onBlur={() => setIsEditing(false)}
+              />
+            </form>
+          ) : (
+            <>
+              <h3 className="font-medium">{name}</h3>
+              <p className="text-sm text-muted-foreground">
+                Created {new Date(createdAt).toLocaleDateString()}
+              </p>
+              {timeRemaining && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-1 h-6 text-xs text-red-500 hover:text-red-600"
+                  onClick={() => cancelDeleteMutation.mutate()}
+                >
+                  Delete in {timeRemaining} (click to cancel)
+                </Button>
+              )}
+            </>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsEditing(true)}
+          >
             <Pencil className="h-4 w-4" />
           </Button>
           <Button 
@@ -75,6 +165,7 @@ export function GraphCard({ id, name, createdAt }: GraphCardProps) {
             variant="ghost" 
             size="icon"
             onClick={() => startDeleteTimerMutation.mutate()}
+            disabled={!!deleteAt}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
