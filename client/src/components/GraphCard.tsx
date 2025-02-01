@@ -5,7 +5,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { useLocation } from "wouter";
 
 interface GraphCardProps {
   id: number;
@@ -40,6 +39,15 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
         description: "Network renamed successfully",
       });
     },
+    onError: () => {
+      setNewName(name);
+      setIsEditing(false);
+      toast({
+        title: "Error",
+        description: "Failed to rename network",
+        variant: "destructive",
+      });
+    }
   });
 
   const updateModifiedAtMutation = useMutation({
@@ -109,7 +117,7 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
     },
   });
 
-  const handleRename = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (newName.trim() && newName !== name) {
       renameGraphMutation.mutate();
@@ -128,8 +136,6 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
     const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
     return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
-
-  const timeRemaining = deleteAt ? getTimeRemaining() : null;
 
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -157,6 +163,8 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
     return `${year}/${month}/${day} ${hours}:${minutes}`;
   };
 
+  const timeRemaining = deleteAt ? getTimeRemaining() : null;
+
   return (
     <Card 
       className="p-4 hover:bg-secondary/50 transition-colors cursor-pointer"
@@ -165,17 +173,14 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">
           {isEditing ? (
-            <form onSubmit={handleRename} className="flex items-center gap-2">
+            <form onSubmit={handleSubmit}>
               <Input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 className="h-8"
                 autoFocus
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleRename(e);
-                  } else if (e.key === 'Escape') {
+                  if (e.key === 'Escape') {
                     setIsEditing(false);
                     setNewName(name);
                   }
@@ -213,7 +218,7 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
             onClick={(e) => {
               e.stopPropagation();
               if (isEditing) {
-                handleRename(e);
+                handleSubmit(e);
               } else {
                 setIsEditing(true);
               }
