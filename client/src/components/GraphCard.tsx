@@ -5,6 +5,17 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface GraphCardProps {
   id: number;
@@ -174,19 +185,31 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
           >
             <Copy className="h-4 w-4" />
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (window.confirm('Are you sure you want to delete this network? This action will start a 48-hour deletion timer.')) {
-                startDeletionMutation.mutate();
-              }
-            }}
-            disabled={!!deleteAt}
-          >
-            <Trash2 className={`h-4 w-4 ${deleteAt ? 'text-red-500' : ''}`} />
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                disabled={!!deleteAt}
+              >
+                <Trash2 className={`h-4 w-4 ${deleteAt ? 'text-red-500' : ''}`} />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Network</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this network? This action will start a 48-hour deletion timer.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => startDeletionMutation.mutate()}>
+                  Start Deletion Timer
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
       {deleteAt && (
