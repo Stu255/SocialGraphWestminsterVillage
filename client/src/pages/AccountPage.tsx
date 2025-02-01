@@ -36,30 +36,6 @@ export default function AccountPage() {
     }
   });
 
-  // Test deletion mutation
-  const testDeleteMutation = useMutation({
-    mutationFn: async () => {
-      const lastGraph = graphs[graphs.length - 1];
-      if (!lastGraph) return null;
-
-      const res = await fetch(`/api/graphs/${lastGraph.id}/delete`, {
-        method: 'POST',
-      });
-      if (!res.ok) throw new Error("Failed to start deletion timer");
-      const data = await res.json();
-      console.log("Delete response:", data); // Debug log
-      return data;
-    },
-    onSuccess: (data) => {
-      console.log("Delete mutation succeeded:", data); // Additional debug log
-      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
-      toast({
-        title: "Test Delete Started",
-        description: "Deletion timer started. The graph will be deleted in 48 hours.",
-      });
-    },
-  });
-
   const createGraphMutation = useMutation({
     mutationFn: async (name: string) => {
       const res = await fetch("/api/graphs", {
@@ -150,17 +126,6 @@ export default function AccountPage() {
                   onClick={() => setLocation(`/graph/${graph.id}`)}
                 />
               ))}
-            </div>
-
-            {/* Test button for deletion */}
-            <div className="mt-4 pt-4 border-t">
-              <Button 
-                variant="outline" 
-                onClick={() => testDeleteMutation.mutate()}
-                className="w-full"
-              >
-                Test Delete Timer on Last Graph
-              </Button>
             </div>
           </CardContent>
         </Card>

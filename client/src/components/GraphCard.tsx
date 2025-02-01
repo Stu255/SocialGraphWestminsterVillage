@@ -95,7 +95,7 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (displayName.trim()) {
       setIsEditing(false);
@@ -123,19 +123,13 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
     const d = new Date(date);
     if (isNaN(d.getTime())) return "Never";
 
-    const now = new Date();
-    const diffMinutes = Math.floor((now.getTime() - d.getTime()) / (1000 * 60));
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
 
-    if (diffMinutes < 1) return "Just now";
-    if (diffMinutes < 60) return `${diffMinutes} minutes ago`;
-
-    const hours = Math.floor(diffMinutes / 60);
-    if (hours < 24) return `${hours} hours ago`;
-
-    const days = Math.floor(hours / 24);
-    if (days < 7) return `${days} days ago`;
-
-    return d.toLocaleDateString();
+    return `${year}/${month}/${day} ${hours}:${minutes}`;
   };
 
   return (
@@ -217,7 +211,7 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
           </AlertDialog>
         </div>
       </div>
-      {deleteAt && (
+      {deleteAt && timeRemaining && (
         <div className="mt-2 text-sm font-medium text-red-500 text-center">
           Time until deletion: {timeRemaining}
         </div>
