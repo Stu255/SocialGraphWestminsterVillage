@@ -21,6 +21,19 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const updateModifiedAtMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/graphs/${id}/touch`, {
+        method: 'POST',
+      });
+      if (!res.ok) throw new Error("Failed to update last modified time");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
+    },
+  });
+
   const duplicateGraphMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch(`/api/graphs/${id}/duplicate`, {
@@ -42,6 +55,7 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
     e.preventDefault();
     if (displayName.trim()) {
       setIsEditing(false);
+      updateModifiedAtMutation.mutate();
     } else {
       setDisplayName(name);
       setIsEditing(false);
@@ -56,6 +70,7 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
       !isEditing && 
       onClick
     ) {
+      updateModifiedAtMutation.mutate();
       onClick();
     }
   };
@@ -63,10 +78,14 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
   const formatModifiedDate = (date: string) => {
     const d = new Date(date);
     if (isNaN(d.getTime())) return "Never";
+
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-    return `${year}/${month}/${day}`;
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+
+    return `${year}/${month}/${day} ${hours}:${minutes}`;
   };
 
   return (
@@ -113,6 +132,7 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
             onClick={(e) => {
               e.stopPropagation();
               setIsEditing(true);
+              updateModifiedAtMutation.mutate();
             }}
           >
             <Pencil className="h-4 w-4" />

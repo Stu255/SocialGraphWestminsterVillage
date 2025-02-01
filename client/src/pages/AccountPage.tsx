@@ -29,7 +29,9 @@ export default function AccountPage() {
     queryKey: ["/api/graphs"],
     select: (data) => {
       return [...data].sort((a, b) => {
-        return new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime();
+        const dateA = new Date(a.modifiedAt).getTime();
+        const dateB = new Date(b.modifiedAt).getTime();
+        return dateB - dateA;
       });
     }
   });
