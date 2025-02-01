@@ -248,13 +248,15 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
           })
       );
 
-    // Add relationship icons with organization colors
+    // Add relationship icons centered at node position
     nodeGroup
       .append("path")
       .attr("d", d => RELATIONSHIP_ICONS[getRelationshipIcon(d.relationshipToYou)])
       .attr("transform", d => {
         const isSmallCircle = getRelationshipIcon(d.relationshipToYou) === "smallCircle";
-        return `translate(12,${isSmallCircle ? "7" : "12"}) scale(${isSmallCircle ? "1.6" : "0.8"})`;
+        const scale = isSmallCircle ? 1.6 : 0.8;
+        // Center the icon by translating it by half its size
+        return `translate(${-10 * scale}, ${-10 * scale}) scale(${scale})`;
       })
       .attr("fill", d => getNodeColor(d))
       .attr("stroke", "#fff")
@@ -267,20 +269,21 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       .append("text")
       .text(d => d.name)
       .attr("font-size", "12px")
-      .attr("dx", 12)
+      .attr("dx", 15) // Offset label to the right of the icon
       .attr("dy", 4)
       .attr("fill", "#333");
 
     // Update positions on each tick
     simulation.on("tick", () => {
-       // Update all lines (both single and double strokes)
+      // Update all lines (both single and double strokes)
       linkGroup.selectAll("line")
         .attr("x1", d => (d.source as any).x)
         .attr("y1", d => (d.source as any).y)
         .attr("x2", d => (d.target as any).x)
         .attr("y2", d => (d.target as any).y);
 
-      nodeGroup.attr("transform", d => `translate(${(d as any).x - 12},${(d as any).y - 12})`);
+      // Update node positions without offset
+      nodeGroup.attr("transform", d => `translate(${(d as any).x},${(d as any).y})`);
     });
 
     return () => {
