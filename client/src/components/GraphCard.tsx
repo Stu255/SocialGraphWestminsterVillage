@@ -124,7 +124,7 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
 
   return (
     <Card 
-      className="p-4 hover:bg-secondary/50 transition-colors cursor-pointer"
+      className={`p-4 hover:bg-secondary/50 transition-colors cursor-pointer ${deleteAt ? 'bg-red-50 hover:bg-red-100' : ''}`}
       onClick={handleCardClick}
     >
       <div className="flex items-center justify-between">
@@ -136,12 +136,6 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
                 onChange={(e) => setDisplayName(e.target.value)}
                 className="h-8"
                 autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') {
-                    setIsEditing(false);
-                    setDisplayName(name);
-                  }
-                }}
                 onBlur={() => {
                   if (displayName.trim() === '') {
                     setDisplayName(name);
@@ -151,7 +145,7 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
               />
             </form>
           ) : (
-            <div>
+            <div className={`${deleteAt ? 'text-red-600' : ''}`}>
               <h3 className="font-medium truncate">{displayName}</h3>
               <p className="text-sm text-muted-foreground">
                 Modified {formatModifiedDate(initialModifiedAt)}
@@ -191,12 +185,12 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
             }}
             disabled={!!deleteAt}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className={`h-4 w-4 ${deleteAt ? 'text-red-500' : ''}`} />
           </Button>
         </div>
       </div>
       {deleteAt && (
-        <div className="mt-2 text-sm text-red-500 text-center">
+        <div className="mt-2 text-sm font-medium text-red-500 text-center">
           Time until deletion: {timeRemaining}
         </div>
       )}
