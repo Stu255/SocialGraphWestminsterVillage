@@ -21,7 +21,6 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(name);
-  const [, setLocation] = useLocation();
 
   const renameGraphMutation = useMutation({
     mutationFn: async () => {
@@ -40,6 +39,19 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
         title: "Success",
         description: "Network renamed successfully",
       });
+    },
+  });
+
+  const updateModifiedAtMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/graphs/${id}/touch`, {
+        method: 'POST',
+      });
+      if (!res.ok) throw new Error("Failed to update last modified time");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
     },
   });
 
@@ -127,8 +139,22 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
       !isEditing && 
       onClick
     ) {
+      updateModifiedAtMutation.mutate();
       onClick();
     }
+  };
+
+  const formatModifiedDate = (date: string) => {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return "Never";
+
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+
+    return `${year}/${month}/${day} ${hours}:${minutes}`;
   };
 
   return (
@@ -161,7 +187,7 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
               <div>
                 <h3 className="font-medium truncate">{name}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Modified {new Date(modifiedAt).toLocaleDateString()}
+                  Modified {formatModifiedDate(modifiedAt)}
                 </p>
               </div>
               {timeRemaining && (
