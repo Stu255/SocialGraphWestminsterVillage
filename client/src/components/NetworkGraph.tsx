@@ -32,30 +32,26 @@ interface Props {
   graphId: number;
 }
 
-// SVG paths for relationship icons
 const RELATIONSHIP_ICONS = {
   shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
   star: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
-  doubleRing: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z", // Solid circle for Close
-  circle: "M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z",     // Complete circle for Connected
-  smallCircle: "M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16z" // Hollow circle for Acquainted
+  circle: "M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z"
 };
 
-// Map relationship IDs to icon types
 const getRelationshipIcon = (relationshipId: number | undefined) => {
   switch (relationshipId) {
     case 5:
-      return "shield"; // Allied
+      return { path: "shield", fill: true, strokeDasharray: "none" };
     case 4:
-      return "star";   // Trusted
+      return { path: "star", fill: true, strokeDasharray: "none" };
     case 3:
-      return "doubleRing"; // Close - solid circle
+      return { path: "circle", fill: true, strokeDasharray: "none" };
     case 2:
-      return "circle";     // Connected - complete circle
+      return { path: "circle", fill: false, strokeDasharray: "none" };
     case 1:
-      return "smallCircle"; // Acquainted - hollow circle
+      return { path: "circle", fill: false, strokeDasharray: "2,2" };
     default:
-      return "smallCircle";
+      return { path: "circle", fill: false, strokeDasharray: "2,2" };
   }
 };
 
@@ -66,32 +62,32 @@ const getRelationshipLineStyle = (relationshipType: string) => {
         strokeWidth: 4, 
         strokeDasharray: "none",
         doubleStroke: false 
-      }; // Heavy line
+      };
     case "Trusted":
       return { 
         strokeWidth: 2, 
         strokeDasharray: "none",
         doubleStroke: true,
         doubleStrokeGap: 4
-      }; // Double line with increased gap
+      };
     case "Close":
       return { 
         strokeWidth: 2, 
         strokeDasharray: "none",
         doubleStroke: false 
-      }; // Standard line
+      };
     case "Connected":
       return { 
         strokeWidth: 1, 
         strokeDasharray: "none",
         doubleStroke: false 
-      }; // Thin line
+      };
     case "Acquainted":
       return { 
         strokeWidth: 1, 
         strokeDasharray: "4,4",
         doubleStroke: false 
-      }; // Thin dashed line
+      };
     default:
       return { 
         strokeWidth: 1, 
@@ -104,13 +100,11 @@ const getRelationshipLineStyle = (relationshipType: string) => {
 export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // Fetch organizations data to get brand colors
   const { data: organizations = [] } = useQuery<Organization[]>({
     queryKey: ["/api/organizations", graphId],
     enabled: !!graphId,
   });
 
-  // Create a map of organization colors
   const organizationColors = new Map(
     organizations.map(org => [org.name, org.brandColor])
   );
@@ -126,23 +120,20 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
     if (source.organization && target.organization && source.organization === target.organization) {
       return getNodeColor(source);
     }
-    return "#999"; // Gray for inter-organization connections
+    return "#999";
   };
 
   useEffect(() => {
     if (!svgRef.current || !nodes.length) return;
 
-    // Clear existing SVG
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
     const width = svgRef.current.clientWidth;
     const height = svgRef.current.clientHeight;
 
-    // Create container group
     const g = svg.append("g");
 
-    // Setup zoom behavior
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 4])
       .on("zoom", (event) => {
@@ -151,19 +142,15 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
 
     svg.call(zoom);
 
-    // Filter nodes based on filters
     const filteredNodes = nodes.filter((node) => {
       if (filters.affiliation && node.affiliation !== filters.affiliation) return false;
       return true;
     });
 
-    // Deduplicate links (only keep one direction for each relationship)
     const uniqueLinks = links.filter((link) => {
-      // Only keep links where sourcePersonId < targetPersonId to ensure uniqueness
       return link.sourcePersonId < link.targetPersonId;
     });
 
-    // Transform links data for D3
     const filteredLinks = uniqueLinks
       .filter((link) => {
         if (filters.relationshipType && link.relationshipType !== filters.relationshipType) return false;
@@ -177,7 +164,6 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
         type: link.relationshipType,
       }));
 
-    // Create force simulation
     const simulation = d3
       .forceSimulation(filteredNodes)
       .force(
@@ -191,15 +177,12 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collision", d3.forceCollide().radius(30));
 
-       // Create container for links
     const linkGroup = g.append("g").attr("class", "links");
 
-    // Draw links with proper styles
     filteredLinks.forEach(d => {
       const style = getRelationshipLineStyle(d.type);
 
       if (style.doubleStroke) {
-        // For double stroke (Trusted relationship), create two parallel lines
         [-style.doubleStrokeGap/2, style.doubleStrokeGap/2].forEach(offset => {
           linkGroup
             .append("line")
@@ -211,7 +194,6 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
             .attr("transform", `translate(0, ${offset})`);
         });
       } else {
-        // For single stroke relationships
         linkGroup
           .append("line")
           .datum(d)
@@ -222,7 +204,6 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       }
     });
 
-    // Create node group
     const nodeGroup = g
       .append("g")
       .attr("class", "nodes")
@@ -248,41 +229,32 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
           })
       );
 
-    // Add relationship icons centered at node position
     nodeGroup
       .append("path")
-      .attr("d", d => RELATIONSHIP_ICONS[getRelationshipIcon(d.relationshipToYou)])
-      .attr("transform", d => {
-        const isSmallCircle = getRelationshipIcon(d.relationshipToYou) === "smallCircle";
-        const scale = isSmallCircle ? 1.6 : 0.8;
-        // Center the icon by translating it by half its size
-        return `translate(${-10 * scale}, ${-10 * scale}) scale(${scale})`;
-      })
-      .attr("fill", d => getNodeColor(d))
-      .attr("stroke", "#fff")
+      .attr("d", d => RELATIONSHIP_ICONS[getRelationshipIcon(d.relationshipToYou).path])
+      .attr("transform", "translate(-10, -10) scale(0.8)")
+      .attr("fill", d => getRelationshipIcon(d.relationshipToYou).fill ? getNodeColor(d) : "white")
+      .attr("stroke", d => getNodeColor(d))
       .attr("stroke-width", 1.5)
+      .attr("stroke-dasharray", d => getRelationshipIcon(d.relationshipToYou).strokeDasharray)
       .style("cursor", "pointer")
       .on("click", (_event, d) => onNodeSelect(d));
 
-    // Add labels
     nodeGroup
       .append("text")
       .text(d => d.name)
       .attr("font-size", "12px")
-      .attr("dx", 15) // Offset label to the right of the icon
+      .attr("dx", 15)
       .attr("dy", 4)
       .attr("fill", "#333");
 
-    // Update positions on each tick
     simulation.on("tick", () => {
-      // Update all lines (both single and double strokes)
       linkGroup.selectAll("line")
         .attr("x1", d => (d.source as any).x)
         .attr("y1", d => (d.source as any).y)
         .attr("x2", d => (d.target as any).x)
         .attr("y2", d => (d.target as any).y);
 
-      // Update node positions without offset
       nodeGroup.attr("transform", d => `translate(${(d as any).x},${(d as any).y})`);
     });
 
