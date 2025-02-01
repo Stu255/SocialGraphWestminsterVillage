@@ -63,17 +63,42 @@ const getRelationshipIcon = (relationshipId: number | undefined) => {
 const getRelationshipLineStyle = (relationshipType: string) => {
   switch (relationshipType) {
     case "Allied":
-      return { strokeWidth: 4, strokeDasharray: "none" }; // Heavy line
+      return { 
+        strokeWidth: 4, 
+        strokeDasharray: "none",
+        doubleStroke: false 
+      }; // Heavy line
     case "Trusted":
-      return { strokeWidth: 3, strokeDasharray: "none" }; // Double line
+      return { 
+        strokeWidth: 2, 
+        strokeDasharray: "none",
+        doubleStroke: true,
+        doubleStrokeGap: 2
+      }; // Double line
     case "Close":
-      return { strokeWidth: 2, strokeDasharray: "none" }; // Standard line
+      return { 
+        strokeWidth: 2, 
+        strokeDasharray: "none",
+        doubleStroke: false 
+      }; // Standard line
     case "Connected":
-      return { strokeWidth: 1, strokeDasharray: "none" }; // Thin line
+      return { 
+        strokeWidth: 1, 
+        strokeDasharray: "none",
+        doubleStroke: false 
+      }; // Thin line
     case "Acquainted":
-      return { strokeWidth: 1, strokeDasharray: "4,4" }; // Thin dashed line
+      return { 
+        strokeWidth: 1, 
+        strokeDasharray: "4,4",
+        doubleStroke: false 
+      }; // Thin dashed line
     default:
-      return { strokeWidth: 1, strokeDasharray: "none" };
+      return { 
+        strokeWidth: 1, 
+        strokeDasharray: "none",
+        doubleStroke: false 
+      };
   }
 };
 
@@ -167,21 +192,36 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collision", d3.forceCollide().radius(30));
 
-    // Draw links
-    const link = g
-      .append("g")
-      .attr("class", "links")
-      .selectAll("line")
-      .data(filteredLinks)
-      .join("line")
-      .attr("stroke", d => getEdgeColor(d.source, d.target))
-      .attr("stroke-opacity", 0.6)
-      .each(function(d: any) {
-        const style = getRelationshipLineStyle(d.type);
-        d3.select(this)
+       // Create container for links
+    const linkGroup = g.append("g").attr("class", "links");
+
+    // Draw links with proper styles
+    filteredLinks.forEach(d => {
+      const style = getRelationshipLineStyle(d.type);
+
+      if (style.doubleStroke) {
+        // For double stroke (Trusted relationship), create two parallel lines
+        [-style.doubleStrokeGap/2, style.doubleStrokeGap/2].forEach(offset => {
+          linkGroup
+            .append("line")
+            .datum(d)
+            .attr("stroke", getEdgeColor(d.source, d.target))
+            .attr("stroke-opacity", 0.6)
+            .attr("stroke-width", style.strokeWidth)
+            .attr("stroke-dasharray", style.strokeDasharray)
+            .attr("transform", `translate(0, ${offset})`);
+        });
+      } else {
+        // For single stroke relationships
+        linkGroup
+          .append("line")
+          .datum(d)
+          .attr("stroke", getEdgeColor(d.source, d.target))
+          .attr("stroke-opacity", 0.6)
           .attr("stroke-width", style.strokeWidth)
           .attr("stroke-dasharray", style.strokeDasharray);
-      });
+      }
+    });
 
     // Create node group
     const nodeGroup = g
@@ -234,7 +274,8 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
 
     // Update positions on each tick
     simulation.on("tick", () => {
-      link
+       // Update all lines (both single and double strokes)
+      linkGroup.selectAll("line")
         .attr("x1", d => (d.source as any).x)
         .attr("y1", d => (d.source as any).y)
         .attr("x2", d => (d.target as any).x)
