@@ -19,22 +19,6 @@ export function GraphCard({ id, name, createdAt }: GraphCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Format countdown timer
-  const formatCountdown = (endTime: string) => {
-    const end = new Date(endTime).getTime();
-    const now = new Date().getTime();
-    const diff = end - now;
-    
-    if (diff <= 0) return "00:00:00";
-    
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  // Mutations
   const renameGraphMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch(`/api/graphs/${id}`, {
@@ -112,67 +96,78 @@ export function GraphCard({ id, name, createdAt }: GraphCardProps) {
   });
 
   return (
-    <Card className="p-4 space-y-2">
+    <Card className="p-4 hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between">
-        {isRenaming ? (
-          <div className="flex gap-2 flex-1">
-            <Input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className="flex-1"
-            />
+        <div className="flex-1">
+          <h3 className="font-medium">{name}</h3>
+          <p className="text-sm text-muted-foreground">
+            Created {new Date(createdAt).toLocaleDateString()}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsRenaming(true)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => duplicateGraphMutation.mutate()}
+          >
+            <Copy className="h-4 w-4" />
+          </Button>
+          {deleteTimer ? (
             <Button
-              onClick={() => renameGraphMutation.mutate()}
-              disabled={!newName.trim() || newName === name}
+              variant="ghost"
+              size="sm"
+              onClick={() => cancelDeleteTimerMutation.mutate()}
+              className="text-red-500"
             >
-              Save
+              {formatCountdown(deleteTimer)}
             </Button>
-          </div>
-        ) : (
-          <>
-            <div className="flex-1">
-              <h3 className="font-medium">{name}</h3>
-              <p className="text-sm text-muted-foreground">
-                Created {new Date(createdAt).toLocaleDateString()}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsRenaming(true)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => duplicateGraphMutation.mutate()}
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-              {deleteTimer ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => cancelDeleteTimerMutation.mutate()}
-                  className="text-red-500"
-                >
-                  {formatCountdown(deleteTimer)}
-                </Button>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => startDeleteTimerMutation.mutate()}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </>
-        )}
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => startDeleteTimerMutation.mutate()}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
+      {isRenaming && (
+        <div className="mt-2 flex gap-2">
+          <Input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            className="flex-1"
+          />
+          <Button
+            onClick={() => renameGraphMutation.mutate()}
+            disabled={!newName.trim() || newName === name}
+          >
+            Save
+          </Button>
+        </div>
+      )}
     </Card>
   );
+}
+
+function formatCountdown(endTime: string): string {
+  const end = new Date(endTime).getTime();
+  const now = new Date().getTime();
+  const diff = end - now;
+
+  if (diff <= 0) return "00:00:00";
+
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }

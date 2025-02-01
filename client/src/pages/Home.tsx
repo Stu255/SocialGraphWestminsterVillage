@@ -49,9 +49,7 @@ export default function Home() {
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
-      <h1 className="text-4xl font-bold mb-8">
-        Your Social Graphs
-      </h1>
+      <h1 className="text-4xl font-bold mb-8">Your Social Graphs</h1>
 
       <form onSubmit={handleCreateGraph} className="mb-8">
         <div className="flex gap-2">
@@ -67,7 +65,7 @@ export default function Home() {
         </div>
       </form>
 
-      <div className="grid gap-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {graphs.map((graph: any) => (
           <GraphCard
             key={graph.id}
