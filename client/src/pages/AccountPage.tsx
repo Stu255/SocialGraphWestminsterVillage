@@ -51,14 +51,15 @@ export default function AccountPage() {
       return data;
     },
     onSuccess: (data) => {
+      console.log("Delete mutation succeeded:", data); // Additional debug log
       queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
       toast({
         title: "Test Delete Started",
-        description: `Response: ${JSON.stringify(data)}`,
+        description: "Deletion timer started. The graph will be deleted in 48 hours.",
       });
     },
   });
-  
+
   const createGraphMutation = useMutation({
     mutationFn: async (name: string) => {
       const res = await fetch("/api/graphs", {
@@ -104,6 +105,9 @@ export default function AccountPage() {
       createGraphMutation.mutate(newGraphName.trim());
     }
   };
+
+  // Debug log to track graphs data
+  console.log("Current graphs data:", graphs);
 
   return (
     <div className="min-h-screen w-full bg-background p-8">
