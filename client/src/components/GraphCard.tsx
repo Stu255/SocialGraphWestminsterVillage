@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Pencil, Trash2 } from "lucide-react";
+import { Copy, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -33,9 +33,18 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Check if deleteAt is within 48 hours
+  const isInDeleteWindow = () => {
+    if (!deleteAt) return false;
+    const deleteTime = new Date(deleteAt).getTime();
+    const now = new Date().getTime();
+    const millisecondsIn48Hours = 48 * 60 * 60 * 1000;
+    return deleteTime - now <= millisecondsIn48Hours;
+  };
+
   // Calculate and update countdown timer
   useEffect(() => {
-    if (!deleteAt) return;
+    if (!deleteAt || !isInDeleteWindow()) return;
 
     const updateTimer = () => {
       const now = new Date().getTime();
@@ -74,6 +83,23 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
       toast({
         title: "Deletion Timer Started",
         description: "The graph will be deleted in 48 hours",
+      });
+    },
+  });
+
+  const cancelDeletionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/graphs/${id}/delete-timer`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error("Failed to cancel deletion");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
+      toast({
+        title: "Deletion Cancelled",
+        description: "The graph has been recovered",
       });
     },
   });
@@ -157,7 +183,7 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
 
   return (
     <Card 
-      className={`p-4 ${deleteAt ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-secondary/50'} transition-colors cursor-pointer`}
+      className={`p-4 ${isInDeleteWindow() ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-secondary/50'} transition-colors cursor-pointer`}
       onClick={handleCardClick}
     >
       <div className="flex items-center justify-between">
@@ -173,7 +199,7 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
               />
             </form>
           ) : (
-            <div className={deleteAt ? 'text-red-600' : ''}>
+            <div className={isInDeleteWindow() ? 'text-red-600' : ''}>
               <h3 className="font-medium truncate">{displayName}</h3>
               <p className="text-sm text-muted-foreground">
                 Modified {formatModifiedDate(initialModifiedAt)}
@@ -202,34 +228,43 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
           >
             <Copy className="h-4 w-4" />
           </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                disabled={!!deleteAt}
-              >
-                <Trash2 className={`h-4 w-4 ${deleteAt ? 'text-red-500' : ''}`} />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Network</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete this network? This action will start a 48-hour deletion timer.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => startDeletionMutation.mutate()}>
-                  Start Deletion Timer
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {isInDeleteWindow() ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                cancelDeletionMutation.mutate();
+              }}
+            >
+              <RotateCcw className="h-4 w-4 text-red-500" />
+            </Button>
+          ) : (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Network</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete this network? This action will start a 48-hour deletion timer.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => startDeletionMutation.mutate()}>
+                    Start Deletion Timer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </div>
-      {deleteAt && timeRemaining && (
+      {isInDeleteWindow() && timeRemaining && (
         <div className="mt-2 text-sm font-medium text-red-500 text-center">
           Time until deletion: {timeRemaining}
         </div>
