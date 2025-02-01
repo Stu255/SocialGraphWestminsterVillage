@@ -28,11 +28,20 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newName.trim() }),
       });
-      if (!res.ok) {
-        const error = await res.text();
-        throw new Error(error || "Failed to rename network");
+
+      let errorMessage = "Failed to rename network";
+
+      try {
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || errorMessage);
+        }
+        return data;
+      } catch (e) {
+        // If JSON parsing fails, try to get text content
+        const text = await res.text();
+        throw new Error(text || errorMessage);
       }
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
@@ -44,6 +53,8 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
     },
     onError: (error: Error) => {
       console.error("Rename error:", error);
+      setNewName(name); // Reset to original name
+      setIsEditing(false); // Exit edit mode
       toast({
         title: "Error",
         description: error.message || "Failed to rename network",
@@ -122,11 +133,7 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newName.trim() && newName.trim() !== name) {
-      try {
-        await renameGraphMutation.mutateAsync();
-      } catch {
-        setNewName(name);
-      }
+      await renameGraphMutation.mutateAsync();
     } else {
       setIsEditing(false);
       setNewName(name);
