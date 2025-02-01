@@ -29,18 +29,8 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
         body: JSON.stringify({ name: newName.trim() }),
       });
 
-      const contentType = res.headers.get("content-type");
       if (!res.ok) {
-        if (contentType && contentType.includes("application/json")) {
-          const data = await res.json();
-          throw new Error(data.message || "Failed to rename network");
-        } else {
-          throw new Error("Failed to rename network. Please try again.");
-        }
-      }
-
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Invalid server response");
+        throw new Error("Failed to save changes");
       }
 
       return res.json();
@@ -59,11 +49,21 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
       setIsEditing(false); // Exit edit mode
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to rename network. Please try again.",
         variant: "destructive",
       });
     },
   });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newName.trim() && newName.trim() !== name) {
+      await renameGraphMutation.mutateAsync();
+    } else {
+      setIsEditing(false);
+      setNewName(name);
+    }
+  };
 
   const updateModifiedAtMutation = useMutation({
     mutationFn: async () => {
@@ -131,16 +131,6 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
       });
     },
   });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newName.trim() && newName.trim() !== name) {
-      await renameGraphMutation.mutateAsync();
-    } else {
-      setIsEditing(false);
-      setNewName(name);
-    }
-  };
 
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
