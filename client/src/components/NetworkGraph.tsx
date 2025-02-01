@@ -32,26 +32,65 @@ interface Props {
   graphId: number;
 }
 
+// Base circle for all relationship types
+const CIRCLE_PATH = "M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z";
+// Chevron paths positioned relative to circle
+const CHEVRON_DOWN = "M4 12l8 8 8-8";
+const CHEVRON_UP = "M4 20l8-8 8 8";
+
 const RELATIONSHIP_ICONS = {
-  shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
-  star: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
-  circle: "M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z"
+  allied: {
+    path: `${CIRCLE_PATH} ${CHEVRON_DOWN} ${CHEVRON_UP}`,
+    viewBox: "0 0 24 32" // Extended viewBox to accommodate chevrons
+  },
+  trusted: {
+    path: `${CIRCLE_PATH} ${CHEVRON_DOWN}`,
+    viewBox: "0 0 24 28" // Extended viewBox to accommodate bottom chevron
+  },
+  circle: {
+    path: CIRCLE_PATH,
+    viewBox: "0 0 24 24"
+  }
 };
 
 const getRelationshipIcon = (relationshipId: number | undefined) => {
   switch (relationshipId) {
-    case 5:
-      return { path: "shield", fill: true, strokeDasharray: "none" };
-    case 4:
-      return { path: "star", fill: true, strokeDasharray: "none" };
-    case 3:
-      return { path: "circle", fill: true, strokeDasharray: "none" };
-    case 2:
-      return { path: "circle", fill: false, strokeDasharray: "none" };
-    case 1:
-      return { path: "circle", fill: false, strokeDasharray: "2,2" };
+    case 5: // Allied
+      return { 
+        ...RELATIONSHIP_ICONS.allied,
+        fill: true, 
+        strokeDasharray: "none" 
+      };
+    case 4: // Trusted
+      return { 
+        ...RELATIONSHIP_ICONS.trusted,
+        fill: true, 
+        strokeDasharray: "none" 
+      };
+    case 3: // Close
+      return { 
+        ...RELATIONSHIP_ICONS.circle,
+        fill: true, 
+        strokeDasharray: "none" 
+      };
+    case 2: // Connected
+      return { 
+        ...RELATIONSHIP_ICONS.circle,
+        fill: false, 
+        strokeDasharray: "none" 
+      };
+    case 1: // Acquainted
+      return { 
+        ...RELATIONSHIP_ICONS.circle,
+        fill: false, 
+        strokeDasharray: "2,2" 
+      };
     default:
-      return { path: "circle", fill: false, strokeDasharray: "2,2" };
+      return { 
+        ...RELATIONSHIP_ICONS.circle,
+        fill: false, 
+        strokeDasharray: "2,2" 
+      };
   }
 };
 
@@ -231,8 +270,15 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
 
     nodeGroup
       .append("path")
-      .attr("d", d => RELATIONSHIP_ICONS[getRelationshipIcon(d.relationshipToYou).path])
-      .attr("transform", "translate(-10, -10) scale(0.8)")
+      .attr("d", d => getRelationshipIcon(d.relationshipToYou).path)
+      .attr("viewBox", d => getRelationshipIcon(d.relationshipToYou).viewBox)
+      .attr("transform", d => {
+        const icon = getRelationshipIcon(d.relationshipToYou);
+        // Adjust vertical position based on icon type to center the main circle
+        const yOffset = icon.viewBox === "0 0 24 32" ? -14 : 
+                       icon.viewBox === "0 0 24 28" ? -12 : -10;
+        return `translate(-10, ${yOffset}) scale(0.8)`;
+      })
       .attr("fill", d => getRelationshipIcon(d.relationshipToYou).fill ? getNodeColor(d) : "white")
       .attr("stroke", d => getNodeColor(d))
       .attr("stroke-width", 1.5)
