@@ -15,7 +15,7 @@ interface GraphCardProps {
   onClick?: () => void;
 }
 
-export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCardProps) {
+export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, onClick }: GraphCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState(name);
   const { toast } = useToast();
@@ -23,11 +23,14 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
 
   const updateModifiedAtMutation = useMutation({
     mutationFn: async () => {
+      console.log("Updating modified timestamp for graph:", id);
       const res = await fetch(`/api/graphs/${id}/touch`, {
         method: 'POST',
       });
       if (!res.ok) throw new Error("Failed to update last modified time");
-      return res.json();
+      const data = await res.json();
+      console.log("Server response:", data);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
@@ -76,6 +79,8 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
   };
 
   const formatModifiedDate = (date: string) => {
+    if (!date || date === 'null') return "Never";
+
     const d = new Date(date);
     if (isNaN(d.getTime())) return "Never";
 
@@ -120,7 +125,7 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
             <div>
               <h3 className="font-medium truncate">{displayName}</h3>
               <p className="text-sm text-muted-foreground">
-                Modified {formatModifiedDate(modifiedAt)}
+                Modified {formatModifiedDate(initialModifiedAt)}
               </p>
             </div>
           )}
