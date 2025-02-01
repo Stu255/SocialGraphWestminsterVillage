@@ -35,8 +35,8 @@ interface Props {
 // Base circle for all relationship types
 const CIRCLE_PATH = "M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z";
 // Chevrons positioned outside the circle
-const CHEVRON_DOWN = "M4 22l8 8 8-8"; // Moved down to touch bottom of circle
-const CHEVRON_UP = "M4 -8l8 8 8-8";   // Moved up to touch top of circle
+const CHEVRON_DOWN = "M4 22 L12 30 L20 22"; // V-shaped chevron below circle
+const CHEVRON_UP = "M4 -2 L12 -10 L20 -2";   // V-shaped chevron above circle, pointing up
 
 const RELATIONSHIP_ICONS = {
   allied: {
