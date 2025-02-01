@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy, Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,8 +18,37 @@ interface GraphCardProps {
 export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, onClick }: GraphCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState(name);
+  const [timeRemaining, setTimeRemaining] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Calculate and update countdown timer
+  useEffect(() => {
+    if (!deleteAt) return;
+
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const deleteTime = new Date(deleteAt).getTime();
+      const diff = deleteTime - now;
+
+      if (diff <= 0) {
+        setTimeRemaining("00:00:00");
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setTimeRemaining(
+        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+      );
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [deleteAt]);
 
   const updateModifiedAtMutation = useMutation({
     mutationFn: async () => {
@@ -32,6 +61,23 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
+    },
+  });
+
+  const startDeletionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/graphs/${id}/delete`, {
+        method: 'POST',
+      });
+      if (!res.ok) throw new Error("Failed to start deletion timer");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
+      toast({
+        title: "Deletion Timer Started",
+        description: "The graph will be deleted in 48 hours",
+      });
     },
   });
 
@@ -157,7 +203,7 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
             onClick={(e) => {
               e.stopPropagation();
               if (window.confirm('Are you sure you want to delete this network? This action will start a 48-hour deletion timer.')) {
-                // Handle delete
+                startDeletionMutation.mutate();
                 updateModifiedAtMutation.mutate();
               }
             }}
@@ -167,6 +213,11 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
           </Button>
         </div>
       </div>
+      {deleteAt && (
+        <div className="mt-2 text-sm text-red-500 text-center">
+          Time until deletion: {timeRemaining}
+        </div>
+      )}
     </Card>
   );
 }
