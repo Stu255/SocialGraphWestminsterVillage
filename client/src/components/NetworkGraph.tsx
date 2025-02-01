@@ -35,13 +35,13 @@ interface Props {
 // Base circle for all relationship types
 const CIRCLE_PATH = "M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z";
 // Chevrons positioned outside the circle using 120-degree angles
-const CHEVRON_DOWN = "M6 22 L12 28 M12 28 L18 22"; // Two lines meeting at bottom point
-const CHEVRON_UP = "M6 -2 L12 -8 M12 -8 L18 -2";   // Two lines meeting at top point
+const CHEVRON_DOWN = "M4 22 L12 28 L20 22"; // Two lines meeting at bottom point
+const CHEVRON_UP = "M4 -2 L12 -8 L20 -2";   // Two lines meeting at top point
 
 const RELATIONSHIP_ICONS = {
   allied: {
     path: `${CIRCLE_PATH} ${CHEVRON_DOWN} ${CHEVRON_UP}`,
-    viewBox: "0 0 24 40" // Extended viewBox to accommodate outer chevrons
+    viewBox: "-0 0 24 40" // Extended viewBox to accommodate outer chevrons
   },
   trusted: {
     path: `${CIRCLE_PATH} ${CHEVRON_DOWN}`,
@@ -277,7 +277,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
         // Adjust vertical position to center the circle portion of each icon
         const yOffset = icon.viewBox === "0 0 24 40" ? -20 : 
                        icon.viewBox === "0 0 24 32" ? -16 : -12;
-        return `translate(-10, ${yOffset}) scale(0.8)`;
+        return `translate(-12, ${yOffset}) scale(1)`;
       })
       .attr("fill", d => getRelationshipIcon(d.relationshipToYou).fill ? getNodeColor(d) : "white")
       .attr("stroke", d => getNodeColor(d))
