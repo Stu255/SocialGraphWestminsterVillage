@@ -131,6 +131,15 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
     }
   };
 
+  const toggleEdit = () => {
+    if (isEditing && newName.trim() && newName !== name) {
+      renameGraphMutation.mutate();
+    } else {
+      setIsEditing(!isEditing);
+      setNewName(name);
+    }
+  };
+
   return (
     <Card 
       className="p-4 hover:bg-secondary/50 transition-colors cursor-pointer"
@@ -147,9 +156,15 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
                 autoFocus
                 onBlur={() => {
                   if (newName.trim() && newName !== name) {
-                    handleRename({ preventDefault: () => {} } as React.FormEvent);
+                    renameGraphMutation.mutate();
                   } else {
                     setIsEditing(false);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleRename(e);
                   }
                 }}
               />
@@ -181,7 +196,7 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsEditing(true)}
+            onClick={toggleEdit}
           >
             <Pencil className="h-4 w-4" />
           </Button>
