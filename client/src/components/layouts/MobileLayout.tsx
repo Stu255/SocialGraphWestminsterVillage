@@ -4,7 +4,6 @@ import { ChevronLeft, ChevronRight, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FilterPanel } from "@/components/FilterPanel";
 import { NodeForm } from "@/components/NodeForm";
-import { RelationshipForm } from "@/components/RelationshipForm";
 import { OrganizationManager } from "@/components/OrganizationManager";
 import { RelationshipTypeManager } from "@/components/RelationshipTypeManager";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
@@ -15,7 +14,7 @@ interface MobileLayoutProps {
   nodes: any[];
   relationships: any[];
   filters: any;
-  graphId: number; // Add graphId prop
+  graphId: number;
   onFilterChange: (filters: any) => void;
   onNodeDeleted: () => void;
   onHomeClick: () => void;
@@ -37,7 +36,6 @@ export function MobileLayout({
   const panels = [
     { title: "Filters", component: <FilterPanel filters={filters} onFilterChange={onFilterChange} /> },
     { title: "Add Person", component: <NodeForm graphId={graphId} /> },
-    { title: "Add Relationship", component: <RelationshipForm graphId={graphId} /> },
     { title: "Add Organization", component: <OrganizationManager graphId={graphId} /> },
     { title: "Relationship Types", component: <RelationshipTypeManager graphId={graphId} /> },
     { title: "Analysis", component: 
@@ -46,6 +44,7 @@ export function MobileLayout({
         nodes={nodes}
         relationships={relationships}
         onNodeDeleted={onNodeDeleted}
+        graphId={graphId}
       /> 
     },
   ];
@@ -72,7 +71,7 @@ export function MobileLayout({
             <Button variant="ghost" size="icon" onClick={prevPanel}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            {selectedNode && currentPanel === 5 && (
+            {selectedNode && currentPanel === 4 && (
               <Button variant="ghost" size="icon" onClick={onHomeClick}>
                 <Home className="h-4 w-4" />
               </Button>
@@ -80,7 +79,7 @@ export function MobileLayout({
           </div>
           <h2 className="text-lg font-semibold">{panels[currentPanel].title}</h2>
           <div className="flex items-center gap-2">
-            {(!selectedNode || currentPanel !== 5) && (
+            {(!selectedNode || currentPanel !== 4) && (
               <Button variant="ghost" size="icon" onClick={onHomeClick}>
                 <Home className="h-4 w-4" />
               </Button>
