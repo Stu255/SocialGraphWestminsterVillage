@@ -1,10 +1,8 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Copy, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface GraphCardProps {
   id: number;
@@ -13,31 +11,8 @@ interface GraphCardProps {
 }
 
 export function GraphCard({ id, name, createdAt }: GraphCardProps) {
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [newName, setNewName] = useState(name);
-  const [deleteTimer, setDeleteTimer] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const renameGraphMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`/api/graphs/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName }),
-      });
-      if (!res.ok) throw new Error("Failed to rename network");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
-      setIsRenaming(false);
-      toast({
-        title: "Success",
-        description: "Network renamed successfully",
-      });
-    },
-  });
 
   const duplicateGraphMutation = useMutation({
     mutationFn: async () => {
@@ -67,8 +42,7 @@ export function GraphCard({ id, name, createdAt }: GraphCardProps) {
       if (!res.ok) throw new Error("Failed to start delete timer");
       return res.json();
     },
-    onSuccess: (data) => {
-      setDeleteTimer(data.deleteAt);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
       toast({
         title: "Delete Timer Started",
@@ -77,97 +51,35 @@ export function GraphCard({ id, name, createdAt }: GraphCardProps) {
     },
   });
 
-  const cancelDeleteTimerMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`/api/graphs/${id}/delete-timer`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error("Failed to cancel delete timer");
-      return res.json();
-    },
-    onSuccess: () => {
-      setDeleteTimer(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
-      toast({
-        title: "Delete Timer Cancelled",
-        description: "Network deletion cancelled",
-      });
-    },
-  });
-
   return (
-    <Card className="p-4 hover:shadow-md transition-shadow">
+    <Card className="p-4">
       <div className="flex items-center justify-between">
-        <div className="flex-1">
+        <div>
           <h3 className="font-medium">{name}</h3>
           <p className="text-sm text-muted-foreground">
             Created {new Date(createdAt).toLocaleDateString()}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsRenaming(true)}
-          >
+          <Button variant="ghost" size="icon">
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
+          <Button 
+            variant="ghost" 
             size="icon"
             onClick={() => duplicateGraphMutation.mutate()}
           >
             <Copy className="h-4 w-4" />
           </Button>
-          {deleteTimer ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => cancelDeleteTimerMutation.mutate()}
-              className="text-red-500"
-            >
-              {formatCountdown(deleteTimer)}
-            </Button>
-          ) : (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => startDeleteTimerMutation.mutate()}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </div>
-      {isRenaming && (
-        <div className="mt-2 flex gap-2">
-          <Input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            className="flex-1"
-          />
-          <Button
-            onClick={() => renameGraphMutation.mutate()}
-            disabled={!newName.trim() || newName === name}
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => startDeleteTimerMutation.mutate()}
           >
-            Save
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
-      )}
+      </div>
     </Card>
   );
-}
-
-function formatCountdown(endTime: string): string {
-  const end = new Date(endTime).getTime();
-  const now = new Date().getTime();
-  const diff = end - now;
-
-  if (diff <= 0) return "00:00:00";
-
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
