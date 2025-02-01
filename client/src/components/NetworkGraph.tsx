@@ -34,18 +34,18 @@ interface Props {
 
 // Base circle for all relationship types
 const CIRCLE_PATH = "M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z";
-// Chevron paths positioned relative to circle
-const CHEVRON_DOWN = "M4 12l8 8 8-8";
-const CHEVRON_UP = "M4 20l8-8 8 8";
+// Chevrons positioned outside the circle
+const CHEVRON_DOWN = "M4 22l8 8 8-8"; // Moved down to touch bottom of circle
+const CHEVRON_UP = "M4 -8l8 8 8-8";   // Moved up to touch top of circle
 
 const RELATIONSHIP_ICONS = {
   allied: {
     path: `${CIRCLE_PATH} ${CHEVRON_DOWN} ${CHEVRON_UP}`,
-    viewBox: "0 0 24 32" // Extended viewBox to accommodate chevrons
+    viewBox: "0 0 24 40" // Extended viewBox to accommodate outer chevrons
   },
   trusted: {
     path: `${CIRCLE_PATH} ${CHEVRON_DOWN}`,
-    viewBox: "0 0 24 28" // Extended viewBox to accommodate bottom chevron
+    viewBox: "0 0 24 32" // Extended viewBox to accommodate bottom chevron
   },
   circle: {
     path: CIRCLE_PATH,
@@ -274,9 +274,9 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       .attr("viewBox", d => getRelationshipIcon(d.relationshipToYou).viewBox)
       .attr("transform", d => {
         const icon = getRelationshipIcon(d.relationshipToYou);
-        // Adjust vertical position based on icon type to center the main circle
-        const yOffset = icon.viewBox === "0 0 24 32" ? -14 : 
-                       icon.viewBox === "0 0 24 28" ? -12 : -10;
+        // Adjust vertical position to center the circle portion of each icon
+        const yOffset = icon.viewBox === "0 0 24 40" ? -20 : 
+                       icon.viewBox === "0 0 24 32" ? -16 : -12;
         return `translate(-10, ${yOffset}) scale(0.8)`;
       })
       .attr("fill", d => getRelationshipIcon(d.relationshipToYou).fill ? getNodeColor(d) : "white")
