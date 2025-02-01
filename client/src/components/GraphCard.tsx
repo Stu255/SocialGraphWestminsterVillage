@@ -67,8 +67,7 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
         method: 'POST',
       });
       if (!res.ok) throw new Error("Failed to start deletion timer");
-      const data = await res.json();
-      return data;
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
@@ -124,18 +123,24 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
     const d = new Date(date);
     if (isNaN(d.getTime())) return "Never";
 
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const now = new Date();
+    const diffMinutes = Math.floor((now.getTime() - d.getTime()) / (1000 * 60));
 
-    return `${year}/${month}/${day} ${hours}:${minutes}`;
+    if (diffMinutes < 1) return "Just now";
+    if (diffMinutes < 60) return `${diffMinutes} minutes ago`;
+
+    const hours = Math.floor(diffMinutes / 60);
+    if (hours < 24) return `${hours} hours ago`;
+
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days} days ago`;
+
+    return d.toLocaleDateString();
   };
 
   return (
     <Card 
-      className={`p-4 hover:bg-secondary/50 transition-colors cursor-pointer ${deleteAt ? 'bg-red-50 hover:bg-red-100' : ''}`}
+      className={`p-4 ${deleteAt ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-secondary/50'} transition-colors cursor-pointer`}
       onClick={handleCardClick}
     >
       <div className="flex items-center justify-between">
@@ -156,7 +161,7 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
               />
             </form>
           ) : (
-            <div className={`${deleteAt ? 'text-red-600' : ''}`}>
+            <div className={deleteAt ? 'text-red-600' : ''}>
               <h3 className="font-medium truncate">{displayName}</h3>
               <p className="text-sm text-muted-foreground">
                 Modified {formatModifiedDate(initialModifiedAt)}
