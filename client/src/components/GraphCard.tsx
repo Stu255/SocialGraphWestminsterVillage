@@ -31,17 +31,18 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
 
       let errorMessage = "Failed to rename network";
 
-      try {
-        const data = await res.json();
-        if (!res.ok) {
+      if (!res.ok) {
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const data = await res.json();
           throw new Error(data.message || errorMessage);
+        } else {
+          const text = await res.text();
+          throw new Error(text || errorMessage);
         }
-        return data;
-      } catch (e) {
-        // If JSON parsing fails, try to get text content
-        const text = await res.text();
-        throw new Error(text || errorMessage);
       }
+
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
