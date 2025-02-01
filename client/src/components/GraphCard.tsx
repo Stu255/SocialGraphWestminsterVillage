@@ -95,9 +95,29 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
     },
   });
 
-    const handleSubmit = (e: React.FormEvent) => {
+  const renameGraphMutation = useMutation({
+    mutationFn: async (newName: string) => {
+      const res = await fetch(`/api/graphs/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName }),
+      });
+      if (!res.ok) throw new Error("Failed to rename graph");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
+      toast({
+        title: "Success",
+        description: "Graph renamed successfully",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (displayName.trim()) {
+    if (displayName.trim() && displayName !== name) {
+      renameGraphMutation.mutate(displayName.trim());
       setIsEditing(false);
     } else {
       setDisplayName(name);
@@ -146,12 +166,7 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
                 onChange={(e) => setDisplayName(e.target.value)}
                 className="h-8"
                 autoFocus
-                onBlur={() => {
-                  if (displayName.trim() === '') {
-                    setDisplayName(name);
-                  }
-                  setIsEditing(false);
-                }}
+                onBlur={handleSubmit}
               />
             </form>
           ) : (

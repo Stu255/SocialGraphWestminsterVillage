@@ -381,7 +381,10 @@ export function registerRoutes(app: Express): Server {
     try {
       const [graph] = await db
         .update(socialGraphs)
-        .set({ name: req.body.name })
+        .set({ 
+          name: req.body.name,
+          modifiedAt: new Date()
+        })
         .where(eq(socialGraphs.id, parseInt(req.params.id)))
         .returning();
 
@@ -412,17 +415,21 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "Graph not found" });
       }
 
-      // Create new graph with copied name
+      // Update original graph's modified time
+      await db
+        .update(socialGraphs)
+        .set({ modifiedAt: new Date() })
+        .where(eq(socialGraphs.id, originalGraph.id));
+
+      // Create new graph with copied name and current timestamp
       const [newGraph] = await db
         .insert(socialGraphs)
         .values({
           name: `${originalGraph.name} (Copy)`,
           userId: req.user.id,
+          modifiedAt: new Date()
         })
         .returning();
-
-      // Copy all related data (people, relationships, etc.)
-      // This will be handled by a separate function to maintain transaction safety
 
       res.json(newGraph);
     } catch (error) {
@@ -431,15 +438,21 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/graphs/:id/delete-timer", async (req, res) => {
+  app.post("/api/graphs/:id/delete", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not logged in");
     }
 
     try {
+      const deleteAt = new Date();
+      deleteAt.setHours(deleteAt.getHours() + 48);
+
       const [graph] = await db
         .update(socialGraphs)
-        .set({ deleteAt: req.body.deleteAt })
+        .set({ 
+          deleteAt,
+          modifiedAt: new Date()
+        })
         .where(eq(socialGraphs.id, parseInt(req.params.id)))
         .returning();
 
