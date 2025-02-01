@@ -29,17 +29,19 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
         body: JSON.stringify({ name: newName.trim() }),
       });
 
-      let errorMessage = "Failed to rename network";
-
+      const contentType = res.headers.get("content-type");
       if (!res.ok) {
-        const contentType = res.headers.get("content-type");
         if (contentType && contentType.includes("application/json")) {
           const data = await res.json();
-          throw new Error(data.message || errorMessage);
+          throw new Error(data.message || "Failed to rename network");
         } else {
           const text = await res.text();
-          throw new Error(text || errorMessage);
+          throw new Error("Failed to rename network. Please try again.");
         }
+      }
+
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Invalid server response");
       }
 
       return res.json();
