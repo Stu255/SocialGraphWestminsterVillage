@@ -23,13 +23,11 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
 
   const updateModifiedAtMutation = useMutation({
     mutationFn: async () => {
-      console.log("Updating modified timestamp for graph:", id);
       const res = await fetch(`/api/graphs/${id}/touch`, {
         method: 'POST',
       });
       if (!res.ok) throw new Error("Failed to update last modified time");
       const data = await res.json();
-      console.log("Server response:", data);
       return data;
     },
     onSuccess: () => {
@@ -148,6 +146,7 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
             onClick={(e) => {
               e.stopPropagation();
               duplicateGraphMutation.mutate();
+              updateModifiedAtMutation.mutate();
             }}
           >
             <Copy className="h-4 w-4" />
@@ -159,6 +158,7 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
               e.stopPropagation();
               if (window.confirm('Are you sure you want to delete this network? This action will start a 48-hour deletion timer.')) {
                 // Handle delete
+                updateModifiedAtMutation.mutate();
               }
             }}
             disabled={!!deleteAt}
