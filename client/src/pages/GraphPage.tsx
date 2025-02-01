@@ -16,6 +16,7 @@ import { RelationshipTypeManager } from "@/components/RelationshipTypeManager";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
+import { NetworkManager } from "@/components/NetworkManager";
 
 interface Props {
   params: {
@@ -52,6 +53,15 @@ export default function GraphPage({ params }: Props) {
     },
   });
 
+    const { data: graph } = useQuery({
+    queryKey: ["/api/graphs", graphId],
+    queryFn: async () => {
+      const res = await fetch(`/api/graphs/${graphId}`);
+      if (!res.ok) throw new Error("Failed to fetch graph");
+      return res.json();
+    },
+  });
+
   const handleNodeDeleted = () => {
     setSelectedNode(null);
   };
@@ -60,7 +70,7 @@ export default function GraphPage({ params }: Props) {
     setLocation("/");
   };
 
-  const graph = (
+  const graphComponent = (
     <NetworkGraph
       nodes={people || []}
       links={relationships || []}
@@ -82,7 +92,7 @@ export default function GraphPage({ params }: Props) {
         onNodeDeleted={handleNodeDeleted}
         onHomeClick={handleHomeClick}
       >
-        {graph}
+        {graphComponent}
       </MobileLayout>
     );
   }
@@ -102,6 +112,7 @@ export default function GraphPage({ params }: Props) {
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={25} minSize={20}>
           <div className="h-full p-6 border-r overflow-y-auto space-y-6">
+             {graph && <NetworkManager graphId={graphId} currentName={graph.name} />}
             <FilterPanel filters={filters} onFilterChange={setFilters} />
             <NodeForm graphId={graphId} />
             <OrganizationManager graphId={graphId} />
@@ -112,7 +123,7 @@ export default function GraphPage({ params }: Props) {
         <ResizableHandle />
 
         <ResizablePanel defaultSize={55}>
-          {graph}
+          {graphComponent}
         </ResizablePanel>
 
         <ResizableHandle />

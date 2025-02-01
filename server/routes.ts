@@ -346,5 +346,127 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add graph management routes
+  app.put("/api/graphs/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+
+    try {
+      const [graph] = await db
+        .update(socialGraphs)
+        .set({ name: req.body.name })
+        .where(eq(socialGraphs.id, parseInt(req.params.id)))
+        .returning();
+
+      if (!graph) {
+        return res.status(404).json({ error: "Graph not found" });
+      }
+
+      res.json(graph);
+    } catch (error) {
+      console.error("Error renaming graph:", error);
+      res.status(500).json({ error: "Failed to rename graph" });
+    }
+  });
+
+  app.post("/api/graphs/:id/duplicate", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+
+    try {
+      // Get the original graph
+      const [originalGraph] = await db
+        .select()
+        .from(socialGraphs)
+        .where(eq(socialGraphs.id, parseInt(req.params.id)));
+
+      if (!originalGraph) {
+        return res.status(404).json({ error: "Graph not found" });
+      }
+
+      // Create new graph with copied name
+      const [newGraph] = await db
+        .insert(socialGraphs)
+        .values({
+          name: `${originalGraph.name} (Copy)`,
+          userId: req.user.id,
+        })
+        .returning();
+
+      // Copy all related data (people, relationships, etc.)
+      // This will be handled by a separate function to maintain transaction safety
+
+      res.json(newGraph);
+    } catch (error) {
+      console.error("Error duplicating graph:", error);
+      res.status(500).json({ error: "Failed to duplicate graph" });
+    }
+  });
+
+  app.post("/api/graphs/:id/delete-timer", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+
+    try {
+      const [graph] = await db
+        .update(socialGraphs)
+        .set({ deleteAt: req.body.deleteAt })
+        .where(eq(socialGraphs.id, parseInt(req.params.id)))
+        .returning();
+
+      if (!graph) {
+        return res.status(404).json({ error: "Graph not found" });
+      }
+
+      res.json(graph);
+    } catch (error) {
+      console.error("Error setting delete timer:", error);
+      res.status(500).json({ error: "Failed to set delete timer" });
+    }
+  });
+
+  app.delete("/api/graphs/:id/delete-timer", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+
+    try {
+      const [graph] = await db
+        .update(socialGraphs)
+        .set({ deleteAt: null })
+        .where(eq(socialGraphs.id, parseInt(req.params.id)))
+        .returning();
+
+      if (!graph) {
+        return res.status(404).json({ error: "Graph not found" });
+      }
+
+      res.json(graph);
+    } catch (error) {
+      console.error("Error canceling delete timer:", error);
+      res.status(500).json({ error: "Failed to cancel delete timer" });
+    }
+  });
+
+  app.delete("/api/graphs/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+
+    try {
+      await db
+        .delete(socialGraphs)
+        .where(eq(socialGraphs.id, parseInt(req.params.id)));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting graph:", error);
+      res.status(500).json({ error: "Failed to delete graph" });
+    }
+  });
+
   return httpServer;
 }
