@@ -173,6 +173,25 @@ export function registerRoutes(app: Express): Server {
 
       // Create bidirectional relationship in a single transaction
       const relationship = await db.transaction(async (tx) => {
+        // First, delete any existing relationships between these nodes
+        await tx.delete(relationships)
+          .where(
+            and(
+              eq(relationships.graphId, graphId),
+              or(
+                and(
+                  eq(relationships.sourcePersonId, sourcePersonId),
+                  eq(relationships.targetPersonId, targetPersonId)
+                ),
+                and(
+                  eq(relationships.sourcePersonId, targetPersonId),
+                  eq(relationships.targetPersonId, sourcePersonId)
+                )
+              )
+            )
+          );
+
+        // Then create the new bidirectional relationship
         const [forward] = await tx
           .insert(relationships)
           .values({ sourcePersonId, targetPersonId, relationshipType, graphId })
