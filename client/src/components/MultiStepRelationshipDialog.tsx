@@ -106,14 +106,14 @@ export function MultiStepRelationshipDialog({ open, onOpenChange, newPerson }: P
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] dialog-content">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="dialog-title">
             {step === 1
               ? "Select People"
               : "Define Relationships"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="dialog-description">
             {step === 1
               ? "Select people to create relationships with."
               : "Choose relationship types for each selected person."}
@@ -130,12 +130,12 @@ export function MultiStepRelationshipDialog({ open, onOpenChange, newPerson }: P
           </ScrollArea>
         ) : (
           <ScrollArea className="h-[300px] pr-4">
-            <div className="space-y-4">
+            <div className="space-y-3">
               {relationships.map((rel, index) => {
                 const person = people.find(p => p.id === rel.personId);
                 return (
                   <div key={rel.personId} className="space-y-2">
-                    <Label>{person?.name}</Label>
+                    <Label className="form-label">{person?.name}</Label>
                     <Select
                       value={rel.type || undefined}
                       onValueChange={(value) => {
@@ -146,7 +146,7 @@ export function MultiStepRelationshipDialog({ open, onOpenChange, newPerson }: P
                         });
                       }}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="form-input">
                         <SelectValue placeholder="Select relationship type" />
                       </SelectTrigger>
                       <SelectContent position="popper" side="top" align="start">
@@ -169,6 +169,7 @@ export function MultiStepRelationshipDialog({ open, onOpenChange, newPerson }: P
             <Button
               onClick={handleNext}
               disabled={selectedPeople.length === 0}
+              className="form-input"
             >
               Next
             </Button>
@@ -177,12 +178,14 @@ export function MultiStepRelationshipDialog({ open, onOpenChange, newPerson }: P
               <Button
                 variant="outline"
                 onClick={() => setStep(1)}
+                className="form-input"
               >
                 Back
               </Button>
               <Button
                 onClick={handleFinish}
                 disabled={relationships.some(r => !r.type)}
+                className="form-input"
               >
                 Create Relationships
               </Button>

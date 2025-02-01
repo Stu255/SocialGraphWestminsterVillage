@@ -11,3 +11,38 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* Mobile-specific styles */
+  @media (max-width: 640px) {
+    .dialog-content {
+      @apply text-sm;
+    }
+
+    .dialog-title {
+      @apply text-base;
+    }
+
+    .dialog-description {
+      @apply text-xs;
+    }
+
+    /* Make form labels and inputs smaller on mobile */
+    .form-label {
+      @apply text-sm;
+    }
+
+    .form-input {
+      @apply text-sm;
+    }
+
+    /* Reduce padding in cards and content areas */
+    .card-content {
+      @apply p-3;
+    }
+
+    .card-header {
+      @apply p-3 pb-2;
+    }
+  }
+}

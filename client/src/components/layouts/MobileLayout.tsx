@@ -66,37 +66,37 @@ export function MobileLayout({
 
       {/* Controls Section */}
       <div className="h-[50vh] bg-background border-t">
-        <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={prevPanel}>
+        <div className="flex items-center justify-between p-2 border-b">
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={prevPanel}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
             {selectedNode && currentPanel === 4 && (
-              <Button variant="ghost" size="icon" onClick={onHomeClick}>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onHomeClick}>
                 <Home className="h-4 w-4" />
               </Button>
             )}
           </div>
-          <h2 className="text-lg font-semibold">{panels[currentPanel].title}</h2>
-          <div className="flex items-center gap-2">
+          <h2 className="text-base font-medium">{panels[currentPanel].title}</h2>
+          <div className="flex items-center gap-1">
             {(!selectedNode || currentPanel !== 4) && (
-              <Button variant="ghost" size="icon" onClick={onHomeClick}>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onHomeClick}>
                 <Home className="h-4 w-4" />
               </Button>
             )}
-            <Button variant="ghost" size="icon" onClick={nextPanel}>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={nextPanel}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        <div className="overflow-y-auto h-[calc(50vh-4rem)] p-4">
+        <div className="overflow-y-auto h-[calc(50vh-2.5rem)] p-3">
           <div className="relative w-full h-full">
             {panels.map((panel, index) => (
               <div
                 key={index}
                 className={cn(
-                  "absolute top-0 left-0 w-full transition-transform duration-300 ease-in-out",
+                  "absolute top-0 left-0 w-full transition-transform duration-300 ease-in-out text-sm",
                   index === currentPanel ? "visible" : "invisible"
                 )}
                 style={{
