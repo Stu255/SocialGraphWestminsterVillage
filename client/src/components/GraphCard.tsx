@@ -26,7 +26,7 @@ interface GraphCardProps {
   onClick?: () => void;
 }
 
-export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, onClick }: GraphCardProps) {
+export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState(name);
   const [timeRemaining, setTimeRemaining] = useState<string>("");
@@ -138,11 +138,7 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
   };
 
   const formatModifiedDate = (date: string) => {
-    if (!date || date === 'null') return "Never";
-
     const d = new Date(date);
-    if (isNaN(d.getTime())) return "Never";
-
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
@@ -173,7 +169,7 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
             <div className={deleteAt ? 'text-red-600' : ''}>
               <h3 className="font-medium truncate">{displayName}</h3>
               <p className="text-sm text-muted-foreground">
-                Modified {formatModifiedDate(initialModifiedAt)}
+                Modified {formatModifiedDate(modifiedAt)}
               </p>
             </div>
           )}

@@ -475,7 +475,10 @@ export function registerRoutes(app: Express): Server {
     try {
       const [graph] = await db
         .update(socialGraphs)
-        .set({ deleteAt: null })
+        .set({ 
+          deleteAt: null,
+          modifiedAt: new Date()
+        })
         .where(eq(socialGraphs.id, parseInt(req.params.id)))
         .returning();
 
