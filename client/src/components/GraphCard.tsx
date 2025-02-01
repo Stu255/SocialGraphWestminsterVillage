@@ -26,9 +26,12 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
       const res = await fetch(`/api/graphs/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName }),
+        body: JSON.stringify({ name: newName.trim() }),
       });
-      if (!res.ok) throw new Error("Failed to rename network");
+      if (!res.ok) {
+        const error = await res.text();
+        throw new Error(error || "Failed to rename network");
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -39,15 +42,14 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
         description: "Network renamed successfully",
       });
     },
-    onError: () => {
-      setNewName(name);
-      setIsEditing(false);
+    onError: (error: Error) => {
+      console.error("Rename error:", error);
       toast({
         title: "Error",
-        description: "Failed to rename network",
+        description: error.message || "Failed to rename network",
         variant: "destructive",
       });
-    }
+    },
   });
 
   const updateModifiedAtMutation = useMutation({
@@ -117,24 +119,18 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newName.trim() && newName !== name) {
-      renameGraphMutation.mutate();
+    if (newName.trim() && newName.trim() !== name) {
+      try {
+        await renameGraphMutation.mutateAsync();
+      } catch {
+        setNewName(name);
+      }
     } else {
       setIsEditing(false);
       setNewName(name);
     }
-  };
-
-  const getTimeRemaining = () => {
-    if (!deleteAt) return null;
-    const remaining = new Date(deleteAt).getTime() - Date.now();
-    if (remaining <= 0) return "Deleting soon...";
-    const hours = Math.floor(remaining / (1000 * 60 * 60));
-    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
@@ -161,6 +157,16 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
     const minutes = String(d.getMinutes()).padStart(2, '0');
 
     return `${year}/${month}/${day} ${hours}:${minutes}`;
+  };
+
+  const getTimeRemaining = () => {
+    if (!deleteAt) return null;
+    const remaining = new Date(deleteAt).getTime() - Date.now();
+    if (remaining <= 0) return "Deleting soon...";
+    const hours = Math.floor(remaining / (1000 * 60 * 60));
+    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
   const timeRemaining = deleteAt ? getTimeRemaining() : null;
