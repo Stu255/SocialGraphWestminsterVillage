@@ -473,7 +473,9 @@ export function registerRoutes(app: Express): Server {
     try {
       const [graph] = await db
         .update(socialGraphs)
-        .set({ deleteAt: null })
+        .set({ 
+          deleteAt: new Date('3099-12-31T23:59:59Z')
+        })
         .where(eq(socialGraphs.id, parseInt(req.params.id)))
         .returning();
 
