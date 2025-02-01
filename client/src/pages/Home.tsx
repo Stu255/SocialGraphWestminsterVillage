@@ -1,96 +1,82 @@
-import { NetworkGraph } from "@/components/NetworkGraph";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useMobile } from "@/hooks/use-mobile";
-import { MobileLayout } from "@/components/layouts/MobileLayout";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
-import { FilterPanel } from "@/components/FilterPanel";
-import { NodeForm } from "@/components/NodeForm";
-import { RelationshipForm } from "@/components/RelationshipForm";
-import { AffiliationManager } from "@/components/AffiliationManager";
-import { RelationshipTypeManager } from "@/components/RelationshipTypeManager";
-import { AnalysisPanel } from "@/components/AnalysisPanel";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { GraphCard } from "@/components/GraphCard";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
-  const isMobile = useMobile();
-  const [selectedNode, setSelectedNode] = useState<any>(null);
-  const [filters, setFilters] = useState({
-    affiliation: null,
-    relationshipType: null,
+  const [newGraphName, setNewGraphName] = useState("");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: graphs = [] } = useQuery({
+    queryKey: ["/api/graphs"],
+    queryFn: async () => {
+      const res = await fetch("/api/graphs");
+      if (!res.ok) throw new Error("Failed to fetch graphs");
+      return res.json();
+    },
   });
 
-  const { data: people } = useQuery({
-    queryKey: ["/api/people"],
+  const createGraphMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/graphs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newGraphName }),
+      });
+      if (!res.ok) throw new Error("Failed to create graph");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
+      setNewGraphName("");
+      toast({
+        title: "Success",
+        description: "Graph created successfully",
+      });
+    },
   });
 
-  const { data: relationships } = useQuery({
-    queryKey: ["/api/relationships"],
-  });
-
-  const handleNodeDeleted = () => {
-    setSelectedNode(null);
+  const handleCreateGraph = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGraphName.trim()) return;
+    createGraphMutation.mutate();
   };
 
-  const graph = (
-    <NetworkGraph
-      nodes={people || []}
-      links={relationships || []}
-      filters={filters}
-      onNodeSelect={setSelectedNode}
-    />
-  );
-
-  if (isMobile) {
-    return (
-      <MobileLayout
-        selectedNode={selectedNode}
-        nodes={people || []}
-        relationships={relationships || []}
-        filters={filters}
-        onFilterChange={setFilters}
-        onNodeDeleted={handleNodeDeleted}
-      >
-        {graph}
-      </MobileLayout>
-    );
-  }
-
   return (
-    <div className="h-screen w-full bg-background overflow-hidden">
-      <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel defaultSize={25} minSize={20}>
-          <div className="h-full p-6 border-r overflow-y-auto space-y-6">
-            <FilterPanel filters={filters} onFilterChange={setFilters} />
-            <NodeForm />
-            <RelationshipForm />
-            <AffiliationManager />
-            <RelationshipTypeManager />
-          </div>
-        </ResizablePanel>
+    <div className="container mx-auto p-6 max-w-4xl">
+      <h1 className="text-4xl font-bold mb-8">
+        Your Social Graphs
+      </h1>
 
-        <ResizableHandle />
+      <form onSubmit={handleCreateGraph} className="mb-8">
+        <div className="flex gap-2">
+          <Input
+            placeholder="New graph name..."
+            value={newGraphName}
+            onChange={(e) => setNewGraphName(e.target.value)}
+          />
+          <Button type="submit" disabled={!newGraphName.trim()}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Graph
+          </Button>
+        </div>
+      </form>
 
-        <ResizablePanel defaultSize={55}>
-          {graph}
-        </ResizablePanel>
-
-        <ResizableHandle />
-
-        <ResizablePanel defaultSize={20} minSize={15}>
-          <div className="h-full p-6 border-l overflow-y-auto">
-            <AnalysisPanel 
-              selectedNode={selectedNode}
-              nodes={people || []}
-              relationships={relationships || []}
-              onNodeDeleted={handleNodeDeleted}
-            />
-          </div>
-        </ResizablePanel>
-      </ResizablePanelGroup>
+      <div className="grid gap-4">
+        {graphs.map((graph: any) => (
+          <GraphCard
+            key={graph.id}
+            id={graph.id}
+            name={graph.name}
+            createdAt={graph.createdAt}
+          />
+        ))}
+      </div>
     </div>
   );
 }
