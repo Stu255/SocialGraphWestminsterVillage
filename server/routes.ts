@@ -84,6 +84,32 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: "Failed to fetch graphs" });
     }
   });
+  
+  app.post("/api/graphs", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+
+    try {
+      const graphData = {
+        name: req.body.name,
+        userId: req.user.id,
+      };
+
+      const result = insertSocialGraphSchema.safeParse(graphData);
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: "Invalid input: " + result.error.issues.map(i => i.message).join(", ") 
+        });
+      }
+
+      const [graph] = await db.insert(socialGraphs).values(result.data).returning();
+      res.json(graph);
+    } catch (error: any) {
+      console.error("Error creating graph:", error);
+      res.status(500).json({ error: error?.message || "Failed to create graph" });
+    }
+  });
 
   app.get("/api/people", async (req, res) => {
     if (!req.isAuthenticated()) {
