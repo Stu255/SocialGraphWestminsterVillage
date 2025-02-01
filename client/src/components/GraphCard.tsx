@@ -103,6 +103,7 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
       renameGraphMutation.mutate();
     } else {
       setIsEditing(false);
+      setNewName(name);
     }
   };
 
@@ -120,7 +121,6 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
 
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
-    // Only navigate if the click wasn't on a button or input
     if (
       !target.closest('button') && 
       !target.closest('input') && 
@@ -128,15 +128,6 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
       onClick
     ) {
       onClick();
-    }
-  };
-
-  const toggleEdit = () => {
-    if (isEditing && newName.trim() && newName !== name) {
-      renameGraphMutation.mutate();
-    } else {
-      setIsEditing(!isEditing);
-      setNewName(name);
     }
   };
 
@@ -154,17 +145,18 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
                 onChange={(e) => setNewName(e.target.value)}
                 className="h-8"
                 autoFocus
-                onBlur={() => {
-                  if (newName.trim() && newName !== name) {
-                    renameGraphMutation.mutate();
-                  } else {
-                    setIsEditing(false);
-                  }
-                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
-                    handleRename(e);
+                    if (newName.trim() && newName !== name) {
+                      renameGraphMutation.mutate();
+                    } else {
+                      setIsEditing(false);
+                      setNewName(name);
+                    }
+                  } else if (e.key === 'Escape') {
+                    setIsEditing(false);
+                    setNewName(name);
                   }
                 }}
               />
@@ -180,7 +172,8 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
               {timeRemaining && (
                 <button
                   className="text-xs text-red-500 hover:text-red-600 ml-4"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     if (window.confirm('Are you sure you want to cancel the deletion?')) {
                       cancelDeleteMutation.mutate();
                     }
@@ -196,21 +189,35 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
           <Button
             variant="ghost"
             size="icon"
-            onClick={toggleEdit}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isEditing && newName.trim() && newName !== name) {
+                renameGraphMutation.mutate();
+              } else {
+                setIsEditing(!isEditing);
+                setNewName(name);
+              }
+            }}
           >
             <Pencil className="h-4 w-4" />
           </Button>
           <Button 
             variant="ghost" 
             size="icon"
-            onClick={() => duplicateGraphMutation.mutate()}
+            onClick={(e) => {
+              e.stopPropagation();
+              duplicateGraphMutation.mutate();
+            }}
           >
             <Copy className="h-4 w-4" />
           </Button>
           <Button 
             variant="ghost" 
             size="icon"
-            onClick={() => startDeleteTimerMutation.mutate()}
+            onClick={(e) => {
+              e.stopPropagation();
+              startDeleteTimerMutation.mutate();
+            }}
             disabled={!!deleteAt}
           >
             <Trash2 className="h-4 w-4" />
