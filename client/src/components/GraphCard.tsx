@@ -138,19 +138,12 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
   };
 
   const formatModifiedDate = (date: string) => {
-    if (!date) {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      return `${year}/${month}/${day} ${hours}:${minutes}`;
-    }
+    // If no date provided, use current time
+    const d = date ? new Date(date) : new Date();
 
-    const d = new Date(date);
+    // Ensure we have a valid date
     if (isNaN(d.getTime())) {
-      return formatModifiedDate("");
+      return formatModifiedDate(new Date().toISOString());
     }
 
     const year = d.getFullYear();

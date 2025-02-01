@@ -25,7 +25,7 @@ export default function AccountPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: graphs = [] } = useQuery<SocialGraph[]>({
+  const { data: graphs = [], isError, error } = useQuery<SocialGraph[]>({
     queryKey: ["/api/graphs"],
     select: (data) => {
       return [...data].sort((a, b) => {
@@ -43,7 +43,10 @@ export default function AccountPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
       });
-      if (!res.ok) throw new Error("Failed to create graph");
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create graph");
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -66,6 +69,7 @@ export default function AccountPage() {
   const handleLogout = async () => {
     try {
       await logout();
+      setLocation("/");
     } catch (error: any) {
       toast({
         title: "Error",
@@ -82,8 +86,14 @@ export default function AccountPage() {
     }
   };
 
-  // Debug log to track graphs data
-  console.log("Current graphs data:", graphs);
+  // Show error state if query failed
+  if (isError) {
+    toast({
+      title: "Error",
+      description: (error as Error)?.message || "Failed to fetch graphs",
+      variant: "destructive",
+    });
+  }
 
   return (
     <div className="min-h-screen w-full bg-background p-8">
@@ -108,7 +118,10 @@ export default function AccountPage() {
                 placeholder="New graph name..."
                 className="flex-1"
               />
-              <Button type="submit">
+              <Button 
+                type="submit" 
+                disabled={createGraphMutation.isPending || !newGraphName.trim()}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Graph
               </Button>
@@ -126,6 +139,11 @@ export default function AccountPage() {
                   onClick={() => setLocation(`/graph/${graph.id}`)}
                 />
               ))}
+              {graphs.length === 0 && (
+                <div className="col-span-full text-center text-muted-foreground py-8">
+                  No graphs yet. Create your first graph above!
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
