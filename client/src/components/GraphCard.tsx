@@ -35,7 +35,6 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
           const data = await res.json();
           throw new Error(data.message || "Failed to rename network");
         } else {
-          const text = await res.text();
           throw new Error("Failed to rename network. Please try again.");
         }
       }
@@ -60,7 +59,7 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
       setIsEditing(false); // Exit edit mode
       toast({
         title: "Error",
-        description: error.message || "Failed to rename network",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -257,7 +256,9 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
-              startDeleteTimerMutation.mutate();
+              if (window.confirm('Are you sure you want to delete this network? This action will start a 48-hour deletion timer.')) {
+                startDeleteTimerMutation.mutate();
+              }
             }}
             disabled={!!deleteAt}
           >
