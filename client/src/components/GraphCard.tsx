@@ -128,16 +128,21 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     if (
-      !target.closest('button') && 
-      !target.closest('input') && 
-      !isEditing && 
+      !target.closest('button') &&
+      !target.closest('input') &&
+      !isEditing &&
       onClick
     ) {
       onClick();
     }
   };
 
-  const formatModifiedDate = (date: string) => {
+  const formatModifiedDate = (date: string | null | undefined) => {
+    // If no date is provided, use creation date as fallback
+    if (!date) {
+      return "Created";
+    }
+
     const d = new Date(date);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -149,7 +154,7 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
   };
 
   return (
-    <Card 
+    <Card
       className={`p-4 ${deleteAt ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-secondary/50'} transition-colors cursor-pointer`}
       onClick={handleCardClick}
     >
@@ -185,8 +190,8 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
           >
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
@@ -197,8 +202,8 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="icon"
                 disabled={!!deleteAt}
               >
