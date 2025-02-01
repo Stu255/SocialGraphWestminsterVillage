@@ -5,19 +5,23 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { useLocation } from "wouter";
 
 interface GraphCardProps {
   id: number;
   name: string;
   createdAt: string;
+  modifiedAt: string;
   deleteAt?: string | null;
+  onClick?: () => void;
 }
 
-export function GraphCard({ id, name, createdAt, deleteAt }: GraphCardProps) {
+export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(name);
+  const [, setLocation] = useLocation();
 
   const renameGraphMutation = useMutation({
     mutationFn: async () => {
@@ -113,10 +117,26 @@ export function GraphCard({ id, name, createdAt, deleteAt }: GraphCardProps) {
 
   const timeRemaining = deleteAt ? getTimeRemaining() : null;
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    // Only navigate if the click wasn't on a button or input
+    if (
+      !target.closest('button') && 
+      !target.closest('input') && 
+      !isEditing && 
+      onClick
+    ) {
+      onClick();
+    }
+  };
+
   return (
-    <Card className="p-4">
+    <Card 
+      className="p-4 hover:bg-secondary/50 transition-colors cursor-pointer"
+      onClick={handleCardClick}
+    >
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex-1 min-w-0">
           {isEditing ? (
             <form onSubmit={handleRename} className="flex items-center gap-2">
               <Input
@@ -129,9 +149,9 @@ export function GraphCard({ id, name, createdAt, deleteAt }: GraphCardProps) {
             </form>
           ) : (
             <>
-              <h3 className="font-medium">{name}</h3>
+              <h3 className="font-medium truncate">{name}</h3>
               <p className="text-sm text-muted-foreground">
-                Created {new Date(createdAt).toLocaleDateString()}
+                Modified {new Date(modifiedAt).toLocaleDateString()}
               </p>
               {timeRemaining && (
                 <Button
@@ -146,7 +166,7 @@ export function GraphCard({ id, name, createdAt, deleteAt }: GraphCardProps) {
             </>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 ml-4">
           <Button
             variant="ghost"
             size="icon"

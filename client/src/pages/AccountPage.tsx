@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Plus, LogOut } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
+import { GraphCard } from "@/components/GraphCard";
 
 interface SocialGraph {
   id: number;
   name: string;
   userId: number;
   createdAt: string;
+  modifiedAt: string;
   deleteAt: string | null;
 }
 
@@ -25,6 +27,11 @@ export default function AccountPage() {
 
   const { data: graphs = [] } = useQuery<SocialGraph[]>({
     queryKey: ["/api/graphs"],
+    select: (data) => {
+      return [...data].sort((a, b) => {
+        return new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime();
+      });
+    }
   });
 
   const createGraphMutation = useMutation({
@@ -104,23 +111,15 @@ export default function AccountPage() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {graphs.map((graph) => (
-                <Card
+                <GraphCard
                   key={graph.id}
-                  className="cursor-pointer hover:bg-secondary/50 transition-colors"
+                  id={graph.id}
+                  name={graph.name}
+                  createdAt={graph.createdAt}
+                  modifiedAt={graph.modifiedAt}
+                  deleteAt={graph.deleteAt}
                   onClick={() => setLocation(`/graph/${graph.id}`)}
-                >
-                  <CardContent className="pt-6">
-                    <h3 className="font-semibold mb-2">{graph.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Created {new Date(graph.createdAt).toLocaleDateString()}
-                    </p>
-                    {graph.deleteAt && (
-                      <p className="text-sm text-red-500 mt-1">
-                        Deleting in {new Date(graph.deleteAt).toLocaleDateString()}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
+                />
               ))}
             </div>
           </CardContent>
