@@ -148,12 +148,7 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
-                    if (newName.trim() && newName !== name) {
-                      renameGraphMutation.mutate();
-                    } else {
-                      setIsEditing(false);
-                      setNewName(name);
-                    }
+                    handleRename(e);
                   } else if (e.key === 'Escape') {
                     setIsEditing(false);
                     setNewName(name);
@@ -191,11 +186,10 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
-              if (isEditing && newName.trim() && newName !== name) {
-                renameGraphMutation.mutate();
+              if (isEditing) {
+                handleRename(e);
               } else {
-                setIsEditing(!isEditing);
-                setNewName(name);
+                setIsEditing(true);
               }
             }}
           >
