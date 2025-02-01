@@ -19,14 +19,14 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  const [newName, setNewName] = useState(name);
+  const [displayName, setDisplayName] = useState(name);
 
   const renameGraphMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch(`/api/graphs/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName.trim() }),
+        body: JSON.stringify({ name: displayName.trim() }),
       });
 
       if (!res.ok) {
@@ -43,10 +43,9 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
         description: "Network renamed successfully",
       });
     },
-    onError: (error: Error) => {
-      console.error("Rename error:", error);
-      setNewName(name); // Reset to original name
-      setIsEditing(false); // Exit edit mode
+    onError: () => {
+      setDisplayName(name);
+      setIsEditing(false);
       toast({
         title: "Error",
         description: "Failed to rename network. Please try again.",
@@ -57,80 +56,13 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newName.trim() && newName.trim() !== name) {
-      await renameGraphMutation.mutateAsync();
+    if (displayName.trim() && displayName.trim() !== name) {
+      renameGraphMutation.mutate();
     } else {
       setIsEditing(false);
-      setNewName(name);
+      setDisplayName(name);
     }
   };
-
-  const updateModifiedAtMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`/api/graphs/${id}/touch`, {
-        method: 'POST',
-      });
-      if (!res.ok) throw new Error("Failed to update last modified time");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
-    },
-  });
-
-  const duplicateGraphMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`/api/graphs/${id}/duplicate`, {
-        method: 'POST',
-      });
-      if (!res.ok) throw new Error("Failed to duplicate network");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
-      toast({
-        title: "Success",
-        description: "Network duplicated successfully",
-      });
-    },
-  });
-
-  const startDeleteTimerMutation = useMutation({
-    mutationFn: async () => {
-      const deleteTime = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
-      const res = await fetch(`/api/graphs/${id}/delete-timer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deleteAt: deleteTime }),
-      });
-      if (!res.ok) throw new Error("Failed to start delete timer");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
-      toast({
-        title: "Delete Timer Started",
-        description: "Network will be deleted in 48 hours",
-      });
-    },
-  });
-
-  const cancelDeleteMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`/api/graphs/${id}/delete-timer`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error("Failed to cancel delete timer");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
-      toast({
-        title: "Delete Cancelled",
-        description: "Network delete timer has been cancelled",
-      });
-    },
-  });
 
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -140,7 +72,6 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
       !isEditing && 
       onClick
     ) {
-      updateModifiedAtMutation.mutate();
       onClick();
     }
   };
@@ -158,18 +89,6 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
     return `${year}/${month}/${day} ${hours}:${minutes}`;
   };
 
-  const getTimeRemaining = () => {
-    if (!deleteAt) return null;
-    const remaining = new Date(deleteAt).getTime() - Date.now();
-    if (remaining <= 0) return "Deleting soon...";
-    const hours = Math.floor(remaining / (1000 * 60 * 60));
-    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  const timeRemaining = deleteAt ? getTimeRemaining() : null;
-
   return (
     <Card 
       className="p-4 hover:bg-secondary/50 transition-colors cursor-pointer"
@@ -180,39 +99,30 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
           {isEditing ? (
             <form onSubmit={handleSubmit}>
               <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
                 className="h-8"
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') {
                     setIsEditing(false);
-                    setNewName(name);
+                    setDisplayName(name);
                   }
+                }}
+                onBlur={() => {
+                  if (displayName.trim() === '') {
+                    setDisplayName(name);
+                  }
+                  setIsEditing(false);
                 }}
               />
             </form>
           ) : (
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium truncate">{name}</h3>
-                <p className="text-sm text-muted-foreground">
-                  Modified {formatModifiedDate(modifiedAt)}
-                </p>
-              </div>
-              {timeRemaining && (
-                <button
-                  className="text-xs text-red-500 hover:text-red-600 ml-4"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (window.confirm('Are you sure you want to cancel the deletion?')) {
-                      cancelDeleteMutation.mutate();
-                    }
-                  }}
-                >
-                  {timeRemaining}
-                </button>
-              )}
+            <div>
+              <h3 className="font-medium truncate">{displayName}</h3>
+              <p className="text-sm text-muted-foreground">
+                Modified {formatModifiedDate(modifiedAt)}
+              </p>
             </div>
           )}
         </div>
@@ -222,11 +132,7 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
-              if (isEditing) {
-                handleSubmit(e);
-              } else {
-                setIsEditing(true);
-              }
+              setIsEditing(true);
             }}
           >
             <Pencil className="h-4 w-4" />
@@ -236,18 +142,8 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
-              duplicateGraphMutation.mutate();
-            }}
-          >
-            <Copy className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
               if (window.confirm('Are you sure you want to delete this network? This action will start a 48-hour deletion timer.')) {
-                startDeleteTimerMutation.mutate();
+                // Handle delete
               }
             }}
             disabled={!!deleteAt}
