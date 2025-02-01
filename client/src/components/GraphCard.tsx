@@ -50,27 +50,14 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
     return () => clearInterval(interval);
   }, [deleteAt]);
 
-  const updateModifiedAtMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`/api/graphs/${id}/touch`, {
-        method: 'POST',
-      });
-      if (!res.ok) throw new Error("Failed to update last modified time");
-      const data = await res.json();
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
-    },
-  });
-
   const startDeletionMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch(`/api/graphs/${id}/delete`, {
         method: 'POST',
       });
       if (!res.ok) throw new Error("Failed to start deletion timer");
-      return res.json();
+      const data = await res.json();
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
@@ -102,7 +89,6 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
     e.preventDefault();
     if (displayName.trim()) {
       setIsEditing(false);
-      updateModifiedAtMutation.mutate();
     } else {
       setDisplayName(name);
       setIsEditing(false);
@@ -117,7 +103,6 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
       !isEditing && 
       onClick
     ) {
-      updateModifiedAtMutation.mutate();
       onClick();
     }
   };
@@ -181,7 +166,6 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
             onClick={(e) => {
               e.stopPropagation();
               setIsEditing(true);
-              updateModifiedAtMutation.mutate();
             }}
           >
             <Pencil className="h-4 w-4" />
@@ -192,7 +176,6 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
             onClick={(e) => {
               e.stopPropagation();
               duplicateGraphMutation.mutate();
-              updateModifiedAtMutation.mutate();
             }}
           >
             <Copy className="h-4 w-4" />
@@ -204,7 +187,6 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
               e.stopPropagation();
               if (window.confirm('Are you sure you want to delete this network? This action will start a 48-hour deletion timer.')) {
                 startDeletionMutation.mutate();
-                updateModifiedAtMutation.mutate();
               }
             }}
             disabled={!!deleteAt}
