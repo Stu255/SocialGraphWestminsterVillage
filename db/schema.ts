@@ -26,7 +26,7 @@ export const people = pgTable("people", {
   name: text("name").notNull(),
   jobTitle: text("job_title"),
   organization: text("organization"),
-  relationshipToYou: integer("relationship_to_you"), // Added this field
+  relationshipToYou: integer("relationship_to_you"),
   lastContact: date("last_contact"),
   officeNumber: text("office_number"),
   mobileNumber: text("mobile_number"),
@@ -38,7 +38,6 @@ export const people = pgTable("people", {
   graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
-
 
 // Organizations table replaces affiliations
 export const organizations = pgTable("organizations", {
