@@ -1,8 +1,10 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Copy, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface GraphCardProps {
   id: number;
@@ -16,6 +18,25 @@ interface GraphCardProps {
 export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState(name);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const duplicateGraphMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/graphs/${id}/duplicate`, {
+        method: 'POST',
+      });
+      if (!res.ok) throw new Error("Failed to duplicate network");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
+      toast({
+        title: "Success",
+        description: "Network duplicated successfully",
+      });
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +116,16 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
             }}
           >
             <Pencil className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              duplicateGraphMutation.mutate();
+            }}
+          >
+            <Copy className="h-4 w-4" />
           </Button>
           <Button 
             variant="ghost" 
