@@ -26,7 +26,7 @@ interface GraphCardProps {
   onClick?: () => void;
 }
 
-export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCardProps) {
+export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, onClick }: GraphCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState(name);
   const [timeRemaining, setTimeRemaining] = useState<string>("");
@@ -128,22 +128,21 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     if (
-      !target.closest('button') &&
-      !target.closest('input') &&
-      !isEditing &&
+      !target.closest('button') && 
+      !target.closest('input') && 
+      !isEditing && 
       onClick
     ) {
       onClick();
     }
   };
 
-  const formatModifiedDate = (date: string | null | undefined) => {
-    // If no date is provided, use creation date as fallback
-    if (!date) {
-      return "Created";
-    }
+  const formatModifiedDate = (date: string) => {
+    if (!date || date === 'null') return "Never";
 
     const d = new Date(date);
+    if (isNaN(d.getTime())) return "Never";
+
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
@@ -154,7 +153,7 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
   };
 
   return (
-    <Card
+    <Card 
       className={`p-4 ${deleteAt ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-secondary/50'} transition-colors cursor-pointer`}
       onClick={handleCardClick}
     >
@@ -174,7 +173,7 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
             <div className={deleteAt ? 'text-red-600' : ''}>
               <h3 className="font-medium truncate">{displayName}</h3>
               <p className="text-sm text-muted-foreground">
-                Modified {formatModifiedDate(modifiedAt)}
+                Modified {formatModifiedDate(initialModifiedAt)}
               </p>
             </div>
           )}
@@ -190,8 +189,8 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
           >
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
+          <Button 
+            variant="ghost" 
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
@@ -202,8 +201,8 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
+              <Button 
+                variant="ghost" 
                 size="icon"
                 disabled={!!deleteAt}
               >
