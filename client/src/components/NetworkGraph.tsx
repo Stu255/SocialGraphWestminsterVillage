@@ -59,7 +59,6 @@ const getRelationshipIcon = (relationshipId: number | undefined) => {
   }
 };
 
-// Define line styles for different relationship types
 const getRelationshipLineStyle = (relationshipType: string) => {
   switch (relationshipType) {
     case "Allied":
@@ -73,8 +72,8 @@ const getRelationshipLineStyle = (relationshipType: string) => {
         strokeWidth: 2, 
         strokeDasharray: "none",
         doubleStroke: true,
-        doubleStrokeGap: 2
-      }; // Double line
+        doubleStrokeGap: 4
+      }; // Double line with increased gap
     case "Close":
       return { 
         strokeWidth: 2, 
