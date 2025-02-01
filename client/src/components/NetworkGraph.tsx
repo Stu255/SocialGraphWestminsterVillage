@@ -41,7 +41,7 @@ const CHEVRON_UP = "M4 0 L12 -6 L20 0";
 const RELATIONSHIP_ICONS = {
   allied: {
     path: `${CIRCLE_PATH} ${CHEVRON_DOWN} ${CHEVRON_UP}`,
-    viewBox: "-0 -8 24 40"
+    viewBox: "0 -6 24 36"
   },
   trusted: {
     path: `${CIRCLE_PATH} ${CHEVRON_DOWN}`,
@@ -275,7 +275,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       .attr("transform", d => {
         const icon = getRelationshipIcon(d.relationshipToYou);
         // Adjust vertical position to center the circle portion of each icon
-        const yOffset = icon.viewBox === "-0 -8 24 40" ? -20 : 
+        const yOffset = icon.viewBox === "0 -6 24 36" ? -15 : 
                        icon.viewBox === "0 0 24 32" ? -16 : -12;
         return `translate(-12, ${yOffset}) scale(1)`;
       })
