@@ -112,7 +112,8 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
     if (remaining <= 0) return "Deleting soon...";
     const hours = Math.floor(remaining / (1000 * 60 * 60));
     const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h ${minutes}m`;
+    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
   const timeRemaining = deleteAt ? getTimeRemaining() : null;
@@ -144,26 +145,36 @@ export function GraphCard({ id, name, modifiedAt, deleteAt, onClick }: GraphCard
                 onChange={(e) => setNewName(e.target.value)}
                 className="h-8"
                 autoFocus
-                onBlur={() => setIsEditing(false)}
+                onBlur={() => {
+                  if (newName.trim() && newName !== name) {
+                    handleRename({ preventDefault: () => {} } as React.FormEvent);
+                  } else {
+                    setIsEditing(false);
+                  }
+                }}
               />
             </form>
           ) : (
-            <>
-              <h3 className="font-medium truncate">{name}</h3>
-              <p className="text-sm text-muted-foreground">
-                Modified {new Date(modifiedAt).toLocaleDateString()}
-              </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium truncate">{name}</h3>
+                <p className="text-sm text-muted-foreground">
+                  Modified {new Date(modifiedAt).toLocaleDateString()}
+                </p>
+              </div>
               {timeRemaining && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="mt-1 h-6 text-xs text-red-500 hover:text-red-600"
-                  onClick={() => cancelDeleteMutation.mutate()}
+                <button
+                  className="text-xs text-red-500 hover:text-red-600 ml-4"
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to cancel the deletion?')) {
+                      cancelDeleteMutation.mutate();
+                    }
+                  }}
                 >
-                  Delete in {timeRemaining} (click to cancel)
-                </Button>
+                  {timeRemaining}
+                </button>
               )}
-            </>
+            </div>
           )}
         </div>
         <div className="flex items-center gap-2 ml-4">
