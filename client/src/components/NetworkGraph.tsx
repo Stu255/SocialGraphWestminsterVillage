@@ -36,9 +36,9 @@ interface Props {
 const RELATIONSHIP_ICONS = {
   shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
   star: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
-  doubleRing: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12z",
-  circle: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z",
-  smallCircle: "M12 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"
+  doubleRing: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z", // Solid circle for Close
+  circle: "M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z",     // Complete circle for Connected
+  smallCircle: "M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16z" // Hollow circle for Acquainted
 };
 
 // Map relationship IDs to icon types
@@ -47,13 +47,13 @@ const getRelationshipIcon = (relationshipId: number | undefined) => {
     case 5:
       return "shield"; // Allied
     case 4:
-      return "star"; // Trusted
+      return "star";   // Trusted
     case 3:
-      return "doubleRing"; // Close
+      return "doubleRing"; // Close - solid circle
     case 2:
-      return "circle"; // Connected
+      return "circle";     // Connected - complete circle
     case 1:
-      return "smallCircle"; // Acquainted
+      return "smallCircle"; // Acquainted - hollow circle
     default:
       return "smallCircle";
   }
