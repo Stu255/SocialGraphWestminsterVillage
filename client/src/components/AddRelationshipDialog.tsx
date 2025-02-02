@@ -165,7 +165,8 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
 
       if (key === "connectionType") {
         const currentType = getCurrentConnectionType(person.id);
-        if (!currentType) return value.toLowerCase() === "none";
+        if (!currentType && value.toLowerCase() === "none") return true;
+        if (!currentType) return false;
         return currentType.toLowerCase().includes(value.toLowerCase());
       }
 
@@ -298,7 +299,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
                     {selectedPerson && (
                       <TableCell>
                         <Select
-                          value={getCurrentConnectionType(person.id) || "none"}
+                          value={getCurrentConnectionType(person.id) ?? "none"}
                           onValueChange={(value) => handleConnectionSelect(person, value)}
                         >
                           <SelectTrigger>
