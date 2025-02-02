@@ -148,7 +148,8 @@ export function registerRoutes(app: Express): Server {
         graphId: req.body.graphId,
         jobTitle: req.body.jobTitle,
         organization: req.body.organization,
-        relationshipToYou: req.body.relationshipToYou,
+        userRelationshipType: req.body.relationshipToYou || 1,
+        lastContact: req.body.lastContact,
         officeNumber: req.body.officeNumber,
         mobileNumber: req.body.mobileNumber,
         email1: req.body.email1,
@@ -372,6 +373,12 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
+      console.log("Creating organization with data:", req.body);
+
+      if (!req.body.graphId) {
+        return res.status(400).json({ error: "Graph ID is required" });
+      }
+
       const [organization] = await db
         .insert(organizations)
         .values({
@@ -387,6 +394,7 @@ export function registerRoutes(app: Express): Server {
         })
         .returning();
 
+      console.log("Created organization:", organization);
       res.json(organization);
     } catch (error) {
       console.error("Error creating organization:", error);

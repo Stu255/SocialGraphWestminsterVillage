@@ -90,7 +90,6 @@ export const connections = pgTable("connections", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Rest of the schema remains unchanged
 export const customFields = pgTable("custom_fields", {
   id: serial("id").primaryKey(),
   graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
@@ -136,6 +135,17 @@ const insertPeopleSchema = createInsertSchema(people, {
 });
 
 // Export the schemas
+export const insertOrganizationSchema = createInsertSchema(organizations, {
+    graphId: z.number(),
+    name: z.string().min(1, "Name is required"),
+    brandColor: z.string().default("#000000"),
+    accentColor: z.string().default("#000000"),
+    website: z.string().nullable(),
+    industry: z.string().nullable(),
+    hqCity: z.string().nullable(),
+    headcount: z.number().nullable(),
+    turnover: z.string().nullable(),
+  });
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export const insertSocialGraphSchema = createInsertSchema(socialGraphs);
@@ -146,7 +156,6 @@ export const insertConnectionSchema = createInsertSchema(connections);
 export const selectConnectionSchema = createSelectSchema(connections);
 export const insertConnectionTypeSchema = createInsertSchema(connectionTypes);
 export const selectConnectionTypeSchema = createSelectSchema(connectionTypes);
-export const insertOrganizationSchema = createInsertSchema(organizations);
 export const selectOrganizationSchema = createSelectSchema(organizations);
 export const insertCustomFieldSchema = createInsertSchema(customFields);
 export const selectCustomFieldSchema = createSelectSchema(customFields);
