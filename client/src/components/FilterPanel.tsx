@@ -2,20 +2,20 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-interface Affiliation {
+interface Organization {
   id: number;
   name: string;
   color: string;
 }
 
-interface RelationshipType {
+interface ConnectionType {
   id: number;
   name: string;
 }
 
 interface Filters {
-  affiliation: string | null;
-  relationshipType: string | null;
+  organization: string | null;
+  connectionType: string | null;
 }
 
 interface FilterPanelProps {
@@ -24,11 +24,11 @@ interface FilterPanelProps {
 }
 
 export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
-  const { data: affiliations = [] } = useQuery<Affiliation[]>({
-    queryKey: ["/api/affiliations"],
+  const { data: organizations = [] } = useQuery<Organization[]>({
+    queryKey: ["/api/organizations"],
   });
 
-  const { data: relationshipTypes = [] } = useQuery<RelationshipType[]>({
+  const { data: connectionTypes = [] } = useQuery<ConnectionType[]>({
     queryKey: ["/api/relationship-types"],
   });
 
@@ -36,21 +36,21 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
     <Card>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Affiliation</label>
+          <label className="text-sm font-medium">Organization</label>
           <Select
-            value={filters.affiliation || "all"}
+            value={filters.organization || "all"}
             onValueChange={(value) =>
-              onFilterChange({ ...filters, affiliation: value === "all" ? null : value })
+              onFilterChange({ ...filters, organization: value === "all" ? null : value })
             }
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select affiliation" />
+              <SelectValue placeholder="Select organization" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Affiliations</SelectItem>
-              {affiliations.map((affiliation) => (
-                <SelectItem key={affiliation.id} value={affiliation.name}>
-                  {affiliation.name}
+              <SelectItem value="all">All Organizations</SelectItem>
+              {organizations.map((org) => (
+                <SelectItem key={org.id} value={org.name}>
+                  {org.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -58,19 +58,19 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Relationship Type</label>
+          <label className="text-sm font-medium">Connection Type</label>
           <Select
-            value={filters.relationshipType || "all"}
+            value={filters.connectionType || "all"}
             onValueChange={(value) =>
-              onFilterChange({ ...filters, relationshipType: value === "all" ? null : value })
+              onFilterChange({ ...filters, connectionType: value === "all" ? null : value })
             }
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select type" />
+              <SelectValue placeholder="Select connection type" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
-              {relationshipTypes.map((type) => (
+              {connectionTypes.map((type) => (
                 <SelectItem key={type.id} value={type.name}>
                   {type.name}
                 </SelectItem>

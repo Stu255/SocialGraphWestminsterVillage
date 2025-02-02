@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
+import { CONNECTION_TYPES } from "./RelationshipTypeManager";
 import { useToast } from "@/hooks/use-toast";
 
 interface Person {
@@ -36,13 +36,13 @@ interface Person {
   relationshipToYou?: string;
 }
 
-interface AddRelationshipDialogProps {
+interface AddConnectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   graphId: number;
 }
 
-type SortField = "name" | "organization" | "jobTitle" | "relationshipToYou";
+type SortField = "name" | "organization" | "jobTitle";
 type SortDirection = "asc" | "desc";
 type FilterValues = Record<string, string>;
 type SortConfig = {
@@ -50,13 +50,13 @@ type SortConfig = {
   direction: SortDirection | null;
 };
 
-const getRelationshipStrength = (relationshipName: string | undefined) => {
-  if (!relationshipName) return -1;
-  const type = RELATIONSHIP_TYPES.find(t => t.name === relationshipName);
+const getConnectionStrength = (connectionType: string | undefined) => {
+  if (!connectionType) return -1;
+  const type = CONNECTION_TYPES.find(t => t.name === connectionType);
   return type ? type.id : -1;
 };
 
-export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelationshipDialogProps) {
+export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnectionDialogProps) {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: null, direction: null });
   const [filters, setFilters] = useState<FilterValues>({});
@@ -78,18 +78,18 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
   );
 
   const mutation = useMutation({
-    mutationFn: async ({ sourceId, targetId, relationshipType }: any) => {
-      if (relationshipType === "none") {
+    mutationFn: async ({ sourceId, targetId, connectionType }: any) => {
+      if (connectionType === "none") {
         const res = await fetch(`/api/relationships?sourcePersonId=${sourceId}&targetPersonId=${targetId}&graphId=${graphId}`, {
           method: "DELETE",
         });
 
         if (!res.ok) {
           const errorText = await res.text();
-          throw new Error(errorText || "Failed to remove relationship");
+          throw new Error(errorText || "Failed to remove connection");
         }
 
-        return { message: "Relationship removed" };
+        return { message: "Connection removed" };
       } else {
         const res = await fetch("/api/relationships", {
           method: "POST",
@@ -97,14 +97,14 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
           body: JSON.stringify({
             sourcePersonId: sourceId,
             targetPersonId: targetId,
-            relationshipType,
+            relationshipType: connectionType,
             graphId,
           }),
         });
 
         if (!res.ok) {
           const errorText = await res.text();
-          throw new Error(errorText || "Failed to create relationship");
+          throw new Error(errorText || "Failed to create connection");
         }
 
         return res.json();
@@ -114,7 +114,7 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
       queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
       toast({
         title: "Success",
-        description: "Relationship updated successfully",
+        description: "Connection updated successfully",
       });
     },
     onError: (error: Error) => {
@@ -126,27 +126,17 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
     },
   });
 
-  const handleRelationshipSelect = async (targetPerson: Person, relationshipType: string) => {
+  const handleConnectionSelect = async (targetPerson: Person, connectionType: string) => {
     if (!selectedPerson) return;
 
     try {
       await mutation.mutateAsync({
         sourceId: selectedPerson.id,
         targetId: targetPerson.id,
-        relationshipType,
+        connectionType,
       });
 
-      const updatedPeople = people.map(p => {
-        if (p.id === targetPerson.id || p.id === selectedPerson.id) {
-          return {
-            ...p,
-            relationshipToYou: relationshipType === "none" ? undefined : relationshipType
-          };
-        }
-        return p;
-      });
-
-      queryClient.setQueryData(["/api/people", graphId], updatedPeople);
+      queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
     } catch (error) {
       // Error is handled by mutation's onError
     }
@@ -159,7 +149,7 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
   const filteredPeople = people.filter((person) => {
     return Object.entries(filters).every(([key, value]) => {
       if (!value) return true;
-      const fieldValue = person[key as keyof Person]?.toLowerCase() || "";
+      const fieldValue = String(person[key as keyof Person] || "").toLowerCase();
       return fieldValue.includes(value.toLowerCase());
     });
   });
@@ -169,16 +159,8 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
       return a.name.localeCompare(b.name);
     }
 
-    if (sortConfig.column === "relationshipToYou") {
-      const aStrength = getRelationshipStrength(a.relationshipToYou);
-      const bStrength = getRelationshipStrength(b.relationshipToYou);
-      return sortConfig.direction === "asc" 
-        ? aStrength - bStrength 
-        : bStrength - aStrength;
-    }
-
-    const aValue = (a[sortConfig.column as keyof Person] || "").toLowerCase();
-    const bValue = (b[sortConfig.column as keyof Person] || "").toLowerCase();
+    const aValue = String(a[sortConfig.column as keyof Person] || "").toLowerCase();
+    const bValue = String(b[sortConfig.column as keyof Person] || "").toLowerCase();
 
     return sortConfig.direction === "asc"
       ? aValue.localeCompare(bValue)
@@ -253,7 +235,7 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
             )}
             <div>
               <DialogTitle>
-                {selectedPerson ? selectedPerson.name : "Relationships"}
+                {selectedPerson ? `Manage Connections for ${selectedPerson.name}` : "Add Connections"}
               </DialogTitle>
               {selectedPerson && (
                 <DialogDescription>
@@ -278,8 +260,8 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
                   {renderColumnHeader("jobTitle", "Position")}
                 </TableHead>
                 {selectedPerson && (
-                  <TableHead>
-                    {renderColumnHeader("relationshipToYou", "Relationship")}
+                  <TableHead className="w-[150px]">
+                    <div className="pl-2">Connection Type</div>
                   </TableHead>
                 )}
                 <TableHead className="w-[100px]"></TableHead>
@@ -298,15 +280,15 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
                     {selectedPerson && (
                       <TableCell>
                         <Select
-                          onValueChange={(value) => handleRelationshipSelect(person, value)}
-                          value={person.relationshipToYou || "none"}
+                          onValueChange={(value) => handleConnectionSelect(person, value)}
+                          defaultValue="none"
                         >
                           <SelectTrigger style={{ color: getOrganizationColor(person.organization) }}>
-                            <SelectValue defaultValue="none" />
+                            <SelectValue placeholder="Select type" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">None</SelectItem>
-                            {RELATIONSHIP_TYPES.map(type => (
+                            {CONNECTION_TYPES.map(type => (
                               <SelectItem key={type.id} value={type.name}>
                                 {type.name}
                               </SelectItem>
@@ -323,7 +305,7 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: AddRelati
                           onClick={() => handleConnect(person)}
                           style={{ color: getOrganizationColor(person.organization) }}
                         >
-                          Connect
+                          Manage
                         </Button>
                       )}
                     </TableCell>

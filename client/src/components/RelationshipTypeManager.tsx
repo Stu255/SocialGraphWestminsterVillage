@@ -9,51 +9,54 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AddRelationshipDialog } from "./AddRelationshipDialog";
+import { AddConnectionDialog } from "./AddRelationshipDialog";
 
-// Define relationship types with scores and their line styles
-export const RELATIONSHIP_TYPES = [
-  { id: 5, name: "Allied", style: "heavy-line", description: "Heavy line" },
-  { id: 4, name: "Trusted", style: "double-line", description: "Double line" },
-  { id: 3, name: "Close", style: "standard-line", description: "Standard line" },
-  { id: 2, name: "Connected", style: "thin-line", description: "Thin line" },
-  { id: 1, name: "Acquainted", style: "dashed-line", description: "Thin dashed line" }
+// Define connection types with scores and their line styles
+export const CONNECTION_TYPES = [
+  { id: 5, name: "Strong Connection", style: "heavy-line", description: "Heavy line" },
+  { id: 4, name: "Regular Connection", style: "double-line", description: "Double line" },
+  { id: 3, name: "Moderate Connection", style: "standard-line", description: "Standard line" },
+  { id: 2, name: "Light Connection", style: "thin-line", description: "Thin line" },
+  { id: 1, name: "Weak Connection", style: "dashed-line", description: "Thin dashed line" }
 ];
 
-// Helper functions for relationship type conversion
-export const getRelationshipNameById = (id: number) => {
-  console.log('Getting relationship name for id:', id);
-  const type = RELATIONSHIP_TYPES.find(type => type.id === id);
-  const name = type?.name || "Unknown";
-  console.log('Found relationship name:', name);
-  return name;
+// For backward compatibility and to avoid breaking changes
+export const RELATIONSHIP_TYPES = [
+  { id: 5, name: "Strong Relationship", style: "heavy-line", description: "Heavy line" },
+  { id: 4, name: "Regular Relationship", style: "double-line", description: "Double line" },
+  { id: 3, name: "Moderate Relationship", style: "standard-line", description: "Standard line" },
+  { id: 2, name: "Light Relationship", style: "thin-line", description: "Thin line" },
+  { id: 1, name: "Weak Relationship", style: "dashed-line", description: "Thin dashed line" }
+];
+
+// Helper functions for connection type conversion
+export const getConnectionNameById = (id: number) => {
+  const type = CONNECTION_TYPES.find(type => type.id === id);
+  return type?.name || "Unknown";
 };
 
-export const getRelationshipIdByName = (name: string) => {
-  console.log('Getting relationship id for name:', name);
-  const type = RELATIONSHIP_TYPES.find(type => type.name === name);
-  const id = type?.id || null;
-  console.log('Found relationship id:', id);
-  return id;
+export const getConnectionIdByName = (name: string) => {
+  const type = CONNECTION_TYPES.find(type => type.name === name);
+  return type?.id || null;
 };
 
-interface RelationshipDialogProps {
+interface ConnectionListDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-function RelationshipListDialog({ open, onOpenChange }: RelationshipDialogProps) {
+function ConnectionListDialog({ open, onOpenChange }: ConnectionListDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Relationships</DialogTitle>
+          <DialogTitle>Connection Types</DialogTitle>
           <DialogDescription>
-            Available relationship types and their visual representations
+            Available connection types and their visual representations in the network
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          {RELATIONSHIP_TYPES.map((type) => (
+          {CONNECTION_TYPES.map((type) => (
             <div key={type.id} className="flex items-center justify-between p-2 rounded-lg border">
               <div>
                 <h4 className="font-medium">{type.name}</h4>
@@ -74,14 +77,14 @@ function RelationshipListDialog({ open, onOpenChange }: RelationshipDialogProps)
   );
 }
 
-export function RelationshipTypeManager({ graphId }: { graphId: number }) {
+export function ConnectionManager({ graphId }: { graphId: number }) {
   const [showListDialog, setShowListDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Relationships</CardTitle>
+        <CardTitle>Network Connections</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         <Button 
@@ -89,7 +92,7 @@ export function RelationshipTypeManager({ graphId }: { graphId: number }) {
           onClick={() => setShowAddDialog(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add Relationship
+          Add Connection
         </Button>
 
         <Button 
@@ -98,15 +101,15 @@ export function RelationshipTypeManager({ graphId }: { graphId: number }) {
           onClick={() => setShowListDialog(true)}
         >
           <Users className="h-4 w-4 mr-2" />
-          See Relationships
+          Connection Types
         </Button>
 
-        <RelationshipListDialog
+        <ConnectionListDialog
           open={showListDialog}
           onOpenChange={setShowListDialog}
         />
 
-        <AddRelationshipDialog
+        <AddConnectionDialog
           open={showAddDialog}
           onOpenChange={setShowAddDialog}
           graphId={graphId}
@@ -115,3 +118,6 @@ export function RelationshipTypeManager({ graphId }: { graphId: number }) {
     </Card>
   );
 }
+
+// Re-export for backward compatibility
+export { ConnectionManager as RelationshipTypeManager };

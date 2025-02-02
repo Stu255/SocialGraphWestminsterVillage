@@ -33,7 +33,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useForm } from "react-hook-form";
-import { getRelationshipNameById, getRelationshipIdByName, RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
+import { 
+  CONNECTION_TYPES,
+  getConnectionNameById, 
+  getConnectionIdByName 
+} from "./RelationshipTypeManager";
 
 interface AnalysisPanelProps {
   selectedNode: any;
@@ -47,7 +51,7 @@ const FIELD_LABELS: Record<string, string> = {
   name: "Name",
   jobTitle: "Job Title",
   organization: "Organization",
-  relationshipToYou: "Relationship To You",
+  relationshipStrength: "Your Relationship",
   lastContact: "Last Contact",
   officeNumber: "Office Number",
   mobileNumber: "Mobile Number",
@@ -63,30 +67,25 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   const [isEditing, setIsEditing] = useState(false);
   const { data: fieldPreferences } = useFieldPreferences(graphId);
 
-  // Add query for organizations to get brand colors
   const { data: organizations = [] } = useQuery({
     queryKey: ["/api/organizations", graphId],
     enabled: !!graphId,
   });
 
-  // Get the organization color for the current node
   const getOrganizationColor = () => {
     const org = organizations.find((o: any) => o.name === selectedNode?.organization);
     return org?.brandColor || 'hsl(var(--primary))';
   };
 
-  // Define visibleFields based on fieldPreferences
   const visibleFields = fieldPreferences?.order.filter(
     field => !fieldPreferences?.hidden.includes(field)
   ) || Object.keys(FIELD_LABELS);
 
-  // Get centrality data for the network
   const { data: centrality } = useQuery({
     queryKey: ["/api/analysis/centrality", graphId],
     enabled: !!nodes.length,
   });
 
-  // Calculate top 10 people by centrality
   const topPeople = centrality
     ?.sort((a: any, b: any) => b.centrality - a.centrality)
     .slice(0, 10) || [];
@@ -96,7 +95,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       name: "",
       jobTitle: "",
       organization: "",
-      relationshipToYou: "",
+      relationshipStrength: "",
       lastContact: "",
       officeNumber: "",
       mobileNumber: "",
@@ -110,22 +109,22 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
-      console.log('Backend: Sending update request:', values);
       const res = await fetch(`/api/people/${selectedNode.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...values, graphId }),
+        body: JSON.stringify({ 
+          ...values,
+          relationshipToYou: getConnectionIdByName(values.relationshipStrength),
+          graphId 
+        }),
       });
 
       if (!res.ok) {
         const errorText = await res.text();
-        console.error('Server response:', errorText);
         throw new Error(errorText || "Failed to update person");
       }
 
-      const responseData = await res.json();
-      console.log('Server response data:', responseData);
-      return responseData;
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
@@ -148,12 +147,12 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     },
   });
 
-  const deleteRelationshipMutation = useMutation({
+  const deleteConnectionMutation = useMutation({
     mutationFn: async (id: number) => {
       const res = await fetch(`/api/relationships/${id}`, {
         method: 'DELETE',
       });
-      if (!res.ok) throw new Error("Failed to delete relationship");
+      if (!res.ok) throw new Error("Failed to delete connection");
       return res.json();
     },
     onSuccess: () => {
@@ -163,45 +162,22 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
   const onSubmit = (data: any) => {
     if (!data.name?.trim()) {
-      console.log('Form validation failed: Empty name');
       return;
     }
-    if (!data.relationshipToYou) {
-      console.log('Form validation failed: No relationship type selected');
+    if (!data.relationshipStrength) {
       return;
     }
-    console.log('Form submission data:', data);
-    console.log('Relationship value:', data.relationshipToYou);
 
-    // Transform the data to match the expected API format
-    const transformedData = {
-      ...data,
-      jobTitle: data.jobTitle,
-      organization: data.organization,
-      relationshipToYou: data.relationshipToYou,
-      lastContact: data.lastContact,
-      officeNumber: data.officeNumber,
-      mobileNumber: data.mobileNumber,
-      email1: data.email1,
-      email2: data.email2,
-      linkedin: data.linkedin,
-      twitter: data.twitter,
-      notes: data.notes,
-    };
-
-    console.log('Frontend: Sending update with transformed data:', transformedData);
-    updatePersonMutation.mutate(transformedData);
+    updatePersonMutation.mutate(data);
   };
 
-  // Initialize form values when node is selected or editing mode changes
   useEffect(() => {
     if (selectedNode) {
-      console.log('Loading node data:', selectedNode);
       const formValues = {
         name: selectedNode.name || "",
         jobTitle: selectedNode.jobTitle || "",
         organization: selectedNode.organization || "",
-        relationshipToYou: selectedNode.relationshipToYou ? getRelationshipNameById(selectedNode.relationshipToYou) : "",
+        relationshipStrength: selectedNode.relationshipToYou ? getConnectionNameById(selectedNode.relationshipToYou) : "",
         lastContact: selectedNode.lastContact ? new Date(selectedNode.lastContact).toISOString().split('T')[0] : "",
         officeNumber: selectedNode.officeNumber || "",
         mobileNumber: selectedNode.mobileNumber || "",
@@ -211,7 +187,6 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         twitter: selectedNode.twitter || "",
         notes: selectedNode.notes || ""
       };
-      console.log('Setting form values:', formValues);
       form.reset(formValues);
     }
   }, [selectedNode, isEditing, form]);
@@ -225,23 +200,23 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
           name={fieldName}
           rules={{
             required: fieldName === "name" ? "Name is required" :
-                     fieldName === "relationshipToYou" ? "Relationship type is required" :
+                     fieldName === "relationshipStrength" ? "Relationship strength is required" :
                      false
           }}
           render={({ field }) => (
             <FormItem>
               <FormLabel>{FIELD_LABELS[fieldName]}</FormLabel>
               <FormControl>
-                {fieldName === "relationshipToYou" ? (
+                {fieldName === "relationshipStrength" ? (
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select relationship type" />
+                      <SelectValue placeholder="Select relationship strength" />
                     </SelectTrigger>
                     <SelectContent>
-                      {RELATIONSHIP_TYPES.map(type => (
+                      {CONNECTION_TYPES.map(type => (
                         <SelectItem key={type.id} value={type.name}>
                           {type.name}
                         </SelectItem>
@@ -272,8 +247,8 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     let value = selectedNode[fieldName];
     if (fieldName === "lastContact" && value) {
       value = new Date(value).toLocaleDateString();
-    } else if (fieldName === "relationshipToYou" && value) {
-      value = getRelationshipNameById(value);
+    } else if (fieldName === "relationshipStrength" && selectedNode.relationshipToYou) {
+      value = getConnectionNameById(selectedNode.relationshipToYou);
     }
 
     return (
@@ -311,7 +286,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   }
 
   const nodeMetrics = centrality?.find((c: any) => c.id === selectedNode.id);
-  const nodeRelationships = relationships.filter(r =>
+  const nodeConnections = relationships.filter(r =>
     r.sourcePersonId === selectedNode.id ||
     r.targetPersonId === selectedNode.id
   );
@@ -370,7 +345,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete Person</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This will permanently delete {selectedNode.name} and all their relationships.
+                        This will permanently delete {selectedNode.name} and all their connections.
                         This action cannot be undone.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
@@ -404,18 +379,18 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         <CardContent>
           <div className="space-y-2">
             <p><strong>Centrality Score:</strong> {nodeMetrics?.centrality.toFixed(3) || 0}</p>
-            <p><strong>Direct Connections:</strong> {nodeRelationships.length}</p>
+            <p><strong>Direct Connections:</strong> {nodeConnections.length}</p>
           </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Relationships</CardTitle>
+          <CardTitle>Network Connections</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {nodeRelationships.map(rel => {
+            {nodeConnections.map(rel => {
               const otherNode = nodes.find(n =>
                 n.id === (rel.sourcePersonId === selectedNode.id ?
                   rel.targetPersonId :
@@ -432,7 +407,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => deleteRelationshipMutation.mutate(rel.id)}
+                    onClick={() => deleteConnectionMutation.mutate(rel.id)}
                   >
                     <Trash2 className="h-4 w-4" style={{ color: getOrganizationColor() }} />
                   </Button>

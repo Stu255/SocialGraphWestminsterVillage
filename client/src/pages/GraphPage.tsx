@@ -12,7 +12,7 @@ import {
 import { FilterPanel } from "@/components/FilterPanel";
 import { NodeForm } from "@/components/NodeForm";
 import { OrganizationManager } from "@/components/OrganizationManager";
-import { RelationshipTypeManager } from "@/components/RelationshipTypeManager";
+import { ConnectionManager } from "@/components/RelationshipTypeManager";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
@@ -30,7 +30,7 @@ export default function GraphPage({ params }: Props) {
   const [selectedNode, setSelectedNode] = useState<any>(null);
   const [filters, setFilters] = useState({
     organization: null,
-    relationshipType: null,
+    connectionType: null,
   });
 
   const graphId = parseInt(params.id);
@@ -53,7 +53,7 @@ export default function GraphPage({ params }: Props) {
     },
   });
 
-    const { data: graph } = useQuery({
+  const { data: graph } = useQuery({
     queryKey: ["/api/graphs", graphId],
     queryFn: async () => {
       const res = await fetch(`/api/graphs/${graphId}`);
@@ -112,11 +112,11 @@ export default function GraphPage({ params }: Props) {
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={25} minSize={20}>
           <div className="h-full p-6 border-r overflow-y-auto space-y-6">
-             {graph && <NetworkManager graphId={graphId} currentName={graph.name} />}
+            {graph && <NetworkManager graphId={graphId} currentName={graph.name} />}
             <FilterPanel filters={filters} onFilterChange={setFilters} />
             <NodeForm graphId={graphId} />
             <OrganizationManager graphId={graphId} />
-            <RelationshipTypeManager graphId={graphId} />
+            <ConnectionManager graphId={graphId} />
           </div>
         </ResizablePanel>
 

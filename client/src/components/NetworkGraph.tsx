@@ -3,7 +3,7 @@ import * as d3 from "d3";
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 
-interface Node {
+interface Node extends d3.SimulationNodeDatum {
   id: number;
   name: string;
   affiliation: string;
@@ -39,15 +39,15 @@ const CHEVRON_DOWN = "M4 24 L12 30 L20 24";
 const CHEVRON_UP = "M4 0 L12 -6 L20 0";
 
 const RELATIONSHIP_ICONS = {
-  allied: {
+  strong: {
     path: `${CIRCLE_PATH} ${CHEVRON_DOWN} ${CHEVRON_UP}`,
     viewBox: "0 -6 24 36"
   },
-  trusted: {
+  regular: {
     path: `${CIRCLE_PATH} ${CHEVRON_DOWN}`,
     viewBox: "0 0 24 32"
   },
-  circle: {
+  basic: {
     path: CIRCLE_PATH,
     viewBox: "0 0 24 24"
   }
@@ -55,73 +55,73 @@ const RELATIONSHIP_ICONS = {
 
 const getRelationshipIcon = (relationshipId: number | undefined) => {
   switch (relationshipId) {
-    case 5: // Allied
+    case 5: // Strong Relationship
       return { 
-        ...RELATIONSHIP_ICONS.allied,
+        ...RELATIONSHIP_ICONS.strong,
         fill: true, 
         strokeDasharray: "none" 
       };
-    case 4: // Trusted
+    case 4: // Regular Relationship
       return { 
-        ...RELATIONSHIP_ICONS.trusted,
+        ...RELATIONSHIP_ICONS.regular,
         fill: true, 
         strokeDasharray: "none" 
       };
-    case 3: // Close
+    case 3: // Moderate Relationship
       return { 
-        ...RELATIONSHIP_ICONS.circle,
+        ...RELATIONSHIP_ICONS.basic,
         fill: true, 
         strokeDasharray: "none" 
       };
-    case 2: // Connected
+    case 2: // Light Relationship
       return { 
-        ...RELATIONSHIP_ICONS.circle,
+        ...RELATIONSHIP_ICONS.basic,
         fill: false, 
         strokeDasharray: "none" 
       };
-    case 1: // Acquainted
+    case 1: // Weak Relationship
       return { 
-        ...RELATIONSHIP_ICONS.circle,
+        ...RELATIONSHIP_ICONS.basic,
         fill: false, 
         strokeDasharray: "2,2" 
       };
     default:
       return { 
-        ...RELATIONSHIP_ICONS.circle,
+        ...RELATIONSHIP_ICONS.basic,
         fill: false, 
         strokeDasharray: "2,2" 
       };
   }
 };
 
-const getRelationshipLineStyle = (relationshipType: string) => {
-  switch (relationshipType) {
-    case "Allied":
+const getConnectionLineStyle = (connectionType: string) => {
+  switch (connectionType) {
+    case "Strong Connection":
       return { 
         strokeWidth: 4, 
         strokeDasharray: "none",
         doubleStroke: false 
       };
-    case "Trusted":
+    case "Regular Connection":
       return { 
         strokeWidth: 2, 
         strokeDasharray: "none",
         doubleStroke: true,
         doubleStrokeGap: 4
       };
-    case "Close":
+    case "Moderate Connection":
       return { 
         strokeWidth: 2, 
         strokeDasharray: "none",
         doubleStroke: false 
       };
-    case "Connected":
+    case "Light Connection":
       return { 
         strokeWidth: 1, 
         strokeDasharray: "none",
         doubleStroke: false 
       };
-    case "Acquainted":
+    case "Weak Connection":
       return { 
         strokeWidth: 1, 
         strokeDasharray: "4,4",
@@ -219,14 +219,14 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
     const linkGroup = g.append("g").attr("class", "links");
 
     filteredLinks.forEach(d => {
-      const style = getRelationshipLineStyle(d.type);
+      const style = getConnectionLineStyle(d.type);
 
-      if (style.doubleStroke) {
+      if (style.doubleStroke && style.doubleStrokeGap) {
         [-style.doubleStrokeGap/2, style.doubleStrokeGap/2].forEach(offset => {
           linkGroup
             .append("line")
             .datum(d)
-            .attr("stroke", getEdgeColor(d.source, d.target))
+            .attr("stroke", getEdgeColor(d.source as Node, d.target as Node))
             .attr("stroke-opacity", 0.6)
             .attr("stroke-width", style.strokeWidth)
             .attr("stroke-dasharray", style.strokeDasharray)
@@ -236,7 +236,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
         linkGroup
           .append("line")
           .datum(d)
-          .attr("stroke", getEdgeColor(d.source, d.target))
+          .attr("stroke", getEdgeColor(d.source as Node, d.target as Node))
           .attr("stroke-opacity", 0.6)
           .attr("stroke-width", style.strokeWidth)
           .attr("stroke-dasharray", style.strokeDasharray);
