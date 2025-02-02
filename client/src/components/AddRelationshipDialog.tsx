@@ -35,20 +35,13 @@ interface Person {
   jobTitle: string;
 }
 
-interface Relationship {
-  id: number;
-  sourcePersonId: number;
-  targetPersonId: number;
-  relationshipType: number;
-}
-
-interface AddConnectionDialogProps {
+interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   graphId: number;
 }
 
-export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnectionDialogProps) {
+export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [sortConfig, setSortConfig] = useState<{
     column: string | null;
@@ -61,13 +54,13 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch data
+  // Fetch people and their relationships
   const { data: people = [] } = useQuery<Person[]>({
     queryKey: ["/api/people", graphId],
     enabled: !!graphId,
   });
 
-  const { data: relationships = [] } = useQuery<Relationship[]>({
+  const { data: relationships = [] } = useQuery({
     queryKey: ["/api/relationships", graphId],
     enabled: !!graphId,
   });
@@ -77,7 +70,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     enabled: !!graphId,
   });
 
-  // Get organization colors
   const organizationColors = new Map(
     organizations.map((org: any) => [org.name, org.brandColor])
   );
@@ -85,7 +77,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
   const getOrganizationColor = (organizationName: string) => 
     organizationColors.get(organizationName) || "hsl(var(--primary))";
 
-  // Mutation for managing relationships
   const mutation = useMutation({
     mutationFn: async ({
       sourceId,
@@ -106,60 +97,55 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
       // Handle relationship removal
       if (connectionType === "none") {
         if (existingRelationship) {
-          const res = await fetch(`/api/relationships/${existingRelationship.id}`, {
+          const res = await fetch(`/api/relationships/${existingRelationship.id}?graphId=${graphId}`, {
             method: "DELETE",
           });
           if (!res.ok) {
             const errorText = await res.text();
-            throw new Error(errorText || "Failed to remove connection");
+            throw new Error(errorText || "Failed to remove relationship");
           }
         }
         return null;
       }
 
-      // Get connection type ID
+      // Find connection type ID
       const connectionTypeObj = CONNECTION_TYPES.find((t) => t.name === connectionType);
       if (!connectionTypeObj) throw new Error("Invalid connection type");
 
+      const payload = {
+        relationshipType: connectionTypeObj.id,
+        graphId,
+      };
+
       // Update or create relationship
       if (existingRelationship) {
-        const res = await fetch(`/api/relationships/${existingRelationship.id}`, {
+        const res = await fetch(`/api/relationships/${existingRelationship.id}?graphId=${graphId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            relationshipType: connectionTypeObj.id,
-            graphId,
-          }),
+          body: JSON.stringify(payload),
         });
-
         if (!res.ok) {
           const errorText = await res.text();
-          throw new Error(errorText || "Failed to update connection");
+          throw new Error(errorText || "Failed to update relationship");
         }
-
-        const data = await res.json();
-        return data;
+        return res.json();
       }
 
       // Create new relationship
-      const res = await fetch("/api/relationships", {
+      const res = await fetch(`/api/relationships?graphId=${graphId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sourcePersonId: sourceId,
           targetPersonId: targetId,
-          relationshipType: connectionTypeObj.id,
-          graphId,
+          ...payload,
         }),
       });
-
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText || "Failed to create connection");
+        throw new Error(errorText || "Failed to create relationship");
       }
-
-      const data = await res.json();
-      return data;
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
@@ -169,7 +155,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
       });
     },
     onError: (error: Error) => {
-      console.error("Mutation error:", error);
+      console.error("Error:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -178,7 +164,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     },
   });
 
-  // Get current connection type between two people
   const getCurrentConnectionType = (targetPersonId: number): string => {
     if (!selectedPerson) return "none";
 
@@ -196,7 +181,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     return connectionType?.name || "none";
   };
 
-  // Handle connection type selection
   const handleConnectionSelect = (targetPerson: Person, connectionType: string) => {
     if (!selectedPerson) return;
 
@@ -207,25 +191,23 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     });
   };
 
-  // Filter and sort functions
-  const filteredPeople = people
-    .filter((person) => {
-      if (selectedPerson && person.id === selectedPerson.id) return false;
+  const filteredPeople = people.filter((person) => {
+    if (selectedPerson && person.id === selectedPerson.id) return false;
 
-      return Object.entries(filters).every(([key, value]) => {
-        if (!value) return true;
+    return Object.entries(filters).every(([key, value]) => {
+      if (!value) return true;
 
-        if (key === "connectionType") {
-          const currentType = getCurrentConnectionType(person.id);
-          return value === "none"
-            ? currentType === "none"
-            : currentType === value;
-        }
+      if (key === "connectionType") {
+        const currentType = getCurrentConnectionType(person.id);
+        return value === "none"
+          ? currentType === "none"
+          : currentType === value;
+      }
 
-        const fieldValue = String(person[key as keyof Person] || "").toLowerCase();
-        return fieldValue.includes(value.toLowerCase());
-      });
+      const fieldValue = String(person[key as keyof Person] || "").toLowerCase();
+      return fieldValue.includes(value.toLowerCase());
     });
+  });
 
   const sortedPeople = [...filteredPeople].sort((a, b) => {
     if (!sortConfig.column || !sortConfig.direction) return 0;
