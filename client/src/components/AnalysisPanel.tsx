@@ -64,6 +64,7 @@ const FIELD_LABELS: Record<string, string> = {
 };
 
 export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDeleted, graphId }: AnalysisPanelProps) {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const { data: fieldPreferences } = useFieldPreferences(graphId);
@@ -116,31 +117,50 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         graphId 
       };
 
-      const res = await fetch(`/api/people/${selectedNode.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      console.log("Sending contact data:", payload);
 
-      if (!res.ok) {
-        const contentType = res.headers.get("content-type");
-        let errorMessage;
-        if (contentType && contentType.includes("application/json")) {
-          const errorData = await res.json();
-          errorMessage = errorData.error || "Failed to update person";
-        } else {
-          const errorText = await res.text();
-          errorMessage = `API Error: ${res.status} ${res.statusText}`;
+      try {
+        const res = await fetch(`/api/people/${selectedNode.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const contentType = res.headers.get("content-type");
+          let errorMessage;
+
+          try {
+            if (contentType && contentType.includes("application/json")) {
+              const errorData = await res.json();
+              errorMessage = errorData.error || "Failed to update person";
+            } else {
+              const errorText = await res.text();
+              errorMessage = `API Error: ${res.status} ${res.statusText}`;
+              console.error("Server response:", errorText);
+            }
+          } catch (parseError) {
+            console.error("Error parsing response:", parseError);
+            errorMessage = "Failed to parse server response";
+          }
+
+          throw new Error(errorMessage);
         }
-        throw new Error(errorMessage);
-      }
 
-      const data = await res.json();
-      return data;
+        const data = await res.json();
+        return data;
+      } catch (error) {
+        console.error("Contact mutation error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
       setIsEditing(false);
+      toast({
+        title: "Success",
+        description: "Contact updated successfully",
+      });
     },
     onError: (error: Error) => {
       toast({
