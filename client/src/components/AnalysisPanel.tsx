@@ -38,6 +38,7 @@ import {
   getConnectionNameById, 
   getConnectionIdByName 
 } from "./RelationshipTypeManager";
+import { useToast } from "@/hooks/use-toast";
 
 interface AnalysisPanelProps {
   selectedNode: any;
@@ -109,26 +110,44 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
+      const payload = { 
+        ...values,
+        relationshipToYou: getConnectionIdByName(values.relationshipStrength),
+        graphId 
+      };
+
       const res = await fetch(`/api/people/${selectedNode.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          ...values,
-          relationshipToYou: getConnectionIdByName(values.relationshipStrength),
-          graphId 
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || "Failed to update person");
+        const contentType = res.headers.get("content-type");
+        let errorMessage;
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await res.json();
+          errorMessage = errorData.error || "Failed to update person";
+        } else {
+          const errorText = await res.text();
+          errorMessage = `API Error: ${res.status} ${res.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
-      return res.json();
+      const data = await res.json();
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
       setIsEditing(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
