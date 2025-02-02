@@ -50,9 +50,9 @@ interface AddConnectionDialogProps {
 
 export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnectionDialogProps) {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
-  const [sortConfig, setSortConfig] = useState<{ column: string | null; direction: "asc" | "desc" | null }>({ 
-    column: null, 
-    direction: null 
+  const [sortConfig, setSortConfig] = useState<{ column: string | null; direction: "asc" | "desc" | null }>({
+    column: null,
+    direction: null
   });
   const [filters, setFilters] = useState<Record<string, string>>({});
   const { toast } = useToast();
@@ -65,11 +65,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
 
   const { data: relationships = [] } = useQuery<Relationship[]>({
     queryKey: ["/api/relationships", graphId],
-    queryFn: async () => {
-      const res = await fetch(`/api/relationships?graphId=${graphId}`);
-      if (!res.ok) throw new Error("Failed to fetch relationships");
-      return res.json();
-    },
     enabled: !!graphId,
   });
 
@@ -87,51 +82,68 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
   };
 
   const mutation = useMutation({
-    mutationFn: async ({ sourceId, targetId, connectionType }: any) => {
-      const existingRelationship = relationships.find(r => 
-        (r.sourcePersonId === sourceId && r.targetPersonId === targetId) ||
-        (r.targetPersonId === sourceId && r.sourcePersonId === targetId)
-      );
+    mutationFn: async ({ sourceId, targetId, connectionType }: { sourceId: number; targetId: number; connectionType: string }) => {
+      try {
+        const existingRelationship = relationships.find(r =>
+          (r.sourcePersonId === sourceId && r.targetPersonId === targetId) ||
+          (r.targetPersonId === sourceId && r.sourcePersonId === targetId)
+        );
 
-      if (connectionType === "none") {
+        if (connectionType === "none") {
+          if (existingRelationship) {
+            const res = await fetch(`/api/relationships/${existingRelationship.id}`, {
+              method: "DELETE",
+            });
+            if (!res.ok) {
+              const errorText = await res.text();
+              throw new Error(errorText || "Failed to remove connection");
+            }
+          }
+          return null;
+        }
+
+        const connectionTypeObj = CONNECTION_TYPES.find(t => t.name === connectionType);
+        if (!connectionTypeObj) throw new Error("Invalid connection type");
+
         if (existingRelationship) {
           const res = await fetch(`/api/relationships/${existingRelationship.id}`, {
-            method: "DELETE",
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              relationshipType: connectionTypeObj.id,
+              graphId,
+            }),
           });
-          if (!res.ok) throw new Error("Failed to remove connection");
+
+          if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(errorText || "Failed to update connection");
+          }
+
+          return await res.json();
         }
-        return null;
-      }
 
-      const connectionTypeObj = CONNECTION_TYPES.find(t => t.name === connectionType);
-      if (!connectionTypeObj) throw new Error("Invalid connection type");
-
-      const payload = {
-        graphId,
-        relationshipType: connectionTypeObj.id,
-      };
-
-      if (existingRelationship) {
-        const res = await fetch(`/api/relationships/${existingRelationship.id}`, {
-          method: "PUT",
+        const res = await fetch("/api/relationships", {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({
+            sourcePersonId: sourceId,
+            targetPersonId: targetId,
+            relationshipType: connectionTypeObj.id,
+            graphId,
+          }),
         });
-        if (!res.ok) throw new Error("Failed to update connection");
-        return res.json();
-      }
 
-      const res = await fetch("/api/relationships", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...payload,
-          sourcePersonId: sourceId,
-          targetPersonId: targetId,
-        }),
-      });
-      if (!res.ok) throw new Error("Failed to create connection");
-      return res.json();
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText || "Failed to create connection");
+        }
+
+        return await res.json();
+      } catch (error) {
+        console.error("Mutation error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
@@ -141,6 +153,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
       });
     },
     onError: (error: Error) => {
+      console.error("Mutation error details:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -152,7 +165,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
   const getCurrentConnectionType = (targetPersonId: number) => {
     if (!selectedPerson) return "none";
 
-    const relationship = relationships.find(r => 
+    const relationship = relationships.find(r =>
       (r.sourcePersonId === selectedPerson.id && r.targetPersonId === targetPersonId) ||
       (r.targetPersonId === selectedPerson.id && r.sourcePersonId === targetPersonId)
     );
@@ -165,6 +178,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
 
   const handleConnectionSelect = (targetPerson: Person, connectionType: string) => {
     if (!selectedPerson) return;
+
     mutation.mutate({
       sourceId: selectedPerson.id,
       targetId: targetPerson.id,
@@ -194,15 +208,15 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     if (sortConfig.column === "connectionType") {
       const aType = getCurrentConnectionType(a.id);
       const bType = getCurrentConnectionType(b.id);
-      return sortConfig.direction === "asc" ? 
-        aType.localeCompare(bType) : 
+      return sortConfig.direction === "asc" ?
+        aType.localeCompare(bType) :
         bType.localeCompare(aType);
     }
 
     const aValue = String(a[sortConfig.column as keyof Person] || "");
     const bValue = String(b[sortConfig.column as keyof Person] || "");
-    return sortConfig.direction === "asc" ? 
-      aValue.localeCompare(bValue) : 
+    return sortConfig.direction === "asc" ?
+      aValue.localeCompare(bValue) :
       bValue.localeCompare(aValue);
   });
 
