@@ -113,14 +113,14 @@ export const fieldPreferences = pgTable("field_preferences", {
   graphIdIdx: unique("graph_id_idx").on(table.graphId),
 }));
 
-// Custom insert schema for people to handle date conversion
-const insertPeopleSchema = createInsertSchema(people, {
+// Update the insertPersonSchema to match the new structure
+export const insertPersonSchema = createInsertSchema(people, {
   lastContact: z.string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
     .transform(val => val ? new Date(val) : null)
     .optional()
     .nullable(),
-  userRelationshipType: z.number().min(1).max(5),
+  userRelationshipType: z.number().min(1).max(5).default(1),
   graphId: z.number(),
   name: z.string().min(1, "Name is required"),
   jobTitle: z.string().nullable(),
@@ -150,7 +150,6 @@ export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export const insertSocialGraphSchema = createInsertSchema(socialGraphs);
 export const selectSocialGraphSchema = createSelectSchema(socialGraphs);
-export const insertPersonSchema = insertPeopleSchema;
 export const selectPersonSchema = createSelectSchema(people);
 export const insertConnectionSchema = createInsertSchema(connections);
 export const selectConnectionSchema = createSelectSchema(connections);
