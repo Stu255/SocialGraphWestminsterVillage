@@ -73,7 +73,8 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     queryFn: async () => {
       const res = await fetch(`/api/relationships?graphId=${graphId}`);
       if (!res.ok) throw new Error("Failed to fetch relationships");
-      return res.json();
+      const data = await res.json();
+      return data;
     },
     enabled: !!graphId,
   });
@@ -89,53 +90,71 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
 
   const mutation = useMutation({
     mutationFn: async ({ sourceId, targetId, connectionType }: any) => {
-      // Find existing relationship if any
-      const existingRelationship = relationships.find(r => 
-        (r.sourcePersonId === sourceId && r.targetPersonId === targetId) ||
-        (r.targetPersonId === sourceId && r.sourcePersonId === targetId)
-      );
+      try {
+        // Find existing relationship if any
+        const existingRelationship = relationships.find(r => 
+          (r.sourcePersonId === sourceId && r.targetPersonId === targetId) ||
+          (r.targetPersonId === sourceId && r.sourcePersonId === targetId)
+        );
 
-      if (connectionType === "none") {
-        // Only attempt to delete if there is an existing relationship
+        if (connectionType === "none") {
+          // Only attempt to delete if there is an existing relationship
+          if (existingRelationship) {
+            const res = await fetch(`/api/relationships/${existingRelationship.id}`, {
+              method: "DELETE",
+            });
+
+            if (!res.ok) {
+              const error = await res.text();
+              throw new Error(error || "Failed to remove connection");
+            }
+          }
+          return { message: "Connection removed" };
+        }
+
+        const relationshipType = getConnectionIdByName(connectionType);
+
+        // If relationship exists, update it
         if (existingRelationship) {
           const res = await fetch(`/api/relationships/${existingRelationship.id}`, {
-            method: "DELETE",
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              relationshipType,
+              graphId,
+            }),
           });
-          if (!res.ok) throw new Error("Failed to remove connection");
+
+          if (!res.ok) {
+            const error = await res.text();
+            throw new Error(error || "Failed to update connection");
+          }
+
+          return await res.json();
         }
-        return { message: "Connection removed" };
-      }
 
-      const relationshipType = getConnectionIdByName(connectionType);
-
-      // If relationship exists, update it
-      if (existingRelationship) {
-        const res = await fetch(`/api/relationships/${existingRelationship.id}`, {
-          method: "PUT",
+        // Create new relationship
+        const res = await fetch("/api/relationships", {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            sourcePersonId: sourceId,
+            targetPersonId: targetId,
             relationshipType,
             graphId,
           }),
         });
-        if (!res.ok) throw new Error("Failed to update connection");
-        return res.json();
+
+        if (!res.ok) {
+          const error = await res.text();
+          throw new Error(error || "Failed to create connection");
+        }
+
+        return await res.json();
+      } catch (error) {
+        console.error("Error in mutation:", error);
+        throw error;
       }
-
-      // Create new relationship
-      const res = await fetch("/api/relationships", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sourcePersonId: sourceId,
-          targetPersonId: targetId,
-          relationshipType,
-          graphId,
-        }),
-      });
-
-      if (!res.ok) throw new Error("Failed to create connection");
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
@@ -162,7 +181,9 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     );
 
     if (!relationship) return undefined;
-    return getConnectionNameById(Number(relationship.relationshipType));
+
+    const connectionType = getConnectionNameById(Number(relationship.relationshipType));
+    return connectionType || undefined;
   };
 
   const handleConnectionSelect = (targetPerson: Person, connectionType: string) => {
@@ -184,7 +205,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
 
       if (key === "connectionType") {
         const currentType = getCurrentConnectionType(person.id);
-        if (!currentType && value.toLowerCase() === "none") return true;
+        if (value.toLowerCase() === "none") return !currentType;
         if (!currentType) return false;
         return currentType.toLowerCase().includes(value.toLowerCase());
       }
@@ -318,7 +339,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
                     {selectedPerson && (
                       <TableCell>
                         <Select
-                          value={getCurrentConnectionType(person.id)}
+                          value={getCurrentConnectionType(person.id) || "none"}
                           onValueChange={(value) => handleConnectionSelect(person, value)}
                         >
                           <SelectTrigger>
