@@ -20,14 +20,8 @@ export const CONNECTION_TYPES = [
   { id: 1, name: "Acquainted", style: "dashed-line", description: "Thin dashed line" }
 ];
 
-// For backward compatibility and to avoid breaking changes
-export const RELATIONSHIP_TYPES = [
-  { id: 5, name: "Allied", style: "heavy-line", description: "Heavy line" },
-  { id: 4, name: "Trusted", style: "double-line", description: "Double line" },
-  { id: 3, name: "Close", style: "standard-line", description: "Standard line" },
-  { id: 2, name: "Familiar", style: "thin-line", description: "Thin line" },
-  { id: 1, name: "Acquainted", style: "dashed-line", description: "Thin dashed line" }
-];
+// For backward compatibility
+export const RELATIONSHIP_TYPES = CONNECTION_TYPES;
 
 // Helper functions for connection type conversion
 export const getConnectionNameById = (id: number) => {
@@ -37,7 +31,7 @@ export const getConnectionNameById = (id: number) => {
 
 export const getConnectionIdByName = (name: string) => {
   const type = CONNECTION_TYPES.find(type => type.name === name);
-  return type?.id || null;
+  return type?.id || 1; // Default to lowest connection strength if not found
 };
 
 // Keep old function names for backward compatibility

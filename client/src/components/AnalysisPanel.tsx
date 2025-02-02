@@ -35,7 +35,7 @@ import {
 import { useForm } from "react-hook-form";
 import { 
   CONNECTION_TYPES,
-  getConnectionNameById, 
+  getConnectionNameById,
   getConnectionIdByName 
 } from "./RelationshipTypeManager";
 import { useToast } from "@/hooks/use-toast";
@@ -111,9 +111,11 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
+      const relationshipToYou = getConnectionIdByName(values.relationshipStrength);
+
       const payload = { 
         ...values,
-        relationshipToYou: getConnectionIdByName(values.relationshipStrength),
+        relationshipToYou,
         graphId 
       };
 

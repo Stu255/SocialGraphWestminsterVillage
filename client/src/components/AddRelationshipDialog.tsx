@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { CONNECTION_TYPES } from "./RelationshipTypeManager";
+import { CONNECTION_TYPES, getConnectionIdByName } from "./RelationshipTypeManager";
 import { useToast } from "@/hooks/use-toast";
 
 interface Person {
@@ -48,12 +48,6 @@ type FilterValues = Record<string, string>;
 type SortConfig = {
   column: string | null;
   direction: SortDirection | null;
-};
-
-const getConnectionStrength = (connectionType: string | undefined) => {
-  if (!connectionType) return -1;
-  const type = CONNECTION_TYPES.find(t => t.name === connectionType);
-  return type ? type.id : -1;
 };
 
 export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnectionDialogProps) {
@@ -91,13 +85,16 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
 
         return { message: "Connection removed" };
       } else {
+        // Convert the connection type name to its numeric value
+        const relationshipType = getConnectionIdByName(connectionType);
+
         const res = await fetch("/api/relationships", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             sourcePersonId: sourceId,
             targetPersonId: targetId,
-            relationshipType: connectionType,
+            relationshipType,
             graphId,
           }),
         });
@@ -203,11 +200,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
             size="sm"
             className="h-8 w-8 p-0 flex-shrink-0"
             onClick={() => handleSort(column)}
-            style={{
-              color: column === "organization" && filters[column] 
-                ? getOrganizationColor(filters[column]) 
-                : undefined
-            }}
           >
             <ArrowUpDown className="h-4 w-4" />
           </Button>
@@ -226,9 +218,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
                 variant="ghost"
                 size="icon"
                 onClick={() => setSelectedPerson(null)}
-                style={{
-                  color: getOrganizationColor(selectedPerson.organization)
-                }}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -273,9 +262,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
                 .map((person) => (
                   <TableRow key={person.id}>
                     <TableCell>{person.name}</TableCell>
-                    <TableCell style={{ color: getOrganizationColor(person.organization) }}>
-                      {person.organization || "—"}
-                    </TableCell>
+                    <TableCell>{person.organization || "—"}</TableCell>
                     <TableCell>{person.jobTitle || "—"}</TableCell>
                     {selectedPerson && (
                       <TableCell>
@@ -283,7 +270,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
                           onValueChange={(value) => handleConnectionSelect(person, value)}
                           defaultValue="none"
                         >
-                          <SelectTrigger style={{ color: getOrganizationColor(person.organization) }}>
+                          <SelectTrigger>
                             <SelectValue placeholder="Select type" />
                           </SelectTrigger>
                           <SelectContent>
@@ -303,7 +290,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
                           variant="outline"
                           size="sm"
                           onClick={() => handleConnect(person)}
-                          style={{ color: getOrganizationColor(person.organization) }}
                         >
                           Manage
                         </Button>
