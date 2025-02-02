@@ -48,18 +48,13 @@ interface AddConnectionDialogProps {
   graphId: number;
 }
 
-type SortField = "name" | "organization" | "jobTitle" | "connectionType";
-type SortDirection = "asc" | "desc";
-type FilterValues = Record<string, string>;
-type SortConfig = {
-  column: string | null;
-  direction: SortDirection | null;
-};
-
 export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnectionDialogProps) {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ column: null, direction: null });
-  const [filters, setFilters] = useState<FilterValues>({});
+  const [sortConfig, setSortConfig] = useState<{ column: string | null; direction: "asc" | "desc" | null }>({ 
+    column: null, 
+    direction: null 
+  });
+  const [filters, setFilters] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -70,6 +65,11 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
 
   const { data: relationships = [] } = useQuery<Relationship[]>({
     queryKey: ["/api/relationships", graphId],
+    queryFn: async () => {
+      const res = await fetch(`/api/relationships?graphId=${graphId}`);
+      if (!res.ok) throw new Error("Failed to fetch relationships");
+      return res.json();
+    },
     enabled: !!graphId,
   });
 
@@ -82,7 +82,10 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     organizations.map((org: any) => [org.name, org.brandColor])
   );
 
-  // Handles creating, updating, or deleting relationships
+  const getOrganizationColor = (organizationName: string) => {
+    return organizationColors.get(organizationName) || "hsl(var(--primary))";
+  };
+
   const mutation = useMutation({
     mutationFn: async ({ sourceId, targetId, connectionType }: any) => {
       const existingRelationship = relationships.find(r => 
@@ -90,7 +93,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
         (r.targetPersonId === sourceId && r.sourcePersonId === targetId)
       );
 
-      // Handle relationship removal
       if (connectionType === "none") {
         if (existingRelationship) {
           const res = await fetch(`/api/relationships/${existingRelationship.id}`, {
@@ -101,7 +103,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
         return null;
       }
 
-      // Find the connection type object
       const connectionTypeObj = CONNECTION_TYPES.find(t => t.name === connectionType);
       if (!connectionTypeObj) throw new Error("Invalid connection type");
 
@@ -110,7 +111,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
         relationshipType: connectionTypeObj.id,
       };
 
-      // Update existing relationship
       if (existingRelationship) {
         const res = await fetch(`/api/relationships/${existingRelationship.id}`, {
           method: "PUT",
@@ -121,7 +121,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
         return res.json();
       }
 
-      // Create new relationship
       const res = await fetch("/api/relationships", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -150,7 +149,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     },
   });
 
-  // Get the current connection type for a person
   const getCurrentConnectionType = (targetPersonId: number) => {
     if (!selectedPerson) return "none";
 
@@ -174,11 +172,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     });
   };
 
-  const getOrganizationColor = (organizationName: string) => {
-    return organizationColors.get(organizationName) || "hsl(var(--primary))";
-  };
-
-  // Filter people based on search criteria
   const filteredPeople = people.filter(person => {
     if (selectedPerson && person.id === selectedPerson.id) return false;
 
@@ -187,9 +180,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
 
       if (key === "connectionType") {
         const currentType = getCurrentConnectionType(person.id);
-        return value === "none" ? 
-          currentType === "none" : 
-          currentType.toLowerCase().includes(value.toLowerCase());
+        return value === "none" ? currentType === "none" : currentType.includes(value);
       }
 
       const fieldValue = String(person[key as keyof Person] || "").toLowerCase();
@@ -197,7 +188,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     });
   });
 
-  // Sort the filtered list
   const sortedPeople = [...filteredPeople].sort((a, b) => {
     if (!sortConfig.column || !sortConfig.direction) return 0;
 
@@ -244,8 +234,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
           size="sm"
           className="h-8 w-8 p-0"
           onClick={() => handleSort(column)}
-        >
-        </Button>
+        />
       </div>
     </div>
   );
@@ -311,7 +300,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
                         onValueChange={(value) => handleConnectionSelect(person, value)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">None</SelectItem>
