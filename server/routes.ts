@@ -344,6 +344,50 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.put("/api/connections/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not logged in" });
+    }
+    try {
+      const { connectionType, graphId } = req.body;
+
+      // Update both directions of the connection in a single transaction
+      await db.transaction(async (tx) => {
+        const [connection] = await tx
+          .select()
+          .from(connections)
+          .where(eq(connections.id, parseInt(req.params.id)));
+
+        if (!connection) {
+          return res.status(404).json({ error: "Connection not found" });
+        }
+
+        // Update the forward connection
+        await tx
+          .update(connections)
+          .set({ connectionType })
+          .where(eq(connections.id, parseInt(req.params.id)));
+
+        // Find and update the reverse connection
+        await tx
+          .update(connections)
+          .set({ connectionType })
+          .where(
+            and(
+              eq(connections.sourcePersonId, connection.targetPersonId),
+              eq(connections.targetPersonId, connection.sourcePersonId),
+              eq(connections.graphId, connection.graphId)
+            )
+          );
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating connection:", error);
+      res.status(500).json({ error: "Failed to update connection" });
+    }
+  });
+
   // Add organization routes
   app.get("/api/organizations", async (req, res) => {
     if (!req.isAuthenticated()) {

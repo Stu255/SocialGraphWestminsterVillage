@@ -35,11 +35,11 @@ interface Person {
   jobTitle: string;
 }
 
-interface Relationship {
+interface Connection {
   id: number;
   sourcePersonId: number;
   targetPersonId: number;
-  relationshipType: string;
+  connectionType: number;
 }
 
 interface AddConnectionDialogProps {
@@ -68,8 +68,8 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     enabled: !!graphId,
   });
 
-  const { data: relationships = [] } = useQuery<Relationship[]>({
-    queryKey: ["/api/relationships", graphId],
+  const { data: connections = [] } = useQuery<Connection[]>({
+    queryKey: ["/api/connections", graphId],
     enabled: !!graphId,
   });
 
@@ -82,37 +82,32 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     organizations.map((org: any) => [org.name, org.brandColor])
   );
 
-  // Handles creating, updating, or deleting relationships
+  // Handles creating, updating, or deleting connections
   const mutation = useMutation({
     mutationFn: async ({ sourceId, targetId, connectionType }: any) => {
-      const existingRelationship = relationships.find(r => 
+      const existingConnection = connections.find(r => 
         (r.sourcePersonId === sourceId && r.targetPersonId === targetId) ||
         (r.targetPersonId === sourceId && r.sourcePersonId === targetId)
       );
 
-      // Handle relationship removal
-      if (connectionType === "none") {
-        if (existingRelationship) {
-          const res = await fetch(`/api/relationships/${existingRelationship.id}`, {
+      const payload = {
+        graphId,
+        connectionType: connectionType === "none" ? 0 : Number(connectionType),
+        sourcePersonId: sourceId,
+        targetPersonId: targetId
+      };
+
+      // Handle connection removal or update
+      if (existingConnection) {
+        if (connectionType === "none") {
+          const res = await fetch(`/api/connections/${existingConnection.id}`, {
             method: "DELETE",
           });
           if (!res.ok) throw new Error("Failed to remove connection");
+          return null;
         }
-        return null;
-      }
 
-      // Find the connection type object
-      const connectionTypeObj = CONNECTION_TYPES.find(t => t.name === connectionType);
-      if (!connectionTypeObj) throw new Error("Invalid connection type");
-
-      const payload = {
-        graphId,
-        relationshipType: connectionTypeObj.id,
-      };
-
-      // Update existing relationship
-      if (existingRelationship) {
-        const res = await fetch(`/api/relationships/${existingRelationship.id}`, {
+        const res = await fetch(`/api/connections/${existingConnection.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -121,21 +116,17 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
         return res.json();
       }
 
-      // Create new relationship
-      const res = await fetch("/api/relationships", {
+      // Create new connection
+      const res = await fetch("/api/connections", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...payload,
-          sourcePersonId: sourceId,
-          targetPersonId: targetId,
-        }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Failed to create connection");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/connections", graphId] });
       toast({
         title: "Success",
         description: "Connection updated successfully",
@@ -154,15 +145,13 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
   const getCurrentConnectionType = (targetPersonId: number) => {
     if (!selectedPerson) return "none";
 
-    const relationship = relationships.find(r => 
+    const connection = connections.find(r => 
       (r.sourcePersonId === selectedPerson.id && r.targetPersonId === targetPersonId) ||
       (r.targetPersonId === selectedPerson.id && r.sourcePersonId === targetPersonId)
     );
 
-    if (!relationship) return "none";
-
-    const connectionType = CONNECTION_TYPES.find(t => t.id === Number(relationship.relationshipType));
-    return connectionType?.name || "none";
+    if (!connection) return "none";
+    return CONNECTION_TYPES.find(t => t.id === connection.connectionType)?.name || "none";
   };
 
   const handleConnectionSelect = (targetPerson: Person, connectionType: string) => {
