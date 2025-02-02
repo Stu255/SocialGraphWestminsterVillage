@@ -8,14 +8,14 @@ interface Node extends d3.SimulationNodeDatum {
   name: string;
   affiliation: string;
   organization?: string;
-  relationshipToYou?: number;
+  userRelationshipType?: number;
   currentRole?: string;
 }
 
 interface Link {
   sourcePersonId: number;
   targetPersonId: number;
-  relationshipType: string;
+  connectionType: number;
 }
 
 interface Organization {
@@ -32,9 +32,7 @@ interface Props {
   graphId: number;
 }
 
-// Base circle for all relationship types
 const CIRCLE_PATH = "M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z";
-// Chevrons positioned outside the circle using 120-degree angles
 const CHEVRON_DOWN = "M4 24 L12 30 L20 24";
 const CHEVRON_UP = "M4 0 L12 -6 L20 0";
 
@@ -55,31 +53,31 @@ const RELATIONSHIP_ICONS = {
 
 const getRelationshipIcon = (relationshipId: number | undefined) => {
   switch (relationshipId) {
-    case 5: // Strong Relationship
+    case 5:
       return { 
         ...RELATIONSHIP_ICONS.strong,
         fill: true, 
         strokeDasharray: "none" 
       };
-    case 4: // Regular Relationship
+    case 4:
       return { 
         ...RELATIONSHIP_ICONS.regular,
         fill: true, 
         strokeDasharray: "none" 
       };
-    case 3: // Moderate Relationship
+    case 3:
       return { 
         ...RELATIONSHIP_ICONS.basic,
         fill: true, 
         strokeDasharray: "none" 
       };
-    case 2: // Light Relationship
+    case 2:
       return { 
         ...RELATIONSHIP_ICONS.basic,
         fill: false, 
         strokeDasharray: "none" 
       };
-    case 1: // Weak Relationship
+    case 1:
       return { 
         ...RELATIONSHIP_ICONS.basic,
         fill: false, 
@@ -94,45 +92,42 @@ const getRelationshipIcon = (relationshipId: number | undefined) => {
   }
 };
 
-const getConnectionLineStyle = (connectionType: string) => {
+const getConnectionLineStyle = (connectionType: number) => {
   switch (connectionType) {
-    case "Allied":
+    case 5:
       return { 
         strokeWidth: 6, 
         strokeDasharray: "none",
         doubleStroke: true,
-        doubleStrokeGap: 8  // Increased gap between lines for better visibility
+        doubleStrokeGap: 8
       };
-    case "Trusted":
+    case 4:
       return { 
         strokeWidth: 4, 
         strokeDasharray: "none",
         doubleStroke: false 
       };
-    case "Close":
+    case 3:
       return { 
         strokeWidth: 2, 
         strokeDasharray: "none",
         doubleStroke: false 
       };
-    case "Familiar":
+    case 2:
       return { 
         strokeWidth: 1, 
         strokeDasharray: "none",
         doubleStroke: false 
       };
-    case "Acquainted":
+    case 1:
       return { 
         strokeWidth: 1, 
         strokeDasharray: "4,4",
         doubleStroke: false 
       };
+    case 0:
     default:
-      return { 
-        strokeWidth: 1, 
-        strokeDasharray: "none",
-        doubleStroke: false 
-      };
+      return null;
   }
 };
 
@@ -192,7 +187,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
 
     const filteredLinks = uniqueLinks
       .filter((link) => {
-        if (filters.relationshipType && link.relationshipType !== filters.relationshipType) return false;
+        if (filters.relationshipType && link.connectionType !== filters.relationshipType) return false;
         const sourceExists = filteredNodes.some((n) => n.id === link.sourcePersonId);
         const targetExists = filteredNodes.some((n) => n.id === link.targetPersonId);
         return sourceExists && targetExists;
@@ -200,7 +195,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       .map((link) => ({
         source: filteredNodes.find((n) => n.id === link.sourcePersonId)!,
         target: filteredNodes.find((n) => n.id === link.targetPersonId)!,
-        type: link.relationshipType,
+        type: link.connectionType,
       }));
 
     const simulation = d3
@@ -221,21 +216,19 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
     filteredLinks.forEach(d => {
       const style = getConnectionLineStyle(d.type);
 
-      if (style.doubleStroke && style.doubleStrokeGap) {
-        // For Allied connections, render two parallel heavy lines
-        [-style.doubleStrokeGap/2, style.doubleStrokeGap/2].forEach(offset => {
-          linkGroup
-            .append("line")
-            .datum(d)
-            .attr("stroke", getEdgeColor(d.source as Node, d.target as Node))
-            .attr("stroke-opacity", 0.6)
-            .attr("stroke-width", style.strokeWidth)
-            .attr("stroke-dasharray", style.strokeDasharray)
-            .attr("transform", `translate(0, ${offset})`);
+      if (style?.doubleStroke && style?.doubleStrokeGap) {
+          [-style.doubleStrokeGap/2, style.doubleStrokeGap/2].forEach(offset => {
+            linkGroup
+              .append("line")
+              .datum(d)
+              .attr("stroke", getEdgeColor(d.source as Node, d.target as Node))
+              .attr("stroke-opacity", 0.6)
+              .attr("stroke-width", style.strokeWidth)
+              .attr("stroke-dasharray", style.strokeDasharray)
+              .attr("transform", `translate(0, ${offset})`);
         });
-      } else {
-        // For all other connections, render a single line
-        linkGroup
+      } else if(style) {
+          linkGroup
           .append("line")
           .datum(d)
           .attr("stroke", getEdgeColor(d.source as Node, d.target as Node))
@@ -272,19 +265,18 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
 
     nodeGroup
       .append("path")
-      .attr("d", d => getRelationshipIcon(d.relationshipToYou).path)
-      .attr("viewBox", d => getRelationshipIcon(d.relationshipToYou).viewBox)
+      .attr("d", d => getRelationshipIcon(d.userRelationshipType).path)
+      .attr("viewBox", d => getRelationshipIcon(d.userRelationshipType).viewBox)
       .attr("transform", d => {
-        const icon = getRelationshipIcon(d.relationshipToYou);
-        // Adjust vertical position to center the circle portion of each icon
+        const icon = getRelationshipIcon(d.userRelationshipType);
         const yOffset = icon.viewBox === "0 -6 24 36" ? -15 : 
                        icon.viewBox === "0 0 24 32" ? -16 : -12;
         return `translate(-12, ${yOffset}) scale(1)`;
       })
-      .attr("fill", d => getRelationshipIcon(d.relationshipToYou).fill ? getNodeColor(d) : "white")
+      .attr("fill", d => getRelationshipIcon(d.userRelationshipType).fill ? getNodeColor(d) : "white")
       .attr("stroke", d => getNodeColor(d))
       .attr("stroke-width", 1.5)
-      .attr("stroke-dasharray", d => getRelationshipIcon(d.relationshipToYou).strokeDasharray)
+      .attr("stroke-dasharray", d => getRelationshipIcon(d.userRelationshipType).strokeDasharray)
       .style("cursor", "pointer")
       .on("click", (_event, d) => onNodeSelect(d));
 

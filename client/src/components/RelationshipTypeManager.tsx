@@ -11,32 +11,59 @@ import {
 } from "@/components/ui/dialog";
 import { AddConnectionDialog } from "./AddRelationshipDialog";
 
-// Define connection types with scores and their line styles
+/**
+ * Constants defining the relationship and connection types in the network
+ * 
+ * User Relationships (Node Icons):
+ * - Represents relationship between user and people in their network
+ * - Values 1-5, displayed as node icons
+ * 
+ * Network Connections (Edge Lines):
+ * - Represents connections between people in the network
+ * - Values 0-5, displayed as different line styles
+ * - Includes "None" (0) for no connection
+ */
+
+// Define relationship types (for node icons)
+export const RELATIONSHIP_TYPES = [
+  { id: 5, name: "Allied", icon: "strong", description: "Strong relationship icon with up/down chevrons" },
+  { id: 4, name: "Trusted", icon: "regular", description: "Regular relationship icon with down chevron" },
+  { id: 3, name: "Close", icon: "basic-filled", description: "Basic filled circle icon" },
+  { id: 2, name: "Familiar", icon: "basic-outline", description: "Basic outlined circle icon" },
+  { id: 1, name: "Acquainted", icon: "basic-dashed", description: "Basic dashed circle icon" }
+];
+
+// Define connection types (for edge lines)
 export const CONNECTION_TYPES = [
   { id: 5, name: "Allied", style: "heavy-line", description: "Heavy line" },
   { id: 4, name: "Trusted", style: "double-line", description: "Double line" },
   { id: 3, name: "Close", style: "standard-line", description: "Standard line" },
   { id: 2, name: "Familiar", style: "thin-line", description: "Thin line" },
-  { id: 1, name: "Acquainted", style: "dashed-line", description: "Thin dashed line" }
+  { id: 1, name: "Acquainted", style: "dashed-line", description: "Thin dashed line" },
+  { id: 0, name: "None", style: "no-line", description: "No connection" }
 ];
 
-// For backward compatibility
-export const RELATIONSHIP_TYPES = CONNECTION_TYPES;
+// Helper functions for relationship type conversion (node icons)
+export const getRelationshipNameById = (id: number) => {
+  const type = RELATIONSHIP_TYPES.find(type => type.id === id);
+  return type?.name || "Unknown";
+};
 
-// Helper functions for connection type conversion
+export const getRelationshipIdByName = (name: string) => {
+  const type = RELATIONSHIP_TYPES.find(type => type.name === name);
+  return type?.id || 1; // Default to Acquainted if not found
+};
+
+// Helper functions for connection type conversion (edge lines)
 export const getConnectionNameById = (id: number) => {
   const type = CONNECTION_TYPES.find(type => type.id === id);
-  return type?.name || "Unknown";
+  return type?.name || "None";
 };
 
 export const getConnectionIdByName = (name: string) => {
   const type = CONNECTION_TYPES.find(type => type.name === name);
-  return type?.id || 1; // Default to lowest connection strength if not found
+  return type?.id || 0; // Default to None if not found
 };
-
-// Keep old function names for backward compatibility
-export const getRelationshipNameById = getConnectionNameById;
-export const getRelationshipIdByName = getConnectionIdByName;
 
 interface ConnectionListDialogProps {
   open: boolean;
@@ -65,7 +92,8 @@ function ConnectionListDialog({ open, onOpenChange }: ConnectionListDialogProps)
                 type.style === 'double-line' ? 'h-3 border-t-2 border-b-2 border-foreground' :
                 type.style === 'standard-line' ? 'h-1 bg-foreground' :
                 type.style === 'thin-line' ? 'h-px bg-foreground/70' :
-                'h-0 border-t border-dashed border-foreground/50 [border-width:1px] [border-spacing:6px]'
+                type.style === 'dashed-line' ? 'h-0 border-t border-dashed border-foreground/50 [border-width:1px] [border-spacing:6px]' :
+                'hidden' // for "None" type
               }`} />
             </div>
           ))}
@@ -75,14 +103,14 @@ function ConnectionListDialog({ open, onOpenChange }: ConnectionListDialogProps)
   );
 }
 
-export function ConnectionManager({ graphId }: { graphId: number }) {
+export function ConnectionTypeManager({ graphId }: { graphId: number }) {
   const [showListDialog, setShowListDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Connections</CardTitle>
+        <CardTitle>Network Connections</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         <Button 
@@ -117,5 +145,6 @@ export function ConnectionManager({ graphId }: { graphId: number }) {
   );
 }
 
-// Re-export for backward compatibility
-export { ConnectionManager as RelationshipTypeManager };
+// Export both names for compatibility
+export { ConnectionTypeManager as RelationshipTypeManager };
+export { ConnectionTypeManager as ConnectionManager };

@@ -2,6 +2,22 @@ import { pgTable, text, serial, integer, timestamp, boolean, unique, jsonb, date
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
+/**
+ * Naming Convention:
+ * 
+ * 1. Relationships (Node Icons):
+ *    - Represents the relationship between the user and people in their network
+ *    - Stored as integers 1-5 in the database
+ *    - UI labels: Allied (5), Trusted (4), Close (3), Familiar (2), Acquainted (1)
+ *    - Represented by different node icons in the graph
+ * 
+ * 2. Connections (Edges):
+ *    - Represents connections between people in the network
+ *    - Stored as integers 0-5 in the database
+ *    - UI labels: None (0), Allied (5), Trusted (4), Close (3), Familiar (2), Acquainted (1)
+ *    - Represented by different line styles in the graph
+ */
+
 // Users table for authentication
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -26,7 +42,7 @@ export const people = pgTable("people", {
   name: text("name").notNull(),
   jobTitle: text("job_title"),
   organization: text("organization"),
-  relationshipToYou: integer("relationship_to_you"),
+  userRelationshipType: integer("user_relationship_type").notNull().default(1), // 1-5: Acquainted to Allied
   lastContact: date("last_contact"),
   officeNumber: text("office_number"),
   mobileNumber: text("mobile_number"),
@@ -39,7 +55,7 @@ export const people = pgTable("people", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Organizations table replaces affiliations
+// Organizations table
 export const organizations = pgTable("organizations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -54,27 +70,27 @@ export const organizations = pgTable("organizations", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Relationship Types table
-export const relationshipTypes = pgTable("relationship_types", {
+// Connection Types table (renamed from relationshipTypes)
+export const connectionTypes = pgTable("connection_types", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({
-  nameGraphIdIdx: unique("rel_type_name_graph_id_idx").on(table.name, table.graphId),
+  nameGraphIdIdx: unique("conn_type_name_graph_id_idx").on(table.name, table.graphId),
 }));
 
-// Relationships between people
-export const relationships = pgTable("relationships", {
+// Connections between people (renamed from relationships)
+export const connections = pgTable("connections", {
   id: serial("id").primaryKey(),
   sourcePersonId: integer("source_person_id").references(() => people.id).notNull(),
   targetPersonId: integer("target_person_id").references(() => people.id).notNull(),
-  relationshipType: text("relationship_type"),
+  connectionType: integer("connection_type").notNull().default(0), // 0-5: None to Allied
   graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Custom fields for each social graph
+// Rest of the schema remains unchanged
 export const customFields = pgTable("custom_fields", {
   id: serial("id").primaryKey(),
   graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
@@ -86,7 +102,6 @@ export const customFields = pgTable("custom_fields", {
   fieldNameGraphIdIdx: unique("field_name_graph_id_idx").on(table.fieldName, table.graphId),
 }));
 
-// Field preferences for each social graph
 export const fieldPreferences = pgTable("field_preferences", {
   id: serial("id").primaryKey(),
   graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
@@ -106,7 +121,7 @@ const insertPeopleSchema = createInsertSchema(people, {
     .transform(val => val ? new Date(val) : null)
     .optional()
     .nullable(),
-  relationshipToYou: z.number().nullable(),
+  userRelationshipType: z.number().min(1).max(5),
   graphId: z.number(),
   name: z.string().min(1, "Name is required"),
   jobTitle: z.string().nullable(),
@@ -127,10 +142,10 @@ export const insertSocialGraphSchema = createInsertSchema(socialGraphs);
 export const selectSocialGraphSchema = createSelectSchema(socialGraphs);
 export const insertPersonSchema = insertPeopleSchema;
 export const selectPersonSchema = createSelectSchema(people);
-export const insertRelationshipSchema = createInsertSchema(relationships);
-export const selectRelationshipSchema = createSelectSchema(relationships);
-export const insertRelationshipTypeSchema = createInsertSchema(relationshipTypes);
-export const selectRelationshipTypeSchema = createSelectSchema(relationshipTypes);
+export const insertConnectionSchema = createInsertSchema(connections);
+export const selectConnectionSchema = createSelectSchema(connections);
+export const insertConnectionTypeSchema = createInsertSchema(connectionTypes);
+export const selectConnectionTypeSchema = createSelectSchema(connectionTypes);
 export const insertOrganizationSchema = createInsertSchema(organizations);
 export const selectOrganizationSchema = createSelectSchema(organizations);
 export const insertCustomFieldSchema = createInsertSchema(customFields);
@@ -145,8 +160,8 @@ export type SocialGraph = typeof socialGraphs.$inferSelect;
 export type InsertSocialGraph = typeof socialGraphs.$inferInsert;
 export type Person = typeof people.$inferSelect;
 export type InsertPerson = typeof people.$inferInsert;
-export type Relationship = typeof relationships.$inferSelect;
-export type RelationshipType = typeof relationshipTypes.$inferSelect;
+export type Connection = typeof connections.$inferSelect;
+export type ConnectionType = typeof connectionTypes.$inferSelect;
 export type Organization = typeof organizations.$inferSelect;
 export type InsertOrganization = typeof organizations.$inferInsert;
 export type CustomField = typeof customFields.$inferSelect;

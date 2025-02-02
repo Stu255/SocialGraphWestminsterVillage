@@ -4,8 +4,8 @@ import { eq, or, desc, and } from "drizzle-orm";
 import { db } from "@db";
 import { 
   people, 
-  relationships, 
-  relationshipTypes, 
+  connections, 
+  connectionTypes, 
   organizations, 
   socialGraphs,
   fieldPreferences,
@@ -187,9 +187,9 @@ export function registerRoutes(app: Express): Server {
       // Validate relationship value if present
       if (req.body.relationshipToYou !== undefined && req.body.relationshipToYou !== null) {
         const relationshipValue = Number(req.body.relationshipToYou);
-        if (isNaN(relationshipValue) || relationshipValue < 1 || relationshipValue > 5) {
+        if (isNaN(relationshipValue) || relationshipValue < 0 || relationshipValue > 5) {
           return res.status(400).json({ 
-            error: "Invalid relationship value. Must be a number between 1 and 5" 
+            error: "Invalid relationship value. Must be a number between 0 and 5" 
           });
         }
       }
@@ -228,7 +228,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/relationships", async (req, res) => {
+  app.get("/api/connections", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not logged in");
     }
@@ -237,52 +237,52 @@ export function registerRoutes(app: Express): Server {
       return res.status(400).json({ error: "Graph ID is required" });
     }
     try {
-      const allRelationships = await db.select().from(relationships).where(eq(relationships.graphId, Number(graphId)));
-      res.json(allRelationships);
+      const allConnections = await db.select().from(connections).where(eq(connections.graphId, Number(graphId)));
+      res.json(allConnections);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch relationships" });
+      res.status(500).json({ error: "Failed to fetch connections" });
     }
   });
 
-  app.post("/api/relationships", async (req, res) => {
+  app.post("/api/connections", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not logged in");
     }
     try {
-      const { sourcePersonId, targetPersonId, relationshipType, graphId } = req.body;
+      const { sourcePersonId, targetPersonId, connectionType, graphId } = req.body;
 
-      // Create bidirectional relationship in a single transaction
-      const relationship = await db.transaction(async (tx) => {
-        // First, delete any existing relationships between these nodes
-        await tx.delete(relationships)
+      // Create bidirectional connection in a single transaction
+      const connection = await db.transaction(async (tx) => {
+        // First, delete any existing connections between these nodes
+        await tx.delete(connections)
           .where(
             and(
-              eq(relationships.graphId, graphId),
+              eq(connections.graphId, graphId),
               or(
                 and(
-                  eq(relationships.sourcePersonId, sourcePersonId),
-                  eq(relationships.targetPersonId, targetPersonId)
+                  eq(connections.sourcePersonId, sourcePersonId),
+                  eq(connections.targetPersonId, targetPersonId)
                 ),
                 and(
-                  eq(relationships.sourcePersonId, targetPersonId),
-                  eq(relationships.targetPersonId, sourcePersonId)
+                  eq(connections.sourcePersonId, targetPersonId),
+                  eq(connections.targetPersonId, sourcePersonId)
                 )
               )
             )
           );
 
-        // Then create the new bidirectional relationship
+        // Then create the new bidirectional connection
         const [forward] = await tx
-          .insert(relationships)
-          .values({ sourcePersonId, targetPersonId, relationshipType, graphId })
+          .insert(connections)
+          .values({ sourcePersonId, targetPersonId, connectionType, graphId })
           .returning();
 
         const [reverse] = await tx
-          .insert(relationships)
+          .insert(connections)
           .values({ 
             sourcePersonId: targetPersonId, 
             targetPersonId: sourcePersonId, 
-            relationshipType, 
+            connectionType, 
             graphId 
           })
           .returning();
@@ -290,14 +290,14 @@ export function registerRoutes(app: Express): Server {
         return forward;
       });
 
-      res.json(relationship);
+      res.json(connection);
     } catch (error) {
-      console.error("Error creating relationship:", error);
-      res.status(500).json({ error: "Failed to create relationship" });
+      console.error("Error creating connection:", error);
+      res.status(500).json({ error: "Failed to create connection" });
     }
   });
 
-  app.delete("/api/relationships", async (req, res) => {
+  app.delete("/api/connections", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not logged in");
     }
@@ -307,39 +307,39 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Source ID, Target ID and Graph ID are required" });
       }
 
-      // Delete both directions of the relationship in a single transaction
+      // Delete both directions of the connection in a single transaction
       await db.transaction(async (tx) => {
-        await tx.delete(relationships)
+        await tx.delete(connections)
           .where(and(
-            eq(relationships.sourcePersonId, parseInt(sourcePersonId as string)),
-            eq(relationships.targetPersonId, parseInt(targetPersonId as string)),
-            eq(relationships.graphId, parseInt(graphId as string))
+            eq(connections.sourcePersonId, parseInt(sourcePersonId as string)),
+            eq(connections.targetPersonId, parseInt(targetPersonId as string)),
+            eq(connections.graphId, parseInt(graphId as string))
           ));
 
-        await tx.delete(relationships)
+        await tx.delete(connections)
           .where(and(
-            eq(relationships.sourcePersonId, parseInt(targetPersonId as string)),
-            eq(relationships.targetPersonId, parseInt(sourcePersonId as string)),
-            eq(relationships.graphId, parseInt(graphId as string))
+            eq(connections.sourcePersonId, parseInt(targetPersonId as string)),
+            eq(connections.targetPersonId, parseInt(sourcePersonId as string)),
+            eq(connections.graphId, parseInt(graphId as string))
           ));
       });
 
       res.json({ success: true });
     } catch (error) {
-      console.error("Error deleting relationship:", error);
-      res.status(500).json({ error: "Failed to delete relationship" });
+      console.error("Error deleting connection:", error);
+      res.status(500).json({ error: "Failed to delete connection" });
     }
   });
 
-  app.delete("/api/relationships/:id", async (req, res) => {
+  app.delete("/api/connections/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not logged in");
     }
     try {
-      await db.delete(relationships).where(eq(relationships.id, parseInt(req.params.id)));
+      await db.delete(connections).where(eq(connections.id, parseInt(req.params.id)));
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: "Failed to delete relationship" });
+      res.status(500).json({ error: "Failed to delete connection" });
     }
   });
 

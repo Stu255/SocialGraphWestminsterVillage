@@ -34,9 +34,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useForm } from "react-hook-form";
 import { 
-  CONNECTION_TYPES,
-  getConnectionNameById,
-  getConnectionIdByName 
+  RELATIONSHIP_TYPES,
+  getRelationshipNameById,
+  getRelationshipIdByName 
 } from "./RelationshipTypeManager";
 import { useToast } from "@/hooks/use-toast";
 
@@ -52,7 +52,7 @@ const FIELD_LABELS: Record<string, string> = {
   name: "Name",
   jobTitle: "Job Title",
   organization: "Organization",
-  relationshipStrength: "Your Relationship",
+  userRelationshipType: "Your Relationship",
   lastContact: "Last Contact",
   officeNumber: "Office Number",
   mobileNumber: "Mobile Number",
@@ -97,7 +97,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       name: "",
       jobTitle: "",
       organization: "",
-      relationshipStrength: "",
+      userRelationshipType: "",
       lastContact: "",
       officeNumber: "",
       mobileNumber: "",
@@ -111,14 +111,14 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
-      // Convert the relationship strength to numeric value
-      const relationshipToYou = values.relationshipStrength ? 
-        getConnectionIdByName(values.relationshipStrength) : 
-        null;
+      // Convert the relationship type to numeric value
+      const userRelationshipType = values.userRelationshipType ? 
+        getRelationshipIdByName(values.userRelationshipType) : 
+        1; // Default to Acquainted
 
       const payload = { 
         ...values,
-        relationshipToYou,
+        userRelationshipType,
         graphId 
       };
 
@@ -198,7 +198,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     if (!data.name?.trim()) {
       return;
     }
-    if (!data.relationshipStrength) {
+    if (!data.userRelationshipType) {
       return;
     }
 
@@ -211,8 +211,10 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         name: selectedNode.name || "",
         jobTitle: selectedNode.jobTitle || "",
         organization: selectedNode.organization || "",
-        relationshipStrength: selectedNode.relationshipToYou ? getConnectionNameById(selectedNode.relationshipToYou) : "",
-        lastContact: selectedNode.lastContact ? new Date(selectedNode.lastContact).toISOString().split('T')[0] : "",
+        userRelationshipType: selectedNode.userRelationshipType ? 
+          getRelationshipNameById(selectedNode.userRelationshipType) : "",
+        lastContact: selectedNode.lastContact ? 
+          new Date(selectedNode.lastContact).toISOString().split('T')[0] : "",
         officeNumber: selectedNode.officeNumber || "",
         mobileNumber: selectedNode.mobileNumber || "",
         email1: selectedNode.email1 || "",
@@ -234,23 +236,23 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
           name={fieldName}
           rules={{
             required: fieldName === "name" ? "Name is required" :
-                     fieldName === "relationshipStrength" ? "Relationship strength is required" :
+                     fieldName === "userRelationshipType" ? "Relationship type is required" :
                      false
           }}
           render={({ field }) => (
             <FormItem>
               <FormLabel>{FIELD_LABELS[fieldName]}</FormLabel>
               <FormControl>
-                {fieldName === "relationshipStrength" ? (
+                {fieldName === "userRelationshipType" ? (
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select relationship strength" />
+                      <SelectValue placeholder="Select relationship type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {CONNECTION_TYPES.map(type => (
+                      {RELATIONSHIP_TYPES.map(type => (
                         <SelectItem key={type.id} value={type.name}>
                           {type.name}
                         </SelectItem>
@@ -281,8 +283,8 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
     let value = selectedNode[fieldName];
     if (fieldName === "lastContact" && value) {
       value = new Date(value).toLocaleDateString();
-    } else if (fieldName === "relationshipStrength" && selectedNode.relationshipToYou) {
-      value = getConnectionNameById(selectedNode.relationshipToYou);
+    } else if (fieldName === "userRelationshipType" && selectedNode.userRelationshipType) {
+      value = getRelationshipNameById(selectedNode.userRelationshipType);
     }
 
     return (
