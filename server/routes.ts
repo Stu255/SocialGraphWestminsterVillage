@@ -176,6 +176,58 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.put("/api/people/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not logged in" });
+    }
+
+    try {
+      console.log("Received update request for person:", req.params.id, req.body);
+
+      // Validate relationship value if present
+      if (req.body.relationshipToYou !== undefined && req.body.relationshipToYou !== null) {
+        const relationshipValue = Number(req.body.relationshipToYou);
+        if (isNaN(relationshipValue) || relationshipValue < 1 || relationshipValue > 5) {
+          return res.status(400).json({ 
+            error: "Invalid relationship value. Must be a number between 1 and 5" 
+          });
+        }
+      }
+
+      // Update the person
+      const [updatedPerson] = await db
+        .update(people)
+        .set({
+          name: req.body.name,
+          jobTitle: req.body.jobTitle,
+          organization: req.body.organization,
+          relationshipToYou: req.body.relationshipToYou,
+          officeNumber: req.body.officeNumber,
+          mobileNumber: req.body.mobileNumber,
+          email1: req.body.email1,
+          email2: req.body.email2,
+          linkedin: req.body.linkedin,
+          twitter: req.body.twitter,
+          notes: req.body.notes,
+        })
+        .where(eq(people.id, parseInt(req.params.id)))
+        .returning();
+
+      if (!updatedPerson) {
+        return res.status(404).json({ error: "Person not found" });
+      }
+
+      console.log("Successfully updated person:", updatedPerson);
+      res.json(updatedPerson);
+    } catch (error: any) {
+      console.error("Error updating person:", error);
+      res.status(500).json({ 
+        error: error?.message || "Failed to update person",
+        details: process.env.NODE_ENV === 'development' ? error : undefined
+      });
+    }
+  });
+
   app.get("/api/relationships", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not logged in");

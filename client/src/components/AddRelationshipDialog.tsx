@@ -80,6 +80,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
 
         if (!res.ok) {
           const errorText = await res.text();
+          console.error("Delete relationship error response:", errorText);
           throw new Error(errorText || "Failed to remove connection");
         }
 
@@ -87,27 +88,46 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
       } else {
         // Convert the connection type name to its numeric value
         const relationshipType = getConnectionIdByName(connectionType);
+        console.log(`Converting connection type ${connectionType} to numeric value:`, relationshipType);
+
+        const payload = {
+          sourcePersonId: sourceId,
+          targetPersonId: targetId,
+          relationshipType,
+          graphId,
+        };
+
+        console.log("Sending relationship payload:", payload);
 
         const res = await fetch("/api/relationships", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sourcePersonId: sourceId,
-            targetPersonId: targetId,
-            relationshipType,
-            graphId,
-          }),
+          body: JSON.stringify(payload),
         });
 
         if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(errorText || "Failed to create connection");
+          const contentType = res.headers.get("content-type");
+          let errorMessage;
+
+          if (contentType && contentType.includes("application/json")) {
+            const errorData = await res.json();
+            errorMessage = errorData.error;
+          } else {
+            const errorText = await res.text();
+            console.error("Server error response:", errorText);
+            errorMessage = `Server Error: ${res.status} ${res.statusText}`;
+          }
+
+          throw new Error(errorMessage || "Failed to create connection");
         }
 
-        return res.json();
+        const data = await res.json();
+        console.log("Relationship created successfully:", data);
+        return data;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Mutation succeeded:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
       toast({
         title: "Success",
@@ -115,6 +135,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
       });
     },
     onError: (error: Error) => {
+      console.error("Mutation error:", error);
       toast({
         title: "Error",
         description: error.message,
