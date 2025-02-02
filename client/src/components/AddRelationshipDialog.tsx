@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { CONNECTION_TYPES, getConnectionIdByName } from "./RelationshipTypeManager";
+import { CONNECTION_TYPES, getConnectionIdByName, getConnectionNameById } from "./RelationshipTypeManager";
 import { useToast } from "@/hooks/use-toast";
 
 interface Person {
@@ -36,13 +36,19 @@ interface Person {
   relationshipToYou?: string;
 }
 
+interface Relationship {
+  sourcePersonId: number;
+  targetPersonId: number;
+  relationshipType: string;
+}
+
 interface AddConnectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   graphId: number;
 }
 
-type SortField = "name" | "organization" | "jobTitle";
+type SortField = "name" | "organization" | "jobTitle" | "connectionType";
 type SortDirection = "asc" | "desc";
 type FilterValues = Record<string, string>;
 type SortConfig = {
@@ -59,6 +65,11 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
 
   const { data: people = [] } = useQuery<Person[]>({
     queryKey: ["/api/people", graphId],
+    enabled: !!graphId,
+  });
+
+  const { data: relationships = [] } = useQuery<Relationship[]>({
+    queryKey: ["/api/relationships", graphId],
     enabled: !!graphId,
   });
 
@@ -86,7 +97,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
 
         return { message: "Connection removed" };
       } else {
-        // Convert the connection type name to its numeric value
         const relationshipType = getConnectionIdByName(connectionType);
         console.log(`Converting connection type ${connectionType} to numeric value:`, relationshipType);
 
@@ -144,6 +154,17 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     },
   });
 
+  const getCurrentConnectionType = (targetPersonId: number) => {
+    if (!selectedPerson) return "none";
+
+    const relationship = relationships.find(r => 
+      (r.sourcePersonId === selectedPerson.id && r.targetPersonId === targetPersonId) ||
+      (r.targetPersonId === selectedPerson.id && r.sourcePersonId === targetPersonId)
+    );
+
+    return relationship ? getConnectionNameById(Number(relationship.relationshipType)) : "none";
+  };
+
   const handleConnectionSelect = async (targetPerson: Person, connectionType: string) => {
     if (!selectedPerson) return;
 
@@ -167,6 +188,12 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
   const filteredPeople = people.filter((person) => {
     return Object.entries(filters).every(([key, value]) => {
       if (!value) return true;
+
+      if (key === "connectionType") {
+        const currentType = getCurrentConnectionType(person.id);
+        return currentType.toLowerCase().includes(value.toLowerCase());
+      }
+
       const fieldValue = String(person[key as keyof Person] || "").toLowerCase();
       return fieldValue.includes(value.toLowerCase());
     });
@@ -175,6 +202,14 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
   const sortedPeople = [...filteredPeople].sort((a, b) => {
     if (!sortConfig.column || !sortConfig.direction) {
       return a.name.localeCompare(b.name);
+    }
+
+    if (sortConfig.column === "connectionType") {
+      const aType = getCurrentConnectionType(a.id);
+      const bType = getCurrentConnectionType(b.id);
+      return sortConfig.direction === "asc"
+        ? aType.localeCompare(bType)
+        : bType.localeCompare(aType);
     }
 
     const aValue = String(a[sortConfig.column as keyof Person] || "").toLowerCase();
@@ -271,7 +306,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
                 </TableHead>
                 {selectedPerson && (
                   <TableHead className="w-[150px]">
-                    <div className="pl-2">Connection Type</div>
+                    {renderColumnHeader("connectionType", "Connection Type")}
                   </TableHead>
                 )}
                 <TableHead className="w-[100px]"></TableHead>
@@ -288,8 +323,8 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
                     {selectedPerson && (
                       <TableCell>
                         <Select
+                          value={getCurrentConnectionType(person.id)}
                           onValueChange={(value) => handleConnectionSelect(person, value)}
-                          defaultValue="none"
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select type" />

@@ -98,16 +98,16 @@ const getConnectionLineStyle = (connectionType: string) => {
   switch (connectionType) {
     case "Allied":
       return { 
-        strokeWidth: 4, 
+        strokeWidth: 6, 
         strokeDasharray: "none",
-        doubleStroke: false 
+        doubleStroke: true,
+        doubleStrokeGap: 8  // Increased gap between lines for better visibility
       };
     case "Trusted":
       return { 
-        strokeWidth: 2, 
+        strokeWidth: 4, 
         strokeDasharray: "none",
-        doubleStroke: true,
-        doubleStrokeGap: 4
+        doubleStroke: false 
       };
     case "Close":
       return { 
@@ -222,6 +222,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       const style = getConnectionLineStyle(d.type);
 
       if (style.doubleStroke && style.doubleStrokeGap) {
+        // For Allied connections, render two parallel heavy lines
         [-style.doubleStrokeGap/2, style.doubleStrokeGap/2].forEach(offset => {
           linkGroup
             .append("line")
@@ -233,6 +234,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
             .attr("transform", `translate(0, ${offset})`);
         });
       } else {
+        // For all other connections, render a single line
         linkGroup
           .append("line")
           .datum(d)
