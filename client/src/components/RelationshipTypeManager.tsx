@@ -13,20 +13,20 @@ import { AddConnectionDialog } from "./AddRelationshipDialog";
 
 // Define connection types with scores and their line styles
 export const CONNECTION_TYPES = [
-  { id: 5, name: "Strong Connection", style: "heavy-line", description: "Heavy line" },
-  { id: 4, name: "Regular Connection", style: "double-line", description: "Double line" },
-  { id: 3, name: "Moderate Connection", style: "standard-line", description: "Standard line" },
-  { id: 2, name: "Light Connection", style: "thin-line", description: "Thin line" },
-  { id: 1, name: "Weak Connection", style: "dashed-line", description: "Thin dashed line" }
+  { id: 5, name: "Allied", style: "heavy-line", description: "Heavy line" },
+  { id: 4, name: "Trusted", style: "double-line", description: "Double line" },
+  { id: 3, name: "Close", style: "standard-line", description: "Standard line" },
+  { id: 2, name: "Familiar", style: "thin-line", description: "Thin line" },
+  { id: 1, name: "Acquainted", style: "dashed-line", description: "Thin dashed line" }
 ];
 
 // For backward compatibility and to avoid breaking changes
 export const RELATIONSHIP_TYPES = [
-  { id: 5, name: "Strong Relationship", style: "heavy-line", description: "Heavy line" },
-  { id: 4, name: "Regular Relationship", style: "double-line", description: "Double line" },
-  { id: 3, name: "Moderate Relationship", style: "standard-line", description: "Standard line" },
-  { id: 2, name: "Light Relationship", style: "thin-line", description: "Thin line" },
-  { id: 1, name: "Weak Relationship", style: "dashed-line", description: "Thin dashed line" }
+  { id: 5, name: "Allied", style: "heavy-line", description: "Heavy line" },
+  { id: 4, name: "Trusted", style: "double-line", description: "Double line" },
+  { id: 3, name: "Close", style: "standard-line", description: "Standard line" },
+  { id: 2, name: "Familiar", style: "thin-line", description: "Thin line" },
+  { id: 1, name: "Acquainted", style: "dashed-line", description: "Thin dashed line" }
 ];
 
 // Helper functions for connection type conversion
@@ -88,7 +88,7 @@ export function ConnectionManager({ graphId }: { graphId: number }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Network Connections</CardTitle>
+        <CardTitle>Connections</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         <Button 

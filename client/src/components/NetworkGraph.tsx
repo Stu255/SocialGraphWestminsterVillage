@@ -96,32 +96,32 @@ const getRelationshipIcon = (relationshipId: number | undefined) => {
 
 const getConnectionLineStyle = (connectionType: string) => {
   switch (connectionType) {
-    case "Strong Connection":
+    case "Allied":
       return { 
         strokeWidth: 4, 
         strokeDasharray: "none",
         doubleStroke: false 
       };
-    case "Regular Connection":
+    case "Trusted":
       return { 
         strokeWidth: 2, 
         strokeDasharray: "none",
         doubleStroke: true,
         doubleStrokeGap: 4
       };
-    case "Moderate Connection":
+    case "Close":
       return { 
         strokeWidth: 2, 
         strokeDasharray: "none",
         doubleStroke: false 
       };
-    case "Light Connection":
+    case "Familiar":
       return { 
         strokeWidth: 1, 
         strokeDasharray: "none",
         doubleStroke: false 
       };
-    case "Weak Connection":
+    case "Acquainted":
       return { 
         strokeWidth: 1, 
         strokeDasharray: "4,4",
