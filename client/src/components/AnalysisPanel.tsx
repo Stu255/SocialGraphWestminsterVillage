@@ -111,7 +111,10 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
-      const relationshipToYou = getConnectionIdByName(values.relationshipStrength);
+      // Convert the relationship strength to numeric value
+      const relationshipToYou = values.relationshipStrength ? 
+        getConnectionIdByName(values.relationshipStrength) : 
+        null;
 
       const payload = { 
         ...values,
@@ -121,40 +124,29 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
       console.log("Sending contact data:", payload);
 
-      try {
-        const res = await fetch(`/api/people/${selectedNode.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+      const res = await fetch(`/api/people/${selectedNode.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-        if (!res.ok) {
-          const contentType = res.headers.get("content-type");
-          let errorMessage;
+      if (!res.ok) {
+        const contentType = res.headers.get("content-type");
+        let errorMessage;
 
-          try {
-            if (contentType && contentType.includes("application/json")) {
-              const errorData = await res.json();
-              errorMessage = errorData.error || "Failed to update person";
-            } else {
-              const errorText = await res.text();
-              errorMessage = `API Error: ${res.status} ${res.statusText}`;
-              console.error("Server response:", errorText);
-            }
-          } catch (parseError) {
-            console.error("Error parsing response:", parseError);
-            errorMessage = "Failed to parse server response";
-          }
-
-          throw new Error(errorMessage);
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await res.json();
+          errorMessage = errorData.error || "Failed to update person";
+        } else {
+          const errorText = await res.text();
+          console.error("Server error response:", errorText);
+          errorMessage = `Server Error: ${res.status} ${res.statusText}`;
         }
-
-        const data = await res.json();
-        return data;
-      } catch (error) {
-        console.error("Contact mutation error:", error);
-        throw error;
+        throw new Error(errorMessage);
       }
+
+      const data = await res.json();
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
@@ -165,6 +157,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       });
     },
     onError: (error: Error) => {
+      console.error("Update person error:", error);
       toast({
         title: "Error",
         description: error.message,
