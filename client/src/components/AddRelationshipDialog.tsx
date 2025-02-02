@@ -37,6 +37,7 @@ interface Person {
 }
 
 interface Relationship {
+  id: number;
   sourcePersonId: number;
   targetPersonId: number;
   relationshipType: string;
@@ -70,6 +71,11 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
 
   const { data: relationships = [] } = useQuery<Relationship[]>({
     queryKey: ["/api/relationships", graphId],
+    queryFn: async () => {
+      const res = await fetch(`/api/relationships?graphId=${graphId}`);
+      if (!res.ok) throw new Error("Failed to fetch relationships");
+      return res.json();
+    },
     enabled: !!graphId,
   });
 
@@ -85,14 +91,22 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
   const mutation = useMutation({
     mutationFn: async ({ sourceId, targetId, connectionType }: any) => {
       if (connectionType === "none") {
-        const res = await fetch(`/api/relationships?sourcePersonId=${sourceId}&targetPersonId=${targetId}&graphId=${graphId}`, {
-          method: "DELETE",
-        });
+        // Find the existing relationship to delete
+        const existingRelationship = relationships.find(r => 
+          (r.sourcePersonId === sourceId && r.targetPersonId === targetId) ||
+          (r.targetPersonId === sourceId && r.sourcePersonId === targetId)
+        );
 
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error("Delete relationship error response:", errorText);
-          throw new Error(errorText || "Failed to remove connection");
+        if (existingRelationship) {
+          const res = await fetch(`/api/relationships/${existingRelationship.id}`, {
+            method: "DELETE",
+          });
+
+          if (!res.ok) {
+            const errorText = await res.text();
+            console.error("Delete relationship error response:", errorText);
+            throw new Error(errorText || "Failed to remove connection");
+          }
         }
 
         return { message: "Connection removed" };
@@ -162,7 +176,12 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
       (r.targetPersonId === selectedPerson.id && r.sourcePersonId === targetPersonId)
     );
 
-    return relationship ? getConnectionNameById(Number(relationship.relationshipType)) : "none";
+    if (!relationship) return "none";
+
+    // Parse the relationshipType as a number and get its name
+    const connectionName = getConnectionNameById(Number(relationship.relationshipType));
+    console.log(`Found relationship type ${relationship.relationshipType} -> ${connectionName}`);
+    return connectionName;
   };
 
   const handleConnectionSelect = async (targetPerson: Person, connectionType: string) => {
