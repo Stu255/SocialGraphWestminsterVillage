@@ -40,6 +40,10 @@ export const getConnectionIdByName = (name: string) => {
   return type?.id || null;
 };
 
+// Keep old function names for backward compatibility
+export const getRelationshipNameById = getConnectionNameById;
+export const getRelationshipIdByName = getConnectionIdByName;
+
 interface ConnectionListDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
