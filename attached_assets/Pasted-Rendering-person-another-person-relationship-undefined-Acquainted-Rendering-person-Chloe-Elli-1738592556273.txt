@@ -1,0 +1,36 @@
+Rendering person: another person relationship: undefined -> Acquainted
+Rendering person: Chloe Ellison relationship: undefined -> Acquainted
+Rendering person: Freddie relationship: undefined -> Acquainted
+Rendering person: More people are joining relationship: undefined -> Acquainted
+Rendering person: new relationship: undefined -> Acquainted
+Rendering person: Poppy Ellison relationship: undefined -> Acquainted
+Rendering person: Stuart Ellison relationship: undefined -> Acquainted
+Rendering person: afgashnf relationship: undefined -> Acquainted
+Rendering person: another person relationship: undefined -> Acquainted
+Rendering person: Chloe Ellison relationship: undefined -> Acquainted
+Rendering person: Freddie relationship: undefined -> Acquainted
+Rendering person: More people are joining relationship: undefined -> Acquainted
+Rendering person: new relationship: undefined -> Acquainted
+Rendering person: Poppy Ellison relationship: undefined -> Acquainted
+Rendering person: Stuart Ellison relationship: undefined -> Acquainted
+NetworkGraph rendering with data: 
+Object {nodes: Array(8), links: Array(0), filters: {…}}
+Processed links for rendering: 
+Array []
+Getting icon for relationship type: 1
+Rendering person: afgashnf relationship: undefined -> Acquainted
+Rendering person: another person relationship: undefined -> Acquainted
+Rendering person: Chloe Ellison relationship: undefined -> Acquainted
+Rendering person: Freddie relationship: undefined -> Acquainted
+Rendering person: More people are joining relationship: undefined -> Acquainted
+Rendering person: new relationship: undefined -> Acquainted
+Rendering person: Poppy Ellison relationship: undefined -> Acquainted
+Rendering person: Stuart Ellison relationship: undefined -> Acquainted
+Rendering person: afgashnf relationship: undefined -> Acquainted
+Rendering person: another person relationship: undefined -> Acquainted
+Rendering person: Chloe Ellison relationship: undefined -> Acquainted
+Rendering person: Freddie relationship: undefined -> Acquainted
+Rendering person: More people are joining relationship: undefined -> Acquainted
+Rendering person: new relationship: undefined -> Acquainted
+Rendering person: Poppy Ellison relationship: undefined -> Acquainted
+Rendering person: Stuart Ellison relationship: undefined -> Acquainted

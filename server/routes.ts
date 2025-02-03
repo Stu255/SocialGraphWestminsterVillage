@@ -185,9 +185,12 @@ export function registerRoutes(app: Express): Server {
     try {
       console.log("Received update request for person:", req.params.id, req.body);
 
+      // Map relationshipToYou to userRelationshipType
+      const userRelationshipType = req.body.relationshipToYou;
+
       // Validate relationship value if present
-      if (req.body.relationshipToYou !== undefined && req.body.relationshipToYou !== null) {
-        const relationshipValue = Number(req.body.relationshipToYou);
+      if (userRelationshipType !== undefined && userRelationshipType !== null) {
+        const relationshipValue = Number(userRelationshipType);
         if (isNaN(relationshipValue) || relationshipValue < 0 || relationshipValue > 5) {
           return res.status(400).json({ 
             error: "Invalid relationship value. Must be a number between 0 and 5" 
@@ -202,7 +205,7 @@ export function registerRoutes(app: Express): Server {
           name: req.body.name,
           jobTitle: req.body.jobTitle,
           organization: req.body.organization,
-          relationshipToYou: req.body.relationshipToYou,
+          userRelationshipType: userRelationshipType, // Map to correct field name
           officeNumber: req.body.officeNumber,
           mobileNumber: req.body.mobileNumber,
           email1: req.body.email1,

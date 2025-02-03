@@ -12,6 +12,7 @@ interface Node extends d3.SimulationNodeDatum {
   organization?: string;
   relationshipToYou?: number;
   currentRole?: string;
+  userRelationshipType?: number;
 }
 
 interface Link {
@@ -191,7 +192,11 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
 
     svg.call(zoom);
 
-    const filteredNodes = nodes.filter((node) => {
+    const filteredNodes = nodes.map(node => ({
+      ...node,
+      // Map userRelationshipType to relationshipToYou for UI consistency
+      relationshipToYou: node.userRelationshipType
+    })).filter((node) => {
       if (filters.affiliation && node.affiliation !== filters.affiliation) return false;
       if (filters.userRelationshipType && node.relationshipToYou !== filters.userRelationshipType) return false;
       return true;

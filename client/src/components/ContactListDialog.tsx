@@ -348,13 +348,18 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
   const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: null, direction: null });
   const [filters, setFilters] = useState<FilterValues>({});
-  
+
   const { data: people } = useQuery({
     queryKey: ["/api/people", graphId],
     queryFn: async () => {
       const res = await fetch(`/api/people?graphId=${graphId}`);
       if (!res.ok) throw new Error("Failed to fetch people");
-      return res.json();
+      const data = await res.json();
+      // Map userRelationshipType to relationshipToYou for UI consistency
+      return data.map((person: any) => ({
+        ...person,
+        relationshipToYou: person.userRelationshipType
+      }));
     },
   });
 
@@ -363,7 +368,7 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
     return Object.entries(filters).every(([key, value]) => {
       if (!value) return true;
       if (key === 'relationshipToYou') {
-        const relationshipName = getUserRelationshipNameById(person.relationshipToYou)?.toLowerCase() || '';
+        const relationshipName = getUserRelationshipNameById(person.userRelationshipType)?.toLowerCase() || '';
         console.log("Filtering relationship:", person.name, relationshipName, value.toLowerCase());
         return relationshipName.includes(value.toLowerCase());
       }
@@ -388,7 +393,7 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
     const aValue = String(a[sortConfig.column] || '').toLowerCase();
     const bValue = String(b[sortConfig.column] || '').toLowerCase();
 
-    return sortConfig.direction === "asc" 
+    return sortConfig.direction === "asc"
       ? aValue.localeCompare(bValue)
       : bValue.localeCompare(aValue);
   });
