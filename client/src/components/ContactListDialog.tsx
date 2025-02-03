@@ -27,6 +27,7 @@ import {
 import { Check, ChevronsUpDown } from "lucide-react";
 import { AddOrganizationDialog } from "./AddOrganizationDialog";
 import { ContactFormDialog } from "./ContactFormDialog";
+import { getUserRelationshipNameById } from "./RelationshipTypeManager";
 
 interface ContactListDialogProps {
   open: boolean;
@@ -345,8 +346,7 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
   const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: null, direction: null });
   const [filters, setFilters] = useState<FilterValues>({});
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
-
+  
   const { data: people } = useQuery({
     queryKey: ["/api/people", graphId],
     queryFn: async () => {
@@ -360,6 +360,10 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
   const filteredPeople = (people || []).filter((person: any) => {
     return Object.entries(filters).every(([key, value]) => {
       if (!value) return true;
+      if (key === 'relationshipToYou') {
+        const relationshipName = getUserRelationshipNameById(person.relationshipToYou)?.toLowerCase() || '';
+        return relationshipName.startsWith(value.toLowerCase());
+      }
       const fieldValue = person[key]?.toLowerCase() || "";
       return fieldValue.startsWith(value.toLowerCase());
     });
@@ -373,19 +377,17 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
 
     // Special handling for relationshipToYou field
     if (sortConfig.column === 'relationshipToYou') {
-      const aId = a.relationshipToYou || 0;
-      const bId = b.relationshipToYou || 0;
-      return sortConfig.direction === "asc" ? aId - bId : bId - aId;
+      const aValue = a.relationshipToYou || 0;
+      const bValue = b.relationshipToYou || 0;
+      return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
     }
 
-    // Handle other text fields
     const aValue = String(a[sortConfig.column] || '').toLowerCase();
     const bValue = String(b[sortConfig.column] || '').toLowerCase();
 
-    if (sortConfig.direction === "asc") {
-      return aValue.localeCompare(bValue);
-    }
-    return bValue.localeCompare(aValue);
+    return sortConfig.direction === "asc" 
+      ? aValue.localeCompare(bValue)
+      : bValue.localeCompare(aValue);
   });
 
   // Paginate the sorted and filtered results
@@ -417,7 +419,7 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
     setCurrentPage(page);
   };
 
-  const renderColumnHeader = (column: string, label: string) => {
+    const renderColumnHeader = (column: string, label: string) => {
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2">
@@ -466,7 +468,7 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
                       {renderColumnHeader("jobTitle", "Job Title")}
                     </TableHead>
                     <TableHead>
-                      {renderColumnHeader("relationshipToYou", "Relationship To You")}
+                      {renderColumnHeader("relationshipToYou", "Relationship")}
                     </TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
@@ -477,7 +479,7 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
                       <TableCell className="font-medium">{person.name}</TableCell>
                       <TableCell>{person.organization || "—"}</TableCell>
                       <TableCell>{person.jobTitle || "—"}</TableCell>
-                      <TableCell>{person.relationshipToYou || "—"}</TableCell>
+                      <TableCell>{getUserRelationshipNameById(person.relationshipToYou) || "—"}</TableCell>
                       <TableCell>
                         <Button
                           variant="ghost"
