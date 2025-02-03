@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { USER_RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
+import { CONNECTION_TYPES } from "./ConnectionManager";
 
 interface Organization {
   id: number;
@@ -8,14 +10,10 @@ interface Organization {
   color: string;
 }
 
-interface ConnectionType {
-  id: number;
-  name: string;
-}
-
 interface Filters {
   organization: string | null;
-  connectionType: string | null;
+  userRelationshipType: number | null;
+  connectionType: number | null;
 }
 
 interface FilterPanelProps {
@@ -26,10 +24,6 @@ interface FilterPanelProps {
 export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
   const { data: organizations = [] } = useQuery<Organization[]>({
     queryKey: ["/api/organizations"],
-  });
-
-  const { data: connectionTypes = [] } = useQuery<ConnectionType[]>({
-    queryKey: ["/api/relationship-types"],
   });
 
   return (
@@ -58,20 +52,48 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
         </div>
 
         <div className="space-y-2">
+          <label className="text-sm font-medium">Your Relationship Type</label>
+          <Select
+            value={filters.userRelationshipType?.toString() || "all"}
+            onValueChange={(value) =>
+              onFilterChange({
+                ...filters,
+                userRelationshipType: value === "all" ? null : Number(value)
+              })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select relationship type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Relationships</SelectItem>
+              {USER_RELATIONSHIP_TYPES.map((type) => (
+                <SelectItem key={type.id} value={type.id.toString()}>
+                  {type.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
           <label className="text-sm font-medium">Connection Type</label>
           <Select
-            value={filters.connectionType || "all"}
+            value={filters.connectionType?.toString() || "all"}
             onValueChange={(value) =>
-              onFilterChange({ ...filters, connectionType: value === "all" ? null : value })
+              onFilterChange({
+                ...filters,
+                connectionType: value === "all" ? null : Number(value)
+              })
             }
           >
             <SelectTrigger>
               <SelectValue placeholder="Select connection type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              {connectionTypes.map((type) => (
-                <SelectItem key={type.id} value={type.name}>
+              <SelectItem value="all">All Connections</SelectItem>
+              {CONNECTION_TYPES.map((type) => (
+                <SelectItem key={type.id} value={type.id.toString()}>
                   {type.name}
                 </SelectItem>
               ))}
