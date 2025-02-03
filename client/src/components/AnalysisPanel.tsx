@@ -113,16 +113,13 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
       // Convert the relationship type from name to ID
-      // Note: values.userRelationshipType is the name (e.g., "Trusted")
-      const relationshipToYou = getUserRelationshipIdByName(values.userRelationshipType);
+      const userRelationshipType = getUserRelationshipIdByName(values.userRelationshipType);
 
       const payload = { 
         ...values,
-        relationshipToYou, // This will be a number 1-5
+        userRelationshipType, // Send as userRelationshipType to match backend expectation
         graphId 
       };
-
-      console.log("Sending contact data:", payload);
 
       const res = await fetch(`/api/people/${selectedNode.id}`, {
         method: 'PUT',
