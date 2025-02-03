@@ -45,11 +45,20 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
   const queryClient = useQueryClient();
 
   const { data: people = [] } = useQuery<Person[]>({
-    queryKey: ["/api/people", graphId]
+    queryKey: ["/api/people", graphId],
+    enabled: !!graphId,
   });
 
   const { data: connections = [] } = useQuery({
-    queryKey: ["/api/connections", graphId]
+    queryKey: ["/api/connections", graphId],
+    queryFn: async () => {
+      const res = await fetch(`/api/connections?graphId=${graphId}`);
+      if (!res.ok) {
+        throw new Error('Failed to fetch connections');
+      }
+      return res.json();
+    },
+    enabled: !!graphId,
   });
 
   const updateConnection = useMutation({
@@ -58,7 +67,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
       targetId: number, 
       connectionType: string 
     }) => {
-      // Direct mapping from name to ID
       const typeId = CONNECTION_TYPES.find(t => t.name === connectionType)?.id ?? 0;
       console.log("Updating connection:", { sourceId, targetId, connectionType, typeId });
 
@@ -114,6 +122,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
   });
 
   const getCurrentConnection = (targetPersonId: number) => {
+    console.log("Checking connections:", connections);
     const connection = connections.find(c => 
       (c.sourcePersonId === selectedPerson?.id && c.targetPersonId === targetPersonId) ||
       (c.targetPersonId === selectedPerson?.id && c.sourcePersonId === targetPersonId)
@@ -193,7 +202,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
                   <TableCell>
                     {!selectedPerson && (
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         onClick={() => setSelectedPerson(person)}
                       >
