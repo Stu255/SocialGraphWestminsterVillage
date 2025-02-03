@@ -9,8 +9,37 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CONNECTION_TYPES } from "./RelationshipTypeManager";
 import { AddConnectionDialog } from "./AddConnectionDialog";
+
+/**
+ * Constants defining the connection types between contacts
+ * 
+ * Contact Connections (Edge Lines):
+ * - Represents how contacts are connected to each other
+ * - Values 0-5, displayed as different line styles
+ * - Includes "None" (0) for no connection
+ */
+
+// Define connection types (for edge lines)
+export const CONNECTION_TYPES = [
+  { id: 5, name: "Allied", style: "heavy-line", description: "Heavy solid line indicating strongest connection" },
+  { id: 4, name: "Trusted", style: "double-line", description: "Double line indicating strong connection" },
+  { id: 3, name: "Close", style: "standard-line", description: "Standard solid line indicating regular connection" },
+  { id: 2, name: "Familiar", style: "thin-line", description: "Thin solid line indicating basic connection" },
+  { id: 1, name: "Acquainted", style: "dashed-line", description: "Dashed line indicating minimal connection" },
+  { id: 0, name: "None", style: "no-line", description: "No visible connection" }
+];
+
+// Helper functions for connection types (edge lines)
+export const getConnectionNameById = (id: number) => {
+  const type = CONNECTION_TYPES.find(type => type.id === id);
+  return type?.name || "None";
+};
+
+export const getConnectionIdByName = (name: string) => {
+  const type = CONNECTION_TYPES.find(type => type.name === name);
+  return type?.id ?? 0;
+};
 
 interface ConnectionListDialogProps {
   open: boolean;

@@ -12,16 +12,12 @@ import {
 import { AddRelationshipDialog } from "./AddRelationshipDialog";
 
 /**
- * Constants defining the relationship and connection types in the network
+ * Constants defining user's relationship to each contact in their network
  * 
  * User Relationships (Node Icons):
- * - Represents relationship between user and people in their network
- * - Values 1-5, displayed as node icons
- * 
- * Network Connections (Edge Lines):
- * - Represents connections between people in the network
- * - Values 0-5, displayed as different line styles
- * - Includes "None" (0) for no connection
+ * - Represents how the logged-in user relates to each contact
+ * - Stored as integers 1-5 in userRelationshipType field
+ * - Displayed as different node icons in the graph
  */
 
 // Define relationship types (for node icons)
@@ -33,16 +29,6 @@ export const USER_RELATIONSHIP_TYPES = [
   { id: 1, name: "Acquainted", icon: "basic-dashed", description: "Basic dashed circle icon" }
 ];
 
-// Keep the CONNECTION_TYPES array exactly as is - it's the source of truth
-export const CONNECTION_TYPES = [
-  { id: 5, name: "Allied", style: "heavy-line", description: "Heavy solid line indicating strongest connection" },
-  { id: 4, name: "Trusted", style: "double-line", description: "Double line indicating strong connection" },
-  { id: 3, name: "Close", style: "standard-line", description: "Standard solid line indicating regular connection" },
-  { id: 2, name: "Familiar", style: "thin-line", description: "Thin solid line indicating basic connection" },
-  { id: 1, name: "Acquainted", style: "dashed-line", description: "Dashed line indicating minimal connection" },
-  { id: 0, name: "None", style: "no-line", description: "No visible connection" }
-];
-
 // Helper functions for relationship type conversion (node icons)
 export const getUserRelationshipNameById = (id: number) => {
   const type = USER_RELATIONSHIP_TYPES.find(type => type.id === id);
@@ -52,17 +38,6 @@ export const getUserRelationshipNameById = (id: number) => {
 export const getUserRelationshipIdByName = (name: string) => {
   const type = USER_RELATIONSHIP_TYPES.find(type => type.name === name);
   return type?.id || 1; // Default to Acquainted if not found
-};
-
-// Helper functions for connection types (edge lines)
-export const getConnectionNameById = (id: number) => {
-  const type = CONNECTION_TYPES.find(type => type.id === id);
-  return type?.name || "None";
-};
-
-export const getConnectionIdByName = (name: string) => {
-  const type = CONNECTION_TYPES.find(type => type.name === name);
-  return type?.id ?? 0;
 };
 
 interface RelationshipListDialogProps {

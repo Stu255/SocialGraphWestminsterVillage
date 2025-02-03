@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
-import { CONNECTION_TYPES } from "./RelationshipTypeManager";
+import { CONNECTION_TYPES } from "./ConnectionManager";
 import { useToast } from "@/hooks/use-toast";
 
 interface Person {

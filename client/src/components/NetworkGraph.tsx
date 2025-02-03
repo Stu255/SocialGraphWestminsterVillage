@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import * as d3 from "d3";
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
+// import { USER_RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
+import { CONNECTION_TYPES } from "./ConnectionManager";
 
 interface Node extends d3.SimulationNodeDatum {
   id: number;
@@ -188,10 +190,9 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
 
     svg.call(zoom);
 
-    // Filter nodes by relationship type and affiliation
+    // Filter nodes by affiliation only for now
     const filteredNodes = nodes.filter((node) => {
       if (filters.affiliation && node.affiliation !== filters.affiliation) return false;
-      if (filters.userRelationshipType && node.userRelationshipType !== filters.userRelationshipType) return false;
       return true;
     });
 
@@ -260,12 +261,16 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       }
     });
 
-    // Create nodes group
+    // Create nodes group with basic circles for now
     const nodeGroup = g.append("g")
       .attr("class", "nodes")
-      .selectAll("g")
+      .selectAll("circle")
       .data(filteredNodes)
-      .join("g")
+      .join("circle")
+      .attr("r", 10)
+      .attr("fill", d => getNodeColor(d))
+      .attr("stroke", "white")
+      .attr("stroke-width", 2)
       .call(d3.drag<any, any>()
         .on("start", (event, d) => {
           if (!event.active) simulation.alphaTarget(0.3).restart();
@@ -282,32 +287,9 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
           d.fy = null;
         }));
 
-    // Add relationship-based node icons
-    nodeGroup
-      .append("path")
-      .attr("d", d => getUserRelationshipIcon(d.userRelationshipType).path)
-      .attr("viewBox", d => getUserRelationshipIcon(d.userRelationshipType).viewBox)
-      .attr("transform", d => {
-        const icon = getUserRelationshipIcon(d.userRelationshipType);
-        const yOffset = icon.viewBox === "0 -6 24 36" ? -15 : 
-                       icon.viewBox === "0 0 24 32" ? -16 : -12;
-        return `translate(-12, ${yOffset}) scale(1)`;
-      })
-      .attr("fill", d => getUserRelationshipIcon(d.userRelationshipType).fill ? getNodeColor(d) : "white")
-      .attr("stroke", d => getNodeColor(d))
-      .attr("stroke-width", 1.5)
-      .attr("stroke-dasharray", d => getUserRelationshipIcon(d.userRelationshipType).strokeDasharray)
-      .style("cursor", "pointer")
-      .on("click", (_event, d) => onNodeSelect(d));
-
     // Add node labels
-    nodeGroup
-      .append("text")
-      .text(d => d.name)
-      .attr("font-size", "12px")
-      .attr("dx", 15)
-      .attr("dy", 4)
-      .attr("fill", "#333");
+    nodeGroup.append("title")
+      .text(d => d.name);
 
     // Update positions on simulation tick
     simulation.on("tick", () => {
@@ -317,7 +299,8 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
         .attr("x2", (d: any) => d.target.x)
         .attr("y2", (d: any) => d.target.y);
 
-      nodeGroup.attr("transform", (d: any) => `translate(${d.x},${d.y})`);
+      nodeGroup.attr("cx", (d: any) => d.x)
+        .attr("cy", (d: any) => d.y);
     });
 
     return () => {
