@@ -364,7 +364,7 @@ export function registerRoutes(app: Express): Server {
       }
     });
 
-  app.put("/api/connections/:id", async (req, res) => {
+  app.put("/api/relationships/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not logged in" });
     }
@@ -376,6 +376,15 @@ export function registerRoutes(app: Express): Server {
       });
 
       const { connectionType } = req.body;
+
+      // Validate connection type
+      if (connectionType === undefined || connectionType === null || 
+          typeof connectionType !== 'number' || 
+          connectionType < 0 || connectionType > 5) {
+        return res.status(400).json({ 
+          error: "Invalid connection type. Must be a number between 0 and 5" 
+        });
+      }
 
       // Update both directions of the connection in a single transaction
       await db.transaction(async (tx) => {
