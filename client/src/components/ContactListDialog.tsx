@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
+import { USER_RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
 import {
   Command,
   CommandEmpty,
@@ -212,7 +212,7 @@ function EditDialog({ contact, open, onOpenChange, graphId }: EditDialogProps) {
                                 <SelectValue placeholder="Select relationship type" />
                               </SelectTrigger>
                               <SelectContent>
-                                {RELATIONSHIP_TYPES.map(type => (
+                                {USER_RELATIONSHIP_TYPES.map(type => (
                                   <SelectItem key={type.id} value={type.name}>
                                     {type.name}
                                   </SelectItem>

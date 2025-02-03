@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RELATIONSHIP_TYPES, getRelationshipNameById, getRelationshipIdByName } from "./RelationshipTypeManager";
+import { USER_RELATIONSHIP_TYPES, getUserRelationshipNameById, getUserRelationshipIdByName } from "./RelationshipTypeManager";
 
 interface ContactFormDialogProps {
   contact?: any;
@@ -87,7 +87,7 @@ export function ContactFormDialog({ contact, open, onOpenChange, graphId }: Cont
       name: contact?.name || "",
       jobTitle: contact?.jobTitle || "",
       organization: contact?.organization || "",
-      relationshipToYou: contact?.relationshipToYou ? getRelationshipNameById(contact.relationshipToYou) : "",
+      relationshipToYou: contact?.relationshipToYou ? getUserRelationshipNameById(contact.relationshipToYou) : "",
       officeNumber: contact?.officeNumber || "",
       mobileNumber: contact?.mobileNumber || "",
       email1: contact?.email1 || "",
@@ -106,7 +106,7 @@ export function ContactFormDialog({ contact, open, onOpenChange, graphId }: Cont
         graphId: graphId, // Ensure graphId is passed correctly
         jobTitle: values.jobTitle?.trim() || null,
         organization: values.organization?.trim() || null,
-        relationshipToYou: values.relationshipToYou ? getRelationshipIdByName(values.relationshipToYou) : null,
+        relationshipToYou: values.relationshipToYou ? getUserRelationshipIdByName(values.relationshipToYou) : null,
         officeNumber: values.officeNumber?.trim() || null,
         mobileNumber: values.mobileNumber?.trim() || null,
         email1: values.email1?.trim() || null,
@@ -231,7 +231,7 @@ export function ContactFormDialog({ contact, open, onOpenChange, graphId }: Cont
                               <SelectValue placeholder="Select relationship type" />
                             </SelectTrigger>
                             <SelectContent>
-                              {RELATIONSHIP_TYPES.map(type => (
+                              {USER_RELATIONSHIP_TYPES.map(type => (
                                 <SelectItem key={type.id} value={type.name}>
                                   {type.name}
                                 </SelectItem>

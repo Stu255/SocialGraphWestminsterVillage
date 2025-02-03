@@ -20,7 +20,7 @@ import { AddRelationshipDialog } from "./AddRelationshipDialog";
  * - Displayed as different node icons in the graph
  */
 
-// Define relationship types (for node icons)
+// Define user relationship types (for node icons)
 export const USER_RELATIONSHIP_TYPES = [
   { id: 5, name: "Allied", icon: "strong", description: "Strong relationship icon with up/down chevrons" },
   { id: 4, name: "Trusted", icon: "regular", description: "Regular relationship icon with down chevron" },
@@ -29,7 +29,10 @@ export const USER_RELATIONSHIP_TYPES = [
   { id: 1, name: "Acquainted", icon: "basic-dashed", description: "Basic dashed circle icon" }
 ];
 
-// Helper functions for relationship type conversion (node icons)
+// Legacy export for backward compatibility
+export const RELATIONSHIP_TYPES = USER_RELATIONSHIP_TYPES;
+
+// Helper functions for user relationship type conversion (node icons)
 export const getUserRelationshipNameById = (id: number) => {
   const type = USER_RELATIONSHIP_TYPES.find(type => type.id === id);
   return type?.name || "Unknown";
@@ -40,12 +43,16 @@ export const getUserRelationshipIdByName = (name: string) => {
   return type?.id || 1; // Default to Acquainted if not found
 };
 
+// Legacy exports for backward compatibility
+export const getRelationshipNameById = getUserRelationshipNameById;
+export const getRelationshipIdByName = getUserRelationshipIdByName;
+
 interface RelationshipListDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-function RelationshipListDialog({ open, onOpenChange }: RelationshipListDialogProps) {
+function UserRelationshipListDialog({ open, onOpenChange }: RelationshipListDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -97,7 +104,7 @@ export function UserRelationshipManager({ graphId }: { graphId: number }) {
           Relationship Types
         </Button>
 
-        <RelationshipListDialog
+        <UserRelationshipListDialog
           open={showListDialog}
           onOpenChange={setShowListDialog}
         />
@@ -112,5 +119,5 @@ export function UserRelationshipManager({ graphId }: { graphId: number }) {
   );
 }
 
-// Export with class name for backward compatibility
+// Export with new name for clarity
 export { UserRelationshipManager as RelationshipTypeManager };

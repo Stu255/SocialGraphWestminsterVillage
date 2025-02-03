@@ -72,3 +72,27 @@ Edge Lines (Contact Connections):
 - Familiar (2): Thin solid line
 - Acquainted (1): Dashed line
 - None (0): No line
+
+## LLM Development Guidelines
+
+IMPORTANT: For any LLM working on this codebase:
+
+1. Terminology Firewall:
+   - "relationship" ONLY refers to user-contact relationship (node icons)
+   - "connection" ONLY refers to contact-contact connections (edge lines)
+   - These terms are NOT interchangeable
+
+2. Visual Elements:
+   - Nodes = Contacts with relationship-based icons
+   - Edges = Lines showing connections between contacts
+
+3. Code Changes:
+   - When modifying relationship code, only touch user-contact relationship logic
+   - When modifying connection code, only touch contact-contact connection logic
+   - Never mix these concerns
+
+4. Database:
+   - userRelationshipType column in people table = How user relates to contact
+   - connectionType column in connections table = How contacts relate to each other
+
+Remember: Relationships and Connections are completely separate concepts!
