@@ -60,7 +60,9 @@ const USER_RELATIONSHIP_ICONS = {
 };
 
 const getUserRelationshipIcon = (relationshipType: number | undefined) => {
-  switch (relationshipType) {
+  const type = typeof relationshipType === 'number' ? relationshipType : 1;
+
+  switch (type) {
     case 5:
       return { 
         ...USER_RELATIONSHIP_ICONS.strong,
@@ -271,18 +273,30 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
 
     nodeGroup
       .append("path")
-      .attr("d", d => getUserRelationshipIcon(d.relationshipToYou).path)
-      .attr("viewBox", d => getUserRelationshipIcon(d.relationshipToYou).viewBox)
+      .attr("d", d => {
+        const icon = getUserRelationshipIcon(d.relationshipToYou);
+        return icon.path;
+      })
+      .attr("viewBox", d => {
+        const icon = getUserRelationshipIcon(d.relationshipToYou);
+        return icon.viewBox;
+      })
       .attr("transform", d => {
         const icon = getUserRelationshipIcon(d.relationshipToYou);
         const yOffset = icon.viewBox === "0 -6 24 36" ? -15 : 
                        icon.viewBox === "0 0 24 32" ? -16 : -12;
         return `translate(-12, ${yOffset}) scale(1)`;
       })
-      .attr("fill", d => getUserRelationshipIcon(d.relationshipToYou).fill ? getNodeColor(d) : "white")
+      .attr("fill", d => {
+        const icon = getUserRelationshipIcon(d.relationshipToYou);
+        return icon.fill ? getNodeColor(d) : "white";
+      })
       .attr("stroke", d => getNodeColor(d))
       .attr("stroke-width", 1.5)
-      .attr("stroke-dasharray", d => getUserRelationshipIcon(d.relationshipToYou).strokeDasharray)
+      .attr("stroke-dasharray", d => {
+        const icon = getUserRelationshipIcon(d.relationshipToYou);
+        return icon.strokeDasharray;
+      })
       .style("cursor", "pointer")
       .on("click", (_event, d) => onNodeSelect(d));
 

@@ -32,6 +32,7 @@ export default function GraphPage({ params }: Props) {
   const [filters, setFilters] = useState({
     organization: null,
     connectionType: null,
+    userRelationshipType: null,
   });
 
   const graphId = parseInt(params.id);
@@ -71,9 +72,16 @@ export default function GraphPage({ params }: Props) {
     setLocation("/");
   };
 
+  // Prepare nodes with proper type information
+  const preparedNodes = (people || []).map(person => ({
+    ...person,
+    // Ensure relationshipToYou is always present
+    relationshipToYou: person.relationshipToYou || 1, // Default to "Acquainted" if not set
+  }));
+
   const graphComponent = (
     <NetworkGraph
-      nodes={people || []}
+      nodes={preparedNodes}
       links={relationships || []}
       filters={filters}
       onNodeSelect={setSelectedNode}
@@ -85,7 +93,7 @@ export default function GraphPage({ params }: Props) {
     return (
       <MobileLayout
         selectedNode={selectedNode}
-        nodes={people || []}
+        nodes={preparedNodes}
         relationships={relationships || []}
         filters={filters}
         graphId={graphId}
@@ -133,10 +141,8 @@ export default function GraphPage({ params }: Props) {
           <div className="h-full p-6 border-l overflow-y-auto">
             <AnalysisPanel
               selectedNode={selectedNode}
-              nodes={people || []}
-              relationships={relationships || []}
-              onNodeDeleted={handleNodeDeleted}
               graphId={graphId}
+              onNodeDeleted={handleNodeDeleted}
             />
           </div>
         </ResizablePanel>
