@@ -5,15 +5,15 @@ import { z } from "zod";
 /**
  * Naming Convention:
  * 
- * 1. Relationships (Node Icons):
- *    - Represents the relationship between the user and people in their network
- *    - Stored as integers 1-5 in the database
+ * 1. User Relationships (Node Icons):
+ *    - Represents how the logged-in user relates to each contact
+ *    - Stored as integers 1-5 in userRelationshipType
  *    - UI labels: Allied (5), Trusted (4), Close (3), Familiar (2), Acquainted (1)
  *    - Represented by different node icons in the graph
  * 
- * 2. Connections (Edges):
- *    - Represents connections between people in the network
- *    - Stored as integers 0-5 in the database
+ * 2. Contact Connections (Edges):
+ *    - Represents how contacts are connected to each other
+ *    - Stored as integers 0-5 in connectionType
  *    - UI labels: None (0), Allied (5), Trusted (4), Close (3), Familiar (2), Acquainted (1)
  *    - Represented by different line styles in the graph
  */
@@ -36,13 +36,13 @@ export const socialGraphs = pgTable("social_graphs", {
   deleteAt: timestamp("delete_at"),
 });
 
-// Core People table with all the fields from FieldSettingsDialog
+// Core People table with all contact fields
 export const people = pgTable("people", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   jobTitle: text("job_title"),
   organization: text("organization"),
-  userRelationshipType: integer("user_relationship_type").notNull().default(1), // 1-5: Acquainted to Allied
+  userRelationshipType: integer("user_relationship_type").notNull().default(1), // 1-5: How user relates to this contact
   lastContact: date("last_contact"),
   officeNumber: text("office_number"),
   mobileNumber: text("mobile_number"),
@@ -70,7 +70,7 @@ export const organizations = pgTable("organizations", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Connection Types table (renamed from relationshipTypes)
+// Connection Types table
 export const connectionTypes = pgTable("connection_types", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -80,40 +80,17 @@ export const connectionTypes = pgTable("connection_types", {
   nameGraphIdIdx: unique("conn_type_name_graph_id_idx").on(table.name, table.graphId),
 }));
 
-// Connections between people (renamed from relationships)
+// Connections between contacts
 export const connections = pgTable("connections", {
   id: serial("id").primaryKey(),
   sourcePersonId: integer("source_person_id").references(() => people.id).notNull(),
   targetPersonId: integer("target_person_id").references(() => people.id).notNull(),
-  connectionType: integer("connection_type").notNull().default(0), // 0-5: None to Allied
+  connectionType: integer("connection_type").notNull().default(0), // 0-5: How contacts are connected
   graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const customFields = pgTable("custom_fields", {
-  id: serial("id").primaryKey(),
-  graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
-  fieldName: text("field_name").notNull(),
-  fieldType: text("field_type").notNull(),
-  isRequired: boolean("is_required").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-}, (table) => ({
-  fieldNameGraphIdIdx: unique("field_name_graph_id_idx").on(table.fieldName, table.graphId),
-}));
-
-export const fieldPreferences = pgTable("field_preferences", {
-  id: serial("id").primaryKey(),
-  graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
-  preferences: jsonb("preferences").notNull().$type<{
-    order: string[];
-    hidden: string[];
-  }>(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-}, (table) => ({
-  graphIdIdx: unique("graph_id_idx").on(table.graphId),
-}));
-
-// Update the insertPersonSchema to match the new structure
+// Update the schemas to reflect the correct naming
 export const insertPersonSchema = createInsertSchema(people, {
   lastContact: z.string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
@@ -135,17 +112,7 @@ export const insertPersonSchema = createInsertSchema(people, {
 });
 
 // Export the schemas
-export const insertOrganizationSchema = createInsertSchema(organizations, {
-    graphId: z.number(),
-    name: z.string().min(1, "Name is required"),
-    brandColor: z.string().default("#000000"),
-    accentColor: z.string().default("#000000"),
-    website: z.string().nullable(),
-    industry: z.string().nullable(),
-    hqCity: z.string().nullable(),
-    headcount: z.number().nullable(),
-    turnover: z.string().nullable(),
-  });
+export const insertOrganizationSchema = createInsertSchema(organizations);
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export const insertSocialGraphSchema = createInsertSchema(socialGraphs);
@@ -156,10 +123,6 @@ export const selectConnectionSchema = createSelectSchema(connections);
 export const insertConnectionTypeSchema = createInsertSchema(connectionTypes);
 export const selectConnectionTypeSchema = createSelectSchema(connectionTypes);
 export const selectOrganizationSchema = createSelectSchema(organizations);
-export const insertCustomFieldSchema = createInsertSchema(customFields);
-export const selectCustomFieldSchema = createSelectSchema(customFields);
-export const insertFieldPreferenceSchema = createInsertSchema(fieldPreferences);
-export const selectFieldPreferenceSchema = createSelectSchema(fieldPreferences);
 
 // Schema types
 export type User = typeof users.$inferSelect;
@@ -172,7 +135,3 @@ export type Connection = typeof connections.$inferSelect;
 export type ConnectionType = typeof connectionTypes.$inferSelect;
 export type Organization = typeof organizations.$inferSelect;
 export type InsertOrganization = typeof organizations.$inferInsert;
-export type CustomField = typeof customFields.$inferSelect;
-export type InsertCustomField = typeof customFields.$inferInsert;
-export type FieldPreference = typeof fieldPreferences.$inferSelect;
-export type InsertFieldPreference = typeof fieldPreferences.$inferInsert;

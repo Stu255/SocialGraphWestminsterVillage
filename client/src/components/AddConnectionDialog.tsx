@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
-import { USER_RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
+import { CONNECTION_TYPES } from "./RelationshipTypeManager";
 import { useToast } from "@/hooks/use-toast";
 
 interface Person {
@@ -31,7 +31,14 @@ interface Person {
   name: string;
   organization: string;
   jobTitle: string;
-  userRelationshipType: number;
+}
+
+interface Connection {
+  id: number;
+  sourcePersonId: number;
+  targetPersonId: number;
+  connectionType: number;
+  graphId: number;
 }
 
 interface Props {
@@ -40,7 +47,7 @@ interface Props {
   graphId: number;
 }
 
-export function AddRelationshipDialog({ open, onOpenChange, graphId }: Props) {
+export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -50,43 +57,68 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: Props) {
     enabled: !!graphId,
   });
 
-  const updateUserRelationship = useMutation({
-    mutationFn: async ({ personId, userRelationshipType }: { 
-      personId: number, 
-      userRelationshipType: number 
-    }) => {
-      console.log("Updating user relationship:", { personId, userRelationshipType });
+  const { data: connections = [] } = useQuery<Connection[]>({
+    queryKey: ["/api/connections", graphId],
+    enabled: !!graphId,
+  });
 
-      const response = await fetch(`/api/people/${personId}`, {
-        method: "PUT",
+  const updateConnection = useMutation({
+    mutationFn: async ({ sourceId, targetId, connectionType }: { 
+      sourceId: number, 
+      targetId: number, 
+      connectionType: number 
+    }) => {
+      // Find existing connection
+      const existingConnection = connections.find(c => 
+        (c.sourcePersonId === sourceId && c.targetPersonId === targetId) ||
+        (c.targetPersonId === sourceId && c.sourcePersonId === targetId)
+      );
+
+      const endpoint = existingConnection 
+        ? `/api/connections/${existingConnection.id}`
+        : "/api/connections";
+      const method = existingConnection ? "PUT" : "POST";
+
+      const response = await fetch(endpoint, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userRelationshipType,
-          graphId
+          graphId,
+          connectionType,
+          sourcePersonId: sourceId,
+          targetPersonId: targetId
         })
       });
 
       if (!response.ok) {
         const error = await response.text();
-        console.error("Server error:", error);
-        throw new Error(`Failed to update relationship: ${error}`);
+        throw new Error(`Failed to update connection: ${error}`);
       }
 
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
-      toast({ title: "Success", description: "Relationship updated" });
+      queryClient.invalidateQueries({ queryKey: ["/api/connections", graphId] });
+      toast({ title: "Success", description: "Connection updated" });
     },
     onError: (error) => {
-      console.error("Mutation failed:", error);
       toast({ 
         title: "Error", 
-        description: error.message || "Failed to update relationship",
+        description: error.message || "Failed to update connection",
         variant: "destructive"
       });
     }
   });
+
+  // Get current connection between two contacts
+  const getCurrentConnection = (targetPersonId: number) => {
+    const connection = connections.find(c => 
+      (c.sourcePersonId === selectedPerson?.id && c.targetPersonId === targetPersonId) ||
+      (c.targetPersonId === selectedPerson?.id && c.sourcePersonId === targetPersonId)
+    );
+
+    return connection?.connectionType ?? 0; // Default to "None" if no connection exists
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -103,7 +135,7 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: Props) {
               </Button>
             )}
             <DialogTitle>
-              {selectedPerson ? `Manage Relationship with ${selectedPerson.name}` : "Select Person"}
+              {selectedPerson ? `Manage Connections for ${selectedPerson.name}` : "Select Contact"}
             </DialogTitle>
           </div>
         </DialogHeader>
@@ -114,7 +146,7 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: Props) {
               <TableHead>Name</TableHead>
               <TableHead>Organization</TableHead>
               <TableHead>Position</TableHead>
-              {selectedPerson && <TableHead>Your Relationship</TableHead>}
+              {selectedPerson && <TableHead>Connection Type</TableHead>}
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>
@@ -129,12 +161,12 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: Props) {
                   {selectedPerson && (
                     <TableCell>
                       <Select
-                        value={String(person.userRelationshipType || 1)}
+                        value={String(getCurrentConnection(person.id))}
                         onValueChange={(value) => {
-                          console.log("Selected new relationship value:", value);
-                          updateUserRelationship.mutate({
-                            personId: person.id,
-                            userRelationshipType: Number(value)
+                          updateConnection.mutate({
+                            sourceId: selectedPerson.id,
+                            targetId: person.id,
+                            connectionType: Number(value)
                           });
                         }}
                       >
@@ -142,7 +174,7 @@ export function AddRelationshipDialog({ open, onOpenChange, graphId }: Props) {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {USER_RELATIONSHIP_TYPES.map((type) => (
+                          {CONNECTION_TYPES.map((type) => (
                             <SelectItem key={type.id} value={String(type.id)}>
                               {type.name}
                             </SelectItem>

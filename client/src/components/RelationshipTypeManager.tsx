@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AddConnectionDialog } from "./AddRelationshipDialog";
+import { AddRelationshipDialog } from "./AddRelationshipDialog";
 
 /**
  * Constants defining the relationship and connection types in the network
@@ -25,7 +25,7 @@ import { AddConnectionDialog } from "./AddRelationshipDialog";
  */
 
 // Define relationship types (for node icons)
-export const RELATIONSHIP_TYPES = [
+export const USER_RELATIONSHIP_TYPES = [
   { id: 5, name: "Allied", icon: "strong", description: "Strong relationship icon with up/down chevrons" },
   { id: 4, name: "Trusted", icon: "regular", description: "Regular relationship icon with down chevron" },
   { id: 3, name: "Close", icon: "basic-filled", description: "Basic filled circle icon" },
@@ -44,17 +44,17 @@ export const CONNECTION_TYPES = [
 ];
 
 // Helper functions for relationship type conversion (node icons)
-export const getRelationshipNameById = (id: number) => {
-  const type = RELATIONSHIP_TYPES.find(type => type.id === id);
+export const getUserRelationshipNameById = (id: number) => {
+  const type = USER_RELATIONSHIP_TYPES.find(type => type.id === id);
   return type?.name || "Unknown";
 };
 
-export const getRelationshipIdByName = (name: string) => {
-  const type = RELATIONSHIP_TYPES.find(type => type.name === name);
+export const getUserRelationshipIdByName = (name: string) => {
+  const type = USER_RELATIONSHIP_TYPES.find(type => type.name === name);
   return type?.id || 1; // Default to Acquainted if not found
 };
 
-// Simple helper functions with no complex logic
+// Helper functions for connection types (edge lines)
 export const getConnectionNameById = (id: number) => {
   const type = CONNECTION_TYPES.find(type => type.id === id);
   return type?.name || "None";
@@ -65,36 +65,28 @@ export const getConnectionIdByName = (name: string) => {
   return type?.id ?? 0;
 };
 
-interface ConnectionListDialogProps {
+interface RelationshipListDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-function ConnectionListDialog({ open, onOpenChange }: ConnectionListDialogProps) {
+function RelationshipListDialog({ open, onOpenChange }: RelationshipListDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Connection Types</DialogTitle>
+          <DialogTitle>User Relationship Types</DialogTitle>
           <DialogDescription>
-            Available connection types and their visual representations in the network
+            How you relate to each contact in your network, shown as node icons
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          {CONNECTION_TYPES.map((type) => (
+          {USER_RELATIONSHIP_TYPES.map((type) => (
             <div key={type.id} className="flex items-center justify-between p-2 rounded-lg border">
               <div>
                 <h4 className="font-medium">{type.name}</h4>
                 <p className="text-sm text-muted-foreground">{type.description}</p>
               </div>
-              <div className={`w-24 ${
-                type.style === 'heavy-line' ? 'h-2 bg-foreground' :
-                type.style === 'double-line' ? 'h-3 border-t-2 border-b-2 border-foreground' :
-                type.style === 'standard-line' ? 'h-1 bg-foreground' :
-                type.style === 'thin-line' ? 'h-px bg-foreground/70' :
-                type.style === 'dashed-line' ? 'h-0 border-t border-dashed border-foreground/50 [border-width:1px] [border-spacing:6px]' :
-                'hidden' // for "None" type
-              }`} />
             </div>
           ))}
         </div>
@@ -103,14 +95,14 @@ function ConnectionListDialog({ open, onOpenChange }: ConnectionListDialogProps)
   );
 }
 
-export function ConnectionTypeManager({ graphId }: { graphId: number }) {
+export function UserRelationshipManager({ graphId }: { graphId: number }) {
   const [showListDialog, setShowListDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Network Connections</CardTitle>
+        <CardTitle>Your Relationships</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         <Button 
@@ -118,7 +110,7 @@ export function ConnectionTypeManager({ graphId }: { graphId: number }) {
           onClick={() => setShowAddDialog(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add Connection
+          Add Relationship
         </Button>
 
         <Button 
@@ -127,15 +119,15 @@ export function ConnectionTypeManager({ graphId }: { graphId: number }) {
           onClick={() => setShowListDialog(true)}
         >
           <Users className="h-4 w-4 mr-2" />
-          Connection Types
+          Relationship Types
         </Button>
 
-        <ConnectionListDialog
+        <RelationshipListDialog
           open={showListDialog}
           onOpenChange={setShowListDialog}
         />
 
-        <AddConnectionDialog
+        <AddRelationshipDialog
           open={showAddDialog}
           onOpenChange={setShowAddDialog}
           graphId={graphId}
@@ -145,6 +137,5 @@ export function ConnectionTypeManager({ graphId }: { graphId: number }) {
   );
 }
 
-// Export both names for compatibility
-export { ConnectionTypeManager as RelationshipTypeManager };
-export { ConnectionTypeManager as ConnectionManager };
+// Export with class name for backward compatibility
+export { UserRelationshipManager as RelationshipTypeManager };
