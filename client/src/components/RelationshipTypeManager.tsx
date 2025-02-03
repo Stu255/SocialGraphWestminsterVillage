@@ -29,23 +29,21 @@ export const USER_RELATIONSHIP_TYPES = [
   { id: 1, name: "Acquainted", icon: "basic-dashed", description: "Basic dashed circle icon" }
 ];
 
-// Legacy export for backward compatibility
-export const RELATIONSHIP_TYPES = USER_RELATIONSHIP_TYPES;
-
 // Helper functions for user relationship type conversion (node icons)
-export const getUserRelationshipNameById = (id: number) => {
-  const type = USER_RELATIONSHIP_TYPES.find(type => type.id === id);
-  return type?.name || "Unknown";
+export const getUserRelationshipNameById = (id: number): string => {
+  const type = USER_RELATIONSHIP_TYPES.find(type => type.id === Number(id));
+  return type?.name || "Acquainted"; // Default to Acquainted if not found
 };
 
-export const getUserRelationshipIdByName = (name: string) => {
+export const getUserRelationshipIdByName = (name: string): number => {
   const type = USER_RELATIONSHIP_TYPES.find(type => type.name === name);
-  return type?.id || 1; // Default to Acquainted if not found
+  return type?.id || 1; // Default to Acquainted (1) if not found
 };
 
-// Legacy exports for backward compatibility
+// Export the conversion functions for backward compatibility
 export const getRelationshipNameById = getUserRelationshipNameById;
 export const getRelationshipIdByName = getUserRelationshipIdByName;
+export const RELATIONSHIP_TYPES = USER_RELATIONSHIP_TYPES;
 
 interface RelationshipListDialogProps {
   open: boolean;
@@ -67,7 +65,9 @@ function UserRelationshipListDialog({ open, onOpenChange }: RelationshipListDial
             <div key={type.id} className="flex items-center justify-between p-2 rounded-lg border">
               <div>
                 <h4 className="font-medium">{type.name}</h4>
-                <p className="text-sm text-muted-foreground">{type.description}</p>
+                <p className="text-sm text-muted-foreground">
+                  ID: {type.id} - {type.description}
+                </p>
               </div>
             </div>
           ))}

@@ -36,7 +36,8 @@ import { useForm } from "react-hook-form";
 import { 
   RELATIONSHIP_TYPES,
   getRelationshipNameById,
-  getRelationshipIdByName 
+  getRelationshipIdByName,
+  getUserRelationshipIdByName
 } from "./RelationshipTypeManager";
 import { useToast } from "@/hooks/use-toast";
 
@@ -112,11 +113,12 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
       // Convert the relationship type from name to ID
-      const userRelationshipType = getRelationshipIdByName(values.userRelationshipType);
+      // Note: values.userRelationshipType is the name (e.g., "Trusted")
+      const relationshipToYou = getUserRelationshipIdByName(values.userRelationshipType);
 
       const payload = { 
         ...values,
-        userRelationshipType,
+        relationshipToYou, // This will be a number 1-5
         graphId 
       };
 
