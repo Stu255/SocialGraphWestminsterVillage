@@ -56,10 +56,11 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
 
   const { data: people = [] } = useQuery<Person[]>({
     queryKey: ["/api/people", graphId],
+    enabled: !!graphId,
   });
 
   const { data: connections = [] } = useQuery<Connection[]>({
-    queryKey: ["/api/connections", graphId],
+    queryKey: ["/api/relationships", graphId],
     enabled: !!graphId,
   });
 
@@ -74,9 +75,16 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
         (c.targetPersonId === sourceId && c.sourcePersonId === targetId)
       );
 
+      console.log("Updating connection:", {
+        sourceId,
+        targetId,
+        connectionType,
+        existing: existingConnection
+      });
+
       const endpoint = existingConnection 
-        ? `/api/connections/${existingConnection.id}`
-        : "/api/connections";
+        ? `/api/relationships/${existingConnection.id}`
+        : "/api/relationships";
       const method = existingConnection ? "PUT" : "POST";
 
       const response = await fetch(endpoint, {
@@ -91,23 +99,23 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
       });
 
       if (!response.ok) {
-          const error = await response.text();
+        const error = await response.text();
         throw new Error(`Failed to update connection: ${error}`);
       }
 
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/connections", graphId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
       toast({ title: "Success", description: "Connection updated" });
     },
-      onError: (error) => {
-          toast({ 
-              title: "Error", 
-              description: error.message || "Failed to update connection",
-              variant: "destructive"
-          });
-      }
+    onError: (error) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to update connection",
+        variant: "destructive"
+      });
+    }
   });
 
   // Get current connection between two contacts
@@ -116,6 +124,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
       (c.sourcePersonId === selectedPerson?.id && c.targetPersonId === targetPersonId) ||
       (c.targetPersonId === selectedPerson?.id && c.sourcePersonId === targetPersonId)
     );
+    // Return the connection type or 0 for "None"
     return connection?.connectionType ?? 0;
   };
 

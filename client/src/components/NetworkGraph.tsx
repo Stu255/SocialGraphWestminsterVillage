@@ -107,6 +107,7 @@ const getUserRelationshipIcon = (relationshipType: number | undefined) => {
 };
 
 const getConnectionLineStyle = (connectionType: number) => {
+  console.log("Getting line style for connection type:", connectionType);
   switch (connectionType) {
     case 5:
       return { 
@@ -140,7 +141,9 @@ const getConnectionLineStyle = (connectionType: number) => {
         strokeDasharray: "4,4",
         doubleStroke: false
       } as const;
+    case 0:
     default:
+      console.log("No line style for connection type:", connectionType);
       return null;
   }
 };
@@ -174,7 +177,15 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
   useEffect(() => {
     if (!svgRef.current || !nodes.length) return;
 
-    console.log("NetworkGraph rendering with data:", { nodes, links, filters });
+    console.log("NetworkGraph rendering with data:", { 
+      nodes, 
+      links, 
+      filters,
+      processedLinks: links.map(link => ({
+        ...link,
+        connectionType: link.connectionType || 0
+      }))
+    });
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
@@ -217,7 +228,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       .map(link => ({
         source: nodeMap.get(link.sourcePersonId)!,
         target: nodeMap.get(link.targetPersonId)!,
-        type: link.connectionType
+        type: link.connectionType || 0
       }));
 
     console.log("Processed links for rendering:", processedLinks);
@@ -235,6 +246,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
 
     processedLinks.forEach(link => {
       const style = getConnectionLineStyle(link.type);
+      console.log("Rendering link with style:", { link, style });
 
       if (!style) return;
 
