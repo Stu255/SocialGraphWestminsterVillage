@@ -25,12 +25,14 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { CONNECTION_TYPES, getConnectionNameById } from "./ConnectionManager";
 import { useToast } from "@/hooks/use-toast";
+import { getUserRelationshipNameById } from "./RelationshipTypeManager";
 
 interface Person {
   id: number;
   name: string;
   organization: string;
   jobTitle: string;
+  userRelationshipType: number;
 }
 
 interface Connection {
@@ -40,6 +42,7 @@ interface Connection {
   connectionType: number;
   graphId: number;
 }
+
 
 interface Props {
   open: boolean;
@@ -54,7 +57,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
 
   const { data: people = [] } = useQuery<Person[]>({
     queryKey: ["/api/people", graphId],
-    enabled: !!graphId,
   });
 
   const { data: connections = [] } = useQuery<Connection[]>({
@@ -68,7 +70,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
       targetId: number, 
       connectionType: number 
     }) => {
-      // Find existing connection
       const existingConnection = connections.find(c => 
         (c.sourcePersonId === sourceId && c.targetPersonId === targetId) ||
         (c.targetPersonId === sourceId && c.sourcePersonId === targetId)
@@ -91,7 +92,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
       });
 
       if (!response.ok) {
-        const error = await response.text();
+          const error = await response.text();
         throw new Error(`Failed to update connection: ${error}`);
       }
 
@@ -101,13 +102,13 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
       queryClient.invalidateQueries({ queryKey: ["/api/connections", graphId] });
       toast({ title: "Success", description: "Connection updated" });
     },
-    onError: (error) => {
-      toast({ 
-        title: "Error", 
-        description: error.message || "Failed to update connection",
-        variant: "destructive"
-      });
-    }
+      onError: (error) => {
+          toast({ 
+              title: "Error", 
+              description: error.message || "Failed to update connection",
+              variant: "destructive"
+          });
+      }
   });
 
   // Get current connection between two contacts
@@ -116,8 +117,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
       (c.sourcePersonId === selectedPerson?.id && c.targetPersonId === targetPersonId) ||
       (c.targetPersonId === selectedPerson?.id && c.sourcePersonId === targetPersonId)
     );
-
-    return connection?.connectionType ?? 0; // Default to "None" if no connection exists
+    return connection?.connectionType ?? 0;
   };
 
   return (
@@ -146,8 +146,8 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
               <TableHead>Name</TableHead>
               <TableHead>Organization</TableHead>
               <TableHead>Position</TableHead>
+                <TableHead>Relationship</TableHead>
               {selectedPerson && <TableHead>Connection Type</TableHead>}
-              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -158,6 +158,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
                   <TableCell>{person.name}</TableCell>
                   <TableCell>{person.organization || "—"}</TableCell>
                   <TableCell>{person.jobTitle || "—"}</TableCell>
+                    <TableCell>{getUserRelationshipNameById(person.userRelationshipType)}</TableCell>
                   {selectedPerson && (
                     <TableCell>
                       <Select

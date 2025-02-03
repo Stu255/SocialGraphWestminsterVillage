@@ -1,11 +1,10 @@
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pencil, Trash2, X, Check, ArrowLeft } from "lucide-react";
-import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import { useFieldPreferences } from "@/hooks/use-field-preferences";
 import {
   Form,
   FormControl,
@@ -21,33 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { useForm } from "react-hook-form";
 import { 
-  RELATIONSHIP_TYPES,
-  getRelationshipNameById,
-  getRelationshipIdByName,
-  getUserRelationshipIdByName
+  USER_RELATIONSHIP_TYPES,
+  getUserRelationshipNameById,
+  getUserRelationshipIdByName,
 } from "./RelationshipTypeManager";
 import { useToast } from "@/hooks/use-toast";
-
-interface AnalysisPanelProps {
-  selectedNode: any;
-  nodes: any[];
-  relationships: any[];
-  onNodeDeleted?: () => void;
-  graphId: number;
-}
 
 const FIELD_LABELS: Record<string, string> = {
   name: "Name",
@@ -64,35 +43,10 @@ const FIELD_LABELS: Record<string, string> = {
   notes: "Notes"
 };
 
-export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDeleted, graphId }: AnalysisPanelProps) {
+export function AnalysisPanel({ selectedNode, graphId }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  const { data: fieldPreferences } = useFieldPreferences(graphId);
-
-  const { data: organizations = [] } = useQuery({
-    queryKey: ["/api/organizations", graphId],
-    enabled: !!graphId,
-  });
-
-  const getOrganizationColor = () => {
-    const org = organizations.find((o: any) => o.name === selectedNode?.organization);
-    return org?.brandColor || 'hsl(var(--primary))';
-  };
-
-  const visibleFields = fieldPreferences?.order.filter(
-    field => !fieldPreferences?.hidden.includes(field)
-  ) || Object.keys(FIELD_LABELS);
-
-  const { data: centrality } = useQuery({
-    queryKey: ["/api/analysis/centrality", graphId],
-    enabled: !!nodes.length,
-  });
-
-  const topPeople = centrality
-    ?.sort((a: any, b: any) => b.centrality - a.centrality)
-    .slice(0, 10) || [];
-
   const form = useForm({
     defaultValues: {
       name: "",
@@ -112,12 +66,9 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
-      // Convert the relationship type from name to ID
-      const userRelationshipType = getUserRelationshipIdByName(values.userRelationshipType);
-
       const payload = { 
         ...values,
-        userRelationshipType, // Send as userRelationshipType to match backend expectation
+        userRelationshipType: getUserRelationshipIdByName(values.userRelationshipType),
         graphId 
       };
 
@@ -128,22 +79,10 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       });
 
       if (!res.ok) {
-        const contentType = res.headers.get("content-type");
-        let errorMessage;
-
-        if (contentType && contentType.includes("application/json")) {
-          const errorData = await res.json();
-          errorMessage = errorData.error || "Failed to update person";
-        } else {
-          const errorText = await res.text();
-          console.error("Server error response:", errorText);
-          errorMessage = `Server Error: ${res.status} ${res.statusText}`;
-        }
-        throw new Error(errorMessage);
+        throw new Error("Failed to update person");
       }
 
-      const data = await res.json();
-      return data;
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
@@ -153,15 +92,118 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         description: "Contact updated successfully",
       });
     },
-    onError: (error: Error) => {
-      console.error("Update person error:", error);
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
   });
+
+  useEffect(() => {
+    if (selectedNode) {
+      const formValues = {
+        name: selectedNode.name || "",
+        jobTitle: selectedNode.jobTitle || "",
+        organization: selectedNode.organization || "",
+        userRelationshipType: getUserRelationshipNameById(selectedNode.userRelationshipType),
+        lastContact: selectedNode.lastContact ? 
+          new Date(selectedNode.lastContact).toISOString().split('T')[0] : "",
+        officeNumber: selectedNode.officeNumber || "",
+        mobileNumber: selectedNode.mobileNumber || "",
+        email1: selectedNode.email1 || "",
+        email2: selectedNode.email2 || "",
+        linkedin: selectedNode.linkedin || "",
+        twitter: selectedNode.twitter || "",
+        notes: selectedNode.notes || ""
+      };
+      form.reset(formValues);
+    }
+  }, [selectedNode, form]);
+
+  const renderField = (fieldName: string) => {
+    if (isEditing) {
+      return (
+        <FormField
+          key={fieldName}
+          control={form.control}
+          name={fieldName}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{FIELD_LABELS[fieldName]}</FormLabel>
+              <FormControl>
+                {fieldName === "userRelationshipType" ? (
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select relationship type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {USER_RELATIONSHIP_TYPES.map(type => (
+                        <SelectItem key={type.id} value={type.name}>
+                          {type.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : fieldName === "notes" ? (
+                  <Textarea {...field} />
+                ) : (
+                  <Input {...field} />
+                )}
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+    }
+
+    let value = selectedNode[fieldName];
+    if (fieldName === "userRelationshipType") {
+      value = getUserRelationshipNameById(selectedNode.userRelationshipType);
+    }
+
+    return (
+      <p key={fieldName}>
+        <strong>{FIELD_LABELS[fieldName]}:</strong> {value || "Not specified"}
+      </p>
+    );
+  };
+
+  const { data: fieldPreferences } = useQuery({
+    queryKey: ["/api/field-preferences", graphId],
+    enabled: !!graphId,
+  });
+
+  const { data: nodes = [] } = useQuery({
+      queryKey: ["/api/people", graphId],
+      enabled: !!graphId,
+  });
+
+  const { data: relationships = [] } = useQuery({
+    queryKey: ["/api/relationships", graphId],
+    enabled: !!graphId,
+  });
+
+  const { data: organizations = [] } = useQuery({
+    queryKey: ["/api/organizations", graphId],
+    enabled: !!graphId,
+  });
+
+  const getOrganizationColor = () => {
+    const org = organizations.find((o: any) => o.name === selectedNode?.organization);
+    return org?.brandColor || 'hsl(var(--primary))';
+  };
+
+    const visibleFields = fieldPreferences?.order.filter(
+    field => !fieldPreferences?.hidden.includes(field)
+  ) || Object.keys(FIELD_LABELS);
+
+  const { data: centrality } = useQuery({
+    queryKey: ["/api/analysis/centrality", graphId],
+    enabled: !!nodes.length,
+  });
+
+  const topPeople = centrality
+    ?.sort((a: any, b: any) => b.centrality - a.centrality)
+    .slice(0, 10) || [];
 
   const deletePersonMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -192,104 +234,15 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
   });
 
   const onSubmit = (data: any) => {
-    if (!data.name?.trim()) {
-      return;
-    }
-    if (!data.userRelationshipType) {
-      return;
-    }
-
+      if (!data.name?.trim()) {
+          return;
+      }
+      if (!data.userRelationshipType) {
+          return;
+      }
     updatePersonMutation.mutate(data);
   };
 
-  useEffect(() => {
-    if (selectedNode) {
-      const formValues = {
-        name: selectedNode.name || "",
-        jobTitle: selectedNode.jobTitle || "",
-        organization: selectedNode.organization || "",
-        userRelationshipType: selectedNode.userRelationshipType ? 
-          getRelationshipNameById(selectedNode.userRelationshipType) : "Acquainted",
-        lastContact: selectedNode.lastContact ? 
-          new Date(selectedNode.lastContact).toISOString().split('T')[0] : "",
-        officeNumber: selectedNode.officeNumber || "",
-        mobileNumber: selectedNode.mobileNumber || "",
-        email1: selectedNode.email1 || "",
-        email2: selectedNode.email2 || "",
-        linkedin: selectedNode.linkedin || "",
-        twitter: selectedNode.twitter || "",
-        notes: selectedNode.notes || ""
-      };
-      form.reset(formValues);
-    }
-  }, [selectedNode, isEditing, form]);
-
-  const renderField = (fieldName: string) => {
-    if (isEditing) {
-      return (
-        <FormField
-          key={fieldName}
-          control={form.control}
-          name={fieldName}
-          rules={{
-            required: fieldName === "name" ? "Name is required" :
-                     fieldName === "userRelationshipType" ? "Relationship type is required" :
-                     false
-          }}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{FIELD_LABELS[fieldName]}</FormLabel>
-              <FormControl>
-                {fieldName === "userRelationshipType" ? (
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select relationship type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {RELATIONSHIP_TYPES.map(type => (
-                        <SelectItem key={type.id} value={type.name}>
-                          {type.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : fieldName === "notes" ? (
-                  <Textarea
-                    {...field}
-                    className="min-h-[100px]"
-                  />
-                ) : fieldName === "lastContact" ? (
-                  <Input
-                    {...field}
-                    type="date"
-                  />
-                ) : (
-                  <Input {...field} />
-                )}
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      );
-    }
-
-    let value = selectedNode[fieldName];
-    if (fieldName === "lastContact" && value) {
-      value = new Date(value).toLocaleDateString();
-    } else if (fieldName === "userRelationshipType" && selectedNode.userRelationshipType) {
-      value = getRelationshipNameById(selectedNode.userRelationshipType);
-    }
-
-    return (
-      <p key={fieldName}>
-        <strong>{FIELD_LABELS[fieldName]}:</strong> {value || "Not specified"}
-      </p>
-    );
-  };
 
   if (!selectedNode) {
     return (
@@ -317,9 +270,13 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
       </Card>
     );
   }
+    
+  const onNodeDeleted = () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
+  };
 
   const nodeMetrics = centrality?.find((c: any) => c.id === selectedNode.id);
-  const nodeConnections = relationships.filter(r =>
+    const nodeConnections = relationships.filter(r =>
     r.sourcePersonId === selectedNode.id ||
     r.targetPersonId === selectedNode.id
   );
