@@ -40,18 +40,18 @@ interface Connection {
   connectionType: number;
 }
 
-interface AddConnectionDialogProps {
+interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   graphId: number;
 }
 
-export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnectionDialogProps) {
+export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch data
+  // Fetch people and connections
   const { data: people = [] } = useQuery<Person[]>({
     queryKey: ["/api/people", graphId],
     enabled: !!graphId,
@@ -62,88 +62,82 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     enabled: !!graphId,
   });
 
-  // Handle connection updates
+  // Update connection - maps names to numbers and sends to API
   const updateConnection = useMutation({
-    mutationFn: async ({ sourceId, targetId, connectionType }: { 
+    mutationFn: async ({ sourceId, targetId, connectionType }: {
       sourceId: number;
       targetId: number;
       connectionType: string;
     }) => {
-      // Convert connection type name to number (0-5)
-      const connectionTypeId = CONNECTION_TYPES.find(t => t.name === connectionType)?.id ?? 0;
+      // Find connection type ID (0-5) from name
+      const typeId = CONNECTION_TYPES.find(t => t.name === connectionType)?.id ?? 0;
 
       const payload = {
         graphId,
-        connectionType: connectionTypeId,
+        connectionType: typeId,
         sourcePersonId: sourceId,
         targetPersonId: targetId
       };
 
-      const existingConnection = connections.find(r => 
-        (r.sourcePersonId === sourceId && r.targetPersonId === targetId) ||
-        (r.targetPersonId === sourceId && r.sourcePersonId === targetId)
+      // Check if connection exists
+      const existingConnection = connections.find(c => 
+        (c.sourcePersonId === sourceId && c.targetPersonId === targetId) ||
+        (c.targetPersonId === sourceId && c.sourcePersonId === targetId)
       );
 
+      // Update or create
       const endpoint = existingConnection 
         ? `/api/connections/${existingConnection.id}`
         : "/api/connections";
 
-      const method = existingConnection ? "PUT" : "POST";
-
-      const res = await fetch(endpoint, {
-        method,
+      const response = await fetch(endpoint, {
+        method: existingConnection ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
 
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Failed to update connection");
+      if (!response.ok) {
+        throw new Error("Failed to update connection");
       }
 
-      return res.json();
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/connections", graphId] });
-      toast({
-        title: "Success",
-        description: "Connection updated successfully",
-      });
+      toast({ title: "Success", description: "Connection updated" });
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+    onError: () => {
+      toast({ 
+        title: "Error", 
+        description: "Failed to update connection",
+        variant: "destructive"
       });
-    },
+    }
   });
 
-  // Get current connection type name for a person
-  const getCurrentConnection = (targetPersonId: number): string => {
-    const connection = connections.find(r => 
-      (r.sourcePersonId === selectedPerson?.id && r.targetPersonId === targetPersonId) ||
-      (r.targetPersonId === selectedPerson?.id && r.sourcePersonId === targetPersonId)
+  // Get connection type name from numeric value
+  const getCurrentConnection = (targetPersonId: number) => {
+    const connection = connections.find(c => 
+      (c.sourcePersonId === selectedPerson?.id && c.targetPersonId === targetPersonId) ||
+      (c.targetPersonId === selectedPerson?.id && c.sourcePersonId === targetPersonId)
     );
 
-    const connectionType = CONNECTION_TYPES.find(t => t.id === connection?.connectionType);
-    return connectionType?.name || "None";
+    return CONNECTION_TYPES.find(t => t.id === connection?.connectionType)?.name || "None";
   };
 
-  // Handle connection selection
+  // Handle dropdown selection
   const handleConnectionSelect = (targetPerson: Person, connectionType: string) => {
     if (!selectedPerson) return;
 
     updateConnection.mutate({
       sourceId: selectedPerson.id,
       targetId: targetPerson.id,
-      connectionType,
+      connectionType
     });
   };
 
-  const filteredPeople = people.filter(person => 
-    selectedPerson ? person.id !== selectedPerson.id : true
-  );
+  // Filter out selected person from list
+  const filteredPeople = people.filter(p => p.id !== selectedPerson?.id);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
