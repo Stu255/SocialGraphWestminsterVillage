@@ -63,6 +63,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Queries
   const { data: people = [] } = useQuery<Person[]>({
     queryKey: ["/api/people", graphId],
     enabled: !!graphId,
@@ -82,31 +83,24 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     organizations.map((org: any) => [org.name, org.brandColor])
   );
 
-  // Handles creating, updating, or deleting connections
+
+  // Handle connection updates
   const mutation = useMutation({
     mutationFn: async ({ sourceId, targetId, connectionType }: any) => {
+      const payload = {
+        graphId,
+        connectionType: connectionType === "None" ? 0 : 
+          CONNECTION_TYPES.find(t => t.name === connectionType)?.id || 0,
+        sourcePersonId: sourceId,
+        targetPersonId: targetId
+      };
+
       const existingConnection = connections.find(r => 
         (r.sourcePersonId === sourceId && r.targetPersonId === targetId) ||
         (r.targetPersonId === sourceId && r.sourcePersonId === targetId)
       );
 
-      const payload = {
-        graphId,
-        connectionType: connectionType === "none" ? 0 : Number(connectionType),
-        sourcePersonId: sourceId,
-        targetPersonId: targetId
-      };
-
-      // Handle connection removal or update
       if (existingConnection) {
-        if (connectionType === "none") {
-          const res = await fetch(`/api/connections/${existingConnection.id}`, {
-            method: "DELETE",
-          });
-          if (!res.ok) throw new Error("Failed to remove connection");
-          return null;
-        }
-
         const res = await fetch(`/api/connections/${existingConnection.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -116,7 +110,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
         return res.json();
       }
 
-      // Create new connection
       const res = await fetch("/api/connections", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -133,6 +126,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
       });
     },
     onError: (error: Error) => {
+      console.error("Connection mutation error:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -141,21 +135,22 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     },
   });
 
-  // Get the current connection type for a person
+  // Get current connection type (0-5) and convert to name
   const getCurrentConnectionType = (targetPersonId: number) => {
-    if (!selectedPerson) return "none";
+    if (!selectedPerson) return "None";
 
     const connection = connections.find(r => 
       (r.sourcePersonId === selectedPerson.id && r.targetPersonId === targetPersonId) ||
       (r.targetPersonId === selectedPerson.id && r.sourcePersonId === targetPersonId)
     );
 
-    if (!connection) return "none";
-    return CONNECTION_TYPES.find(t => t.id === connection.connectionType)?.name || "none";
+    if (!connection) return "None";
+    return CONNECTION_TYPES.find(t => t.id === connection.connectionType)?.name || "None";
   };
 
   const handleConnectionSelect = (targetPerson: Person, connectionType: string) => {
     if (!selectedPerson) return;
+
     mutation.mutate({
       sourceId: selectedPerson.id,
       targetId: targetPerson.id,
@@ -239,6 +234,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     </div>
   );
 
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px]">
@@ -303,8 +299,8 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">None</SelectItem>
-                          {CONNECTION_TYPES.map(type => (
+                          <SelectItem value="None">None</SelectItem>
+                          {CONNECTION_TYPES.map((type) => (
                             <SelectItem key={type.id} value={type.name}>
                               {type.name}
                             </SelectItem>
