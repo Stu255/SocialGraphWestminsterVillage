@@ -99,14 +99,14 @@ const getConnectionLineStyle = (connectionType: number) => {
   switch (connectionType) {
     case 5: // Allied
       return { 
-        strokeWidth: 6, 
+        strokeWidth: 3, 
         strokeDasharray: "none",
         doubleStroke: true,
-        doubleStrokeGap: 8
+        doubleStrokeGap: 4
       };
     case 4: // Trusted
       return { 
-        strokeWidth: 4, 
+        strokeWidth: 2.5, 
         strokeDasharray: "none",
         doubleStroke: false 
       };
@@ -118,7 +118,7 @@ const getConnectionLineStyle = (connectionType: number) => {
       };
     case 2: // Familiar
       return { 
-        strokeWidth: 1, 
+        strokeWidth: 1.5, 
         strokeDasharray: "none",
         doubleStroke: false 
       };
@@ -129,7 +129,11 @@ const getConnectionLineStyle = (connectionType: number) => {
         doubleStroke: false 
       };
     default:
-      return null;
+      return { 
+        strokeWidth: 1, 
+        strokeDasharray: "none",
+        doubleStroke: false 
+      };
   }
 };
 
@@ -156,18 +160,13 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
     if (source.organization && target.organization && source.organization === target.organization) {
       return getNodeColor(source);
     }
-    return "#999";
+    return "#666";
   };
 
   useEffect(() => {
     if (!svgRef.current || !nodes.length) return;
 
-    console.log("NetworkGraph rendering with data:", {
-      nodes,
-      links,
-      filters,
-      graphId
-    });
+    console.log("NetworkGraph rendering with data:", { nodes, links, filters });
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
@@ -177,6 +176,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
 
     const g = svg.append("g");
 
+    // Setup zoom behavior
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 4])
       .on("zoom", (event) => {
@@ -185,117 +185,100 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
 
     svg.call(zoom);
 
+    // Filter and prepare data
     const filteredNodes = nodes.filter((node) => {
       if (filters.affiliation && node.affiliation !== filters.affiliation) return false;
       return true;
     });
 
-    console.log("Filtered nodes:", filteredNodes.map(n => n.id));
+    // Create a map for quick node lookup
+    const nodeMap = new Map(filteredNodes.map(node => [node.id, node]));
 
-    const filteredLinks = links
-      .filter((link) => {
-        console.log("Processing link:", {
-          link,
-          sourceExists: filteredNodes.some(n => n.id === link.sourcePersonId),
-          targetExists: filteredNodes.some(n => n.id === link.targetPersonId),
-          connectionType: link.connectionType
-        });
-
-        // Only filter by relationship type if specified
+    // Process links to create visible connections
+    const processedLinks = links
+      .filter(link => {
+        // Skip if filter is set and doesn't match
         if (filters.relationshipType && link.connectionType !== filters.relationshipType) {
-          console.log("Link filtered - wrong type:", link);
           return false;
         }
 
-        const sourceExists = filteredNodes.some((n) => n.id === link.sourcePersonId);
-        const targetExists = filteredNodes.some((n) => n.id === link.targetPersonId);
-
-        if (!sourceExists || !targetExists) {
-          console.log("Link filtered - missing node:", link);
-          return false;
-        }
-
-        return true;
+        // Only keep links where both nodes exist
+        const sourceNode = nodeMap.get(link.sourcePersonId);
+        const targetNode = nodeMap.get(link.targetPersonId);
+        return sourceNode && targetNode;
       })
-      .map((link) => ({
-        source: filteredNodes.find((n) => n.id === link.sourcePersonId)!,
-        target: filteredNodes.find((n) => n.id === link.targetPersonId)!,
-        type: link.connectionType,
+      .map(link => ({
+        source: nodeMap.get(link.sourcePersonId)!,
+        target: nodeMap.get(link.targetPersonId)!,
+        type: link.connectionType
       }));
 
-    console.log("Filtered links for rendering:", filteredLinks);
+    console.log("Processed links:", processedLinks);
 
-    const simulation = d3
-      .forceSimulation(filteredNodes)
-      .force(
-        "link",
-        d3
-          .forceLink(filteredLinks)
-          .id((d: any) => d.id)
-          .distance(100)
-      )
+    // Create force simulation
+    const simulation = d3.forceSimulation(filteredNodes)
+      .force("link", d3.forceLink(processedLinks)
+        .id((d: any) => d.id)
+        .distance(100))
       .force("charge", d3.forceManyBody().strength(-300))
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collision", d3.forceCollide().radius(30));
 
-    const linkGroup = g.append("g").attr("class", "links");
+    // Create links group
+    const linkGroup = g.append("g")
+      .attr("class", "links");
 
-    filteredLinks.forEach(d => {
-      const style = getConnectionLineStyle(d.type);
-      console.log("Style for link:", { link: d, style });
+    // Render all links
+    processedLinks.forEach(link => {
+      const style = getConnectionLineStyle(link.type);
 
-      if (!style) {
-        console.log("No style returned for link type:", d.type);
-        return;
-      }
+      if (!style) return;
 
-      if (style.doubleStroke && style.doubleStrokeGap) {
-        [-style.doubleStrokeGap/2, style.doubleStrokeGap/2].forEach(offset => {
-          linkGroup
-            .append("line")
-            .datum(d)
-            .attr("stroke", getEdgeColor(d.source as Node, d.target as Node))
+      if (style.doubleStroke) {
+        // Create double stroke effect
+        [-style.strokeWidth/2, style.strokeWidth/2].forEach(offset => {
+          linkGroup.append("line")
+            .datum(link)
+            .attr("stroke", getEdgeColor(link.source as Node, link.target as Node))
             .attr("stroke-opacity", 0.6)
             .attr("stroke-width", style.strokeWidth)
             .attr("stroke-dasharray", style.strokeDasharray)
             .attr("transform", `translate(0, ${offset})`);
         });
       } else {
-        linkGroup
-          .append("line")
-          .datum(d)
-          .attr("stroke", getEdgeColor(d.source as Node, d.target as Node))
+        // Single line
+        linkGroup.append("line")
+          .datum(link)
+          .attr("stroke", getEdgeColor(link.source as Node, link.target as Node))
           .attr("stroke-opacity", 0.6)
           .attr("stroke-width", style.strokeWidth)
           .attr("stroke-dasharray", style.strokeDasharray);
       }
     });
 
-    const nodeGroup = g
-      .append("g")
+    // Create nodes group
+    const nodeGroup = g.append("g")
       .attr("class", "nodes")
       .selectAll("g")
       .data(filteredNodes)
       .join("g")
-      .call(
-        d3
-          .drag<any, any>()
-          .on("start", (event, d) => {
-            if (!event.active) simulation.alphaTarget(0.3).restart();
-            d.fx = d.x;
-            d.fy = d.y;
-          })
-          .on("drag", (event, d) => {
-            d.fx = event.x;
-            d.fy = event.y;
-          })
-          .on("end", (event, d) => {
-            if (!event.active) simulation.alphaTarget(0);
-            d.fx = null;
-            d.fy = null;
-          })
-      );
+      .call(d3.drag<any, any>()
+        .on("start", (event, d) => {
+          if (!event.active) simulation.alphaTarget(0.3).restart();
+          d.fx = d.x;
+          d.fy = d.y;
+        })
+        .on("drag", (event, d) => {
+          d.fx = event.x;
+          d.fy = event.y;
+        })
+        .on("end", (event, d) => {
+          if (!event.active) simulation.alphaTarget(0);
+          d.fx = null;
+          d.fy = null;
+        }));
 
+    // Add node icons
     nodeGroup
       .append("path")
       .attr("d", d => getRelationshipIcon(d.userRelationshipType).path)
@@ -313,6 +296,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       .style("cursor", "pointer")
       .on("click", (_event, d) => onNodeSelect(d));
 
+    // Add node labels
     nodeGroup
       .append("text")
       .text(d => d.name)
@@ -321,6 +305,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       .attr("dy", 4)
       .attr("fill", "#333");
 
+    // Update positions on simulation tick
     simulation.on("tick", () => {
       linkGroup.selectAll("line")
         .attr("x1", (d: any) => d.source.x)
@@ -334,7 +319,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
     return () => {
       simulation.stop();
     };
-  }, [nodes, links, filters, onNodeSelect, organizationColors, graphId]);
+  }, [nodes, links, filters, onNodeSelect, organizationColors]);
 
   return (
     <Card className="h-full w-full">
