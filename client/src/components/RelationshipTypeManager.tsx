@@ -33,7 +33,7 @@ export const RELATIONSHIP_TYPES = [
   { id: 1, name: "Acquainted", icon: "basic-dashed", description: "Basic dashed circle icon" }
 ];
 
-// Define connection types (for edge lines)
+// Keep the CONNECTION_TYPES array exactly as is - it's the source of truth
 export const CONNECTION_TYPES = [
   { id: 5, name: "Allied", style: "heavy-line", description: "Heavy solid line indicating strongest connection" },
   { id: 4, name: "Trusted", style: "double-line", description: "Double line indicating strong connection" },
@@ -54,7 +54,7 @@ export const getRelationshipIdByName = (name: string) => {
   return type?.id || 1; // Default to Acquainted if not found
 };
 
-// Helper functions for connection type conversion (edge lines)
+// Simple helper functions with no complex logic
 export const getConnectionNameById = (id: number) => {
   const type = CONNECTION_TYPES.find(type => type.id === id);
   return type?.name || "None";
@@ -62,7 +62,7 @@ export const getConnectionNameById = (id: number) => {
 
 export const getConnectionIdByName = (name: string) => {
   const type = CONNECTION_TYPES.find(type => type.name === name);
-  return type?.id || 0; // Default to None if not found
+  return type?.id ?? 0;
 };
 
 interface ConnectionListDialogProps {

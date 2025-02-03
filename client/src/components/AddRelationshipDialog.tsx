@@ -33,13 +33,6 @@ interface Person {
   jobTitle: string;
 }
 
-interface Connection {
-  id: number;
-  sourcePersonId: number;
-  targetPersonId: number;
-  connectionType: number;
-}
-
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -51,55 +44,47 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch people and connections
+  // Basic data fetching
   const { data: people = [] } = useQuery<Person[]>({
-    queryKey: ["/api/people", graphId],
-    enabled: !!graphId,
+    queryKey: ["/api/people", graphId]
   });
 
-  const { data: connections = [] } = useQuery<Connection[]>({
-    queryKey: ["/api/connections", graphId],
-    enabled: !!graphId,
+  const { data: connections = [] } = useQuery({
+    queryKey: ["/api/connections", graphId]
   });
 
-  // Update connection - maps names to numbers and sends to API
+  // Simple mutation to update connection
   const updateConnection = useMutation({
-    mutationFn: async ({ sourceId, targetId, connectionType }: {
-      sourceId: number;
-      targetId: number;
-      connectionType: string;
+    mutationFn: async ({ sourceId, targetId, connectionType }: { 
+      sourceId: number, 
+      targetId: number, 
+      connectionType: string 
     }) => {
-      // Find connection type ID (0-5) from name
+      // Direct mapping from name to ID
       const typeId = CONNECTION_TYPES.find(t => t.name === connectionType)?.id ?? 0;
 
-      const payload = {
-        graphId,
-        connectionType: typeId,
-        sourcePersonId: sourceId,
-        targetPersonId: targetId
-      };
-
-      // Check if connection exists
       const existingConnection = connections.find(c => 
         (c.sourcePersonId === sourceId && c.targetPersonId === targetId) ||
         (c.targetPersonId === sourceId && c.sourcePersonId === targetId)
       );
 
-      // Update or create
-      const endpoint = existingConnection 
-        ? `/api/connections/${existingConnection.id}`
-        : "/api/connections";
+      const response = await fetch(
+        existingConnection 
+          ? `/api/connections/${existingConnection.id}`
+          : "/api/connections",
+        {
+          method: existingConnection ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            graphId,
+            connectionType: typeId,
+            sourcePersonId: sourceId,
+            targetPersonId: targetId
+          })
+        }
+      );
 
-      const response = await fetch(endpoint, {
-        method: existingConnection ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update connection");
-      }
-
+      if (!response.ok) throw new Error("Failed to update connection");
       return response.json();
     },
     onSuccess: () => {
@@ -115,29 +100,16 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
     }
   });
 
-  // Get connection type name from numeric value
+  // Get current connection value
   const getCurrentConnection = (targetPersonId: number) => {
     const connection = connections.find(c => 
       (c.sourcePersonId === selectedPerson?.id && c.targetPersonId === targetPersonId) ||
       (c.targetPersonId === selectedPerson?.id && c.sourcePersonId === targetPersonId)
     );
 
-    return CONNECTION_TYPES.find(t => t.id === connection?.connectionType)?.name || "None";
+    const connectionType = CONNECTION_TYPES.find(t => t.id === connection?.connectionType);
+    return connectionType?.name || "None";
   };
-
-  // Handle dropdown selection
-  const handleConnectionSelect = (targetPerson: Person, connectionType: string) => {
-    if (!selectedPerson) return;
-
-    updateConnection.mutate({
-      sourceId: selectedPerson.id,
-      targetId: targetPerson.id,
-      connectionType
-    });
-  };
-
-  // Filter out selected person from list
-  const filteredPeople = people.filter(p => p.id !== selectedPerson?.id);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -170,43 +142,51 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredPeople.map((person) => (
-              <TableRow key={person.id}>
-                <TableCell>{person.name}</TableCell>
-                <TableCell>{person.organization || "—"}</TableCell>
-                <TableCell>{person.jobTitle || "—"}</TableCell>
-                {selectedPerson && (
-                  <TableCell>
-                    <Select
-                      value={getCurrentConnection(person.id)}
-                      onValueChange={(value) => handleConnectionSelect(person, value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CONNECTION_TYPES.map((type) => (
-                          <SelectItem key={type.id} value={type.name}>
-                            {type.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                )}
-                <TableCell>
-                  {!selectedPerson && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedPerson(person)}
-                    >
-                      Manage
-                    </Button>
+            {people
+              .filter(person => person.id !== selectedPerson?.id)
+              .map((person) => (
+                <TableRow key={person.id}>
+                  <TableCell>{person.name}</TableCell>
+                  <TableCell>{person.organization || "—"}</TableCell>
+                  <TableCell>{person.jobTitle || "—"}</TableCell>
+                  {selectedPerson && (
+                    <TableCell>
+                      <Select
+                        value={getCurrentConnection(person.id)}
+                        onValueChange={(value) => 
+                          updateConnection.mutate({
+                            sourceId: selectedPerson.id,
+                            targetId: person.id,
+                            connectionType: value
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CONNECTION_TYPES.map((type) => (
+                            <SelectItem key={type.id} value={type.name}>
+                              {type.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
                   )}
-                </TableCell>
-              </TableRow>
-            ))}
+                  <TableCell>
+                    {!selectedPerson && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedPerson(person)}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </DialogContent>
