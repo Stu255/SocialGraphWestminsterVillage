@@ -16,6 +16,8 @@ interface Link {
   sourcePersonId: number;
   targetPersonId: number;
   connectionType: number;
+  graphId: number;
+  id: number;
 }
 
 interface Organization {
@@ -161,8 +163,12 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
   useEffect(() => {
     if (!svgRef.current || !nodes.length) return;
 
-    console.log("Rendering graph with nodes:", nodes);
-    console.log("Initial links:", links);
+    console.log("NetworkGraph rendering with data:", {
+      nodes,
+      links,
+      filters,
+      graphId
+    });
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
@@ -185,25 +191,30 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       return true;
     });
 
-    console.log("Filtered nodes:", filteredNodes);
+    console.log("Filtered nodes:", filteredNodes.map(n => n.id));
 
     const filteredLinks = links
       .filter((link) => {
-        console.log("Processing link:", link);
-        if (link.connectionType === 0) {
-          console.log("Link filtered out - type 0");
-          return false;
-        }
+        console.log("Processing link:", {
+          link,
+          sourceExists: filteredNodes.some(n => n.id === link.sourcePersonId),
+          targetExists: filteredNodes.some(n => n.id === link.targetPersonId),
+          connectionType: link.connectionType
+        });
+
         if (filters.relationshipType && link.connectionType !== filters.relationshipType) {
-          console.log("Link filtered out - wrong type");
+          console.log("Link filtered - wrong type:", link);
           return false;
         }
+
         const sourceExists = filteredNodes.some((n) => n.id === link.sourcePersonId);
         const targetExists = filteredNodes.some((n) => n.id === link.targetPersonId);
+
         if (!sourceExists || !targetExists) {
-          console.log("Link filtered out - missing nodes");
+          console.log("Link filtered - missing node:", link);
           return false;
         }
+
         return true;
       })
       .map((link) => ({
@@ -212,7 +223,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
         type: link.connectionType,
       }));
 
-    console.log("Filtered links:", filteredLinks);
+    console.log("Filtered links for rendering:", filteredLinks);
 
     const simulation = d3
       .forceSimulation(filteredNodes)
