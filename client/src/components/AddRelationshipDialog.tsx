@@ -44,7 +44,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Basic data fetching
   const { data: people = [] } = useQuery<Person[]>({
     queryKey: ["/api/people", graphId]
   });
@@ -53,7 +52,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
     queryKey: ["/api/connections", graphId]
   });
 
-  // Simple mutation to update connection
   const updateConnection = useMutation({
     mutationFn: async ({ sourceId, targetId, connectionType }: { 
       sourceId: number, 
@@ -62,52 +60,69 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
     }) => {
       // Direct mapping from name to ID
       const typeId = CONNECTION_TYPES.find(t => t.name === connectionType)?.id ?? 0;
+      console.log("Updating connection:", { sourceId, targetId, connectionType, typeId });
 
       const existingConnection = connections.find(c => 
         (c.sourcePersonId === sourceId && c.targetPersonId === targetId) ||
         (c.targetPersonId === sourceId && c.sourcePersonId === targetId)
       );
+      console.log("Existing connection:", existingConnection);
 
-      const response = await fetch(
-        existingConnection 
-          ? `/api/connections/${existingConnection.id}`
-          : "/api/connections",
-        {
-          method: existingConnection ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            graphId,
-            connectionType: typeId,
-            sourcePersonId: sourceId,
-            targetPersonId: targetId
-          })
-        }
-      );
+      const endpoint = existingConnection 
+        ? `/api/connections/${existingConnection.id}`
+        : "/api/connections";
+      const method = existingConnection ? "PUT" : "POST";
 
-      if (!response.ok) throw new Error("Failed to update connection");
-      return response.json();
+      console.log(`Making ${method} request to ${endpoint}`);
+      const payload = {
+        graphId,
+        connectionType: typeId,
+        sourcePersonId: sourceId,
+        targetPersonId: targetId
+      };
+      console.log("Request payload:", payload);
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error("Server error:", error);
+        throw new Error(`Failed to update connection: ${error}`);
+      }
+
+      const result = await response.json();
+      console.log("Server response:", result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Mutation succeeded:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/connections", graphId] });
       toast({ title: "Success", description: "Connection updated" });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Mutation failed:", error);
       toast({ 
         title: "Error", 
-        description: "Failed to update connection",
+        description: error.message || "Failed to update connection",
         variant: "destructive"
       });
     }
   });
 
-  // Get current connection value
   const getCurrentConnection = (targetPersonId: number) => {
     const connection = connections.find(c => 
       (c.sourcePersonId === selectedPerson?.id && c.targetPersonId === targetPersonId) ||
       (c.targetPersonId === selectedPerson?.id && c.sourcePersonId === targetPersonId)
     );
+    console.log("Getting current connection for target", targetPersonId, ":", connection);
 
     const connectionType = CONNECTION_TYPES.find(t => t.id === connection?.connectionType);
+    console.log("Found connection type:", connectionType);
+
     return connectionType?.name || "None";
   };
 
@@ -153,13 +168,14 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
                     <TableCell>
                       <Select
                         value={getCurrentConnection(person.id)}
-                        onValueChange={(value) => 
+                        onValueChange={(value) => {
+                          console.log("Selected new connection value:", value);
                           updateConnection.mutate({
                             sourceId: selectedPerson.id,
                             targetId: person.id,
                             connectionType: value
-                          })
-                        }
+                          });
+                        }}
                       >
                         <SelectTrigger>
                           <SelectValue />

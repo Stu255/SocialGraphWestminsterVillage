@@ -249,11 +249,14 @@ export function registerRoutes(app: Express): Server {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not logged in");
     }
+
     try {
+      console.log("Received connection create request:", req.body);
       const { sourcePersonId, targetPersonId, connectionType, graphId } = req.body;
 
       // Create bidirectional connection in a single transaction
       const connection = await db.transaction(async (tx) => {
+        console.log("Starting transaction for new connection");
         // First, delete any existing connections between these nodes
         await tx.delete(connections)
           .where(
@@ -272,12 +275,25 @@ export function registerRoutes(app: Express): Server {
             )
           );
 
+        console.log("Creating forward connection:", {
+          sourcePersonId,
+          targetPersonId,
+          connectionType,
+          graphId
+        });
+
         // Then create the new bidirectional connection
         const [forward] = await tx
           .insert(connections)
-          .values({ sourcePersonId, targetPersonId, connectionType, graphId })
+          .values({
+            sourcePersonId,
+            targetPersonId,
+            connectionType,
+            graphId
+          })
           .returning();
 
+        console.log("Creating reverse connection");
         const [reverse] = await tx
           .insert(connections)
           .values({ 
@@ -291,6 +307,7 @@ export function registerRoutes(app: Express): Server {
         return forward;
       });
 
+      console.log("Successfully created connection:", connection);
       res.json(connection);
     } catch (error) {
       console.error("Error creating connection:", error);
@@ -331,28 +348,35 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: "Failed to delete connection" });
     }
   });
-
-  app.delete("/api/connections/:id", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).send("Not logged in");
-    }
-    try {
-      await db.delete(connections).where(eq(connections.id, parseInt(req.params.id)));
-      res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to delete connection" });
-    }
-  });
+  
+    app.delete("/api/connections/:id", async (req, res) => {
+      if (!req.isAuthenticated()) {
+          return res.status(401).send("Not logged in");
+      }
+      try {
+          await db.delete(connections).where(eq(connections.id, parseInt(req.params.id)));
+          res.json({ success: true });
+      } catch (error) {
+          res.status(500).json({ error: "Failed to delete connection" });
+      }
+    });
 
   app.put("/api/connections/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not logged in" });
     }
+
     try {
-      const { connectionType, graphId } = req.body;
+      console.log("Received connection update request:", {
+        id: req.params.id,
+        body: req.body
+      });
+
+      const { connectionType } = req.body;
 
       // Update both directions of the connection in a single transaction
       await db.transaction(async (tx) => {
+        console.log("Looking up existing connection");
         const [connection] = await tx
           .select()
           .from(connections)
@@ -362,12 +386,14 @@ export function registerRoutes(app: Express): Server {
           return res.status(404).json({ error: "Connection not found" });
         }
 
+        console.log("Updating forward connection");
         // Update the forward connection
         await tx
           .update(connections)
           .set({ connectionType })
           .where(eq(connections.id, parseInt(req.params.id)));
 
+        console.log("Updating reverse connection");
         // Find and update the reverse connection
         await tx
           .update(connections)
@@ -381,6 +407,7 @@ export function registerRoutes(app: Express): Server {
           );
       });
 
+      console.log("Successfully updated connection");
       res.json({ success: true });
     } catch (error) {
       console.error("Error updating connection:", error);
@@ -505,40 +532,40 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/graphs/:id/duplicate", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).send("Not logged in");
-    }
-
-    try {
-      const now = new Date();
-      // Get the original graph
-      const [originalGraph] = await db
-        .select()
-        .from(socialGraphs)
-        .where(eq(socialGraphs.id, parseInt(req.params.id)));
-
-      if (!originalGraph) {
-        return res.status(404).json({ error: "Graph not found" });
+    app.post("/api/graphs/:id/duplicate", async (req, res) => {
+      if (!req.isAuthenticated()) {
+          return res.status(401).send("Not logged in");
       }
-
-
-      // Create new graph with copied name and current timestamp
-      const [newGraph] = await db
-        .insert(socialGraphs)
-        .values({
-          name: `${originalGraph.name} (Copy)`,
-          userId: req.user.id,
-          modifiedAt: now,
-        })
-        .returning();
-
-      res.json(newGraph);
-    } catch (error) {
-      console.error("Error duplicating graph:", error);
-      res.status(500).json({ error: "Failed to duplicate graph" });
-    }
-  });
+  
+      try {
+          const now = new Date();
+          // Get the original graph
+          const [originalGraph] = await db
+              .select()
+              .from(socialGraphs)
+              .where(eq(socialGraphs.id, parseInt(req.params.id)));
+  
+          if (!originalGraph) {
+              return res.status(404).json({ error: "Graph not found" });
+          }
+  
+  
+          // Create new graph with copied name and current timestamp
+          const [newGraph] = await db
+              .insert(socialGraphs)
+              .values({
+                  name: `${originalGraph.name} (Copy)`,
+                  userId: req.user.id,
+                  modifiedAt: now,
+              })
+              .returning();
+  
+          res.json(newGraph);
+      } catch (error) {
+          console.error("Error duplicating graph:", error);
+          res.status(500).json({ error: "Failed to duplicate graph" });
+      }
+    });
 
   app.post("/api/graphs/:id/delete", async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -568,30 +595,30 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: "Failed to set delete timer" });
     }
   });
-
-  app.delete("/api/graphs/:id/delete-timer", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).send("Not logged in");
-    }
-
-    try {
-      const [graph] = await db
-        .update(socialGraphs)
-        .set({ 
-          deleteAt: new Date('3099-12-31T23:59:59Z')
-        })
-        .where(eq(socialGraphs.id, parseInt(req.params.id)))
-        .returning();
-
-      if (!graph) {
-        return res.status(404).json({ error: "Graph not found" });
+  
+    app.delete("/api/graphs/:id/delete-timer", async (req, res) => {
+      if (!req.isAuthenticated()) {
+          return res.status(401).send("Not logged in");
       }
-
-      res.json(graph);
-    } catch (error) {
-      console.error("Error canceling delete timer:", error);
-      res.status(500).json({ error: "Failed to cancel delete timer" });
-    }
+  
+      try {
+          const [graph] = await db
+              .update(socialGraphs)
+              .set({ 
+                deleteAt: new Date('3099-12-31T23:59:59Z')
+              })
+              .where(eq(socialGraphs.id, parseInt(req.params.id)))
+              .returning();
+  
+          if (!graph) {
+              return res.status(404).json({ error: "Graph not found" });
+          }
+  
+          res.json(graph);
+      } catch (error) {
+          console.error("Error canceling delete timer:", error);
+          res.status(500).json({ error: "Failed to cancel delete timer" });
+      }
   });
 
   app.delete("/api/graphs/:id", async (req, res) => {
