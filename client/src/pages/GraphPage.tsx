@@ -76,7 +76,8 @@ export default function GraphPage({ params }: Props) {
     console.log("Processing node:", person.name, "relationshipToYou:", person.relationshipToYou);
     return {
       ...person,
-      relationshipToYou: person.relationshipToYou !== undefined ? person.relationshipToYou : 1
+      // Only set default if relationshipToYou is strictly undefined or null
+      relationshipToYou: person.relationshipToYou === undefined || person.relationshipToYou === null ? 1 : person.relationshipToYou
     };
   });
 

@@ -1,0 +1,39 @@
+Rendering person: Freddie relationship: undefined -> Acquainted
+Rendering person: More people are joining relationship: undefined -> Acquainted
+Rendering person: new relationship: undefined -> Acquainted
+Rendering person: Poppy Ellison relationship: undefined -> Acquainted
+Rendering person: Stuart Ellison relationship: undefined -> Acquainted
+Sending contact data: 
+Object {name: "another person", graphId: 2, jobTitle: "terrible job", organization: "Exnics", relationshipToYou: 5, …}
+Rendering person: afgashnf relationship: undefined -> Acquainted
+Rendering person: another person relationship: undefined -> Acquainted
+Rendering person: Chloe Ellison relationship: undefined -> Acquainted
+Rendering person: Freddie relationship: undefined -> Acquainted
+Rendering person: More people are joining relationship: undefined -> Acquainted
+Rendering person: new relationship: undefined -> Acquainted
+Rendering person: Poppy Ellison relationship: undefined -> Acquainted
+Rendering person: Stuart Ellison relationship: undefined -> Acquainted
+Rendering person: afgashnf relationship: undefined -> Acquainted
+Rendering person: another person relationship: undefined -> Acquainted
+Rendering person: Chloe Ellison relationship: undefined -> Acquainted
+Rendering person: Freddie relationship: undefined -> Acquainted
+Rendering person: More people are joining relationship: undefined -> Acquainted
+Rendering person: new relationship: undefined -> Acquainted
+Rendering person: Poppy Ellison relationship: undefined -> Acquainted
+Rendering person: Stuart Ellison relationship: undefined -> Acquainted
+Rendering person: afgashnf relationship: undefined -> Acquainted
+Rendering person: another person relationship: undefined -> Acquainted
+Rendering person: Chloe Ellison relationship: undefined -> Acquainted
+Rendering person: Freddie relationship: undefined -> Acquainted
+Rendering person: More people are joining relationship: undefined -> Acquainted
+Rendering person: new relationship: undefined -> Acquainted
+Rendering person: Poppy Ellison relationship: undefined -> Acquainted
+Rendering person: Stuart Ellison relationship: undefined -> Acquainted
+Rendering person: afgashnf relationship: undefined -> Acquainted
+Rendering person: another person relationship: undefined -> Acquainted
+Rendering person: Chloe Ellison relationship: undefined -> Acquainted
+Rendering person: Freddie relationship: undefined -> Acquainted
+Rendering person: More people are joining relationship: undefined -> Acquainted
+Rendering person: new relationship: undefined -> Acquainted
+Rendering person: Poppy Ellison relationship: undefined -> Acquainted
+Rendering person: Stuart Ellison relationship: undefined -> Acquainted

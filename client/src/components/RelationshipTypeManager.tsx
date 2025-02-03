@@ -30,14 +30,16 @@ export const USER_RELATIONSHIP_TYPES = [
 ];
 
 // Helper functions for user relationship type conversion (node icons)
-export const getUserRelationshipNameById = (id: number): string => {
-  const type = USER_RELATIONSHIP_TYPES.find(type => type.id === Number(id));
-  return type?.name || "Acquainted"; // Default to Acquainted if not found
+export const getUserRelationshipNameById = (id: number | undefined | null): string => {
+  if (typeof id !== 'number') return "Acquainted";
+  const type = USER_RELATIONSHIP_TYPES.find(type => type.id === id);
+  return type?.name || "Acquainted";
 };
 
-export const getUserRelationshipIdByName = (name: string): number => {
+export const getUserRelationshipIdByName = (name: string | undefined | null): number => {
+  if (!name) return 1;
   const type = USER_RELATIONSHIP_TYPES.find(type => type.name === name);
-  return type?.id || 1; // Default to Acquainted (1) if not found
+  return type?.id || 1;
 };
 
 // Export the conversion functions for backward compatibility

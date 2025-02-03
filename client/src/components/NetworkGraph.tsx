@@ -60,7 +60,8 @@ const USER_RELATIONSHIP_ICONS = {
 };
 
 const getUserRelationshipIcon = (relationshipType: number | undefined) => {
-  const type = relationshipType ?? 1;
+  // Only default to Acquainted if strictly undefined or null
+  const type = relationshipType === undefined || relationshipType === null ? 1 : relationshipType;
   console.log("Getting icon for relationship type:", type);
 
   switch (type) {
@@ -95,6 +96,7 @@ const getUserRelationshipIcon = (relationshipType: number | undefined) => {
         strokeDasharray: "2,2" 
       };
     default:
+      console.warn("Unexpected relationship type:", type);
       return { 
         ...USER_RELATIONSHIP_ICONS.basic,
         fill: false, 
