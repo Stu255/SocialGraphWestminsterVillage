@@ -1,0 +1,75 @@
+Sending contact data: 
+Object {name: "Stuart Ellison", graphId: 2, jobTitle: "Director", organization: "Stratsor", relationshipToYou: 1, …}
+email1: "stuart.ellison@exnics.com"
+email2: "stuart.ellison@exnics.com"
+graphId: 2
+jobTitle: "Director"
+linkedin: null
+mobileNumber: "07880745894"
+name: "Stuart Ellison"
+notes: "Notes go here, this guy?"
+officeNumber: "07880745894"
+organization: "Stratsor"
+relationshipToYou: 1
+twitter: null
+[[Prototype]]: Object
+NetworkGraph rendering with data: 
+Object {nodes: Array(8), links: Array(0), filters: {…}}
+Processed links for rendering: 
+Array []
+Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+Sending contact data: 
+Object {name: "Stuart Ellison", graphId: 2, jobTitle: "Director", organization: "Stratsor", relationshipToYou: 1, …}
+email1: "stuart.ellison@exnics.com"
+email2: "stuart.ellison@exnics.com"
+graphId: 2
+jobTitle: "Director"
+linkedin: null
+mobileNumber: "07880745894"
+name: "Stuart Ellison"
+notes: "Notes go here, this guy?"
+officeNumber: "07880745894"
+organization: "Stratsor"
+relationshipToYou: 1
+twitter: null
+[[Prototype]]: Object
+NetworkGraph rendering with data: 
+Object {nodes: Array(8), links: Array(0), filters: {…}}
+Processed links for rendering: 
+Array []
+Sending contact data: 
+Object {name: "Stuart Ellison", graphId: 2, jobTitle: "Director", organization: "Stratsor", relationshipToYou: 5, …}
+email1: "stuart.ellison@exnics.com"
+email2: "stuart.ellison@exnics.com"
+graphId: 2
+jobTitle: "Director"
+linkedin: null
+mobileNumber: "07880745894"
+name: "Stuart Ellison"
+notes: "Notes go here, this guy?"
+officeNumber: "07880745894"
+organization: "Stratsor"
+relationshipToYou: 5
+twitter: null
+[[Prototype]]: Object
+constructor: ƒ Object()
+hasOwnProperty: ƒ hasOwnProperty()
+isPrototypeOf: ƒ isPrototypeOf()
+propertyIsEnumerable: ƒ propertyIsEnumerable()
+toLocaleString: ƒ toLocaleString()
+toString: ƒ toString()
+valueOf: ƒ valueOf()
+__defineGetter__: ƒ __defineGetter__()
+__defineSetter__: ƒ __defineSetter__()
+__lookupGetter__: ƒ __lookupGetter__()
+__lookupSetter__: ƒ __lookupSetter__()
+__proto__: Object
+get __proto__: ƒ get __proto__()
+length: 0
+name: "get __proto__"
+[[Prototype]]: ƒ ()
+set __proto__: ƒ set __proto__()
+NetworkGraph rendering with data: 
+Object {nodes: Array(8), links: Array(0), filters: {…}}
+Processed links for rendering: 
+Array []

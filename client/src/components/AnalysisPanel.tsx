@@ -68,7 +68,7 @@ export function AnalysisPanel({ selectedNode, graphId }) {
     mutationFn: async (values: any) => {
       const payload = { 
         ...values,
-        userRelationshipType: getUserRelationshipIdByName(values.userRelationshipType),
+        relationshipToYou: getUserRelationshipIdByName(values.userRelationshipType),
         graphId 
       };
 
@@ -100,7 +100,7 @@ export function AnalysisPanel({ selectedNode, graphId }) {
         name: selectedNode.name || "",
         jobTitle: selectedNode.jobTitle || "",
         organization: selectedNode.organization || "",
-        userRelationshipType: getUserRelationshipNameById(selectedNode.userRelationshipType),
+        userRelationshipType: getUserRelationshipNameById(selectedNode.relationshipToYou || 1),
         lastContact: selectedNode.lastContact ? 
           new Date(selectedNode.lastContact).toISOString().split('T')[0] : "",
         officeNumber: selectedNode.officeNumber || "",
@@ -157,7 +157,7 @@ export function AnalysisPanel({ selectedNode, graphId }) {
 
     let value = selectedNode[fieldName];
     if (fieldName === "userRelationshipType") {
-      value = getUserRelationshipNameById(selectedNode.userRelationshipType);
+      value = getUserRelationshipNameById(selectedNode.relationshipToYou);
     }
 
     return (

@@ -32,7 +32,7 @@ interface Person {
   name: string;
   organization: string;
   jobTitle: string;
-  userRelationshipType: number;
+  relationshipToYou: number;
 }
 
 interface Connection {
@@ -42,7 +42,6 @@ interface Connection {
   connectionType: number;
   graphId: number;
 }
-
 
 interface Props {
   open: boolean;
@@ -146,7 +145,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
               <TableHead>Name</TableHead>
               <TableHead>Organization</TableHead>
               <TableHead>Position</TableHead>
-                <TableHead>Relationship</TableHead>
+              <TableHead>Relationship</TableHead>
               {selectedPerson && <TableHead>Connection Type</TableHead>}
             </TableRow>
           </TableHeader>
@@ -158,7 +157,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
                   <TableCell>{person.name}</TableCell>
                   <TableCell>{person.organization || "—"}</TableCell>
                   <TableCell>{person.jobTitle || "—"}</TableCell>
-                    <TableCell>{getUserRelationshipNameById(person.userRelationshipType)}</TableCell>
+                  <TableCell>{getUserRelationshipNameById(person.relationshipToYou)}</TableCell>
                   {selectedPerson && (
                     <TableCell>
                       <Select
