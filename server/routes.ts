@@ -375,7 +375,7 @@ export function registerRoutes(app: Express): Server {
         body: req.body
       });
 
-      const { connectionType } = req.body;
+      const { connectionType, graphId, sourcePersonId, targetPersonId } = req.body;
 
       // Validate connection type
       if (connectionType === undefined || connectionType === null || 
@@ -386,41 +386,58 @@ export function registerRoutes(app: Express): Server {
         });
       }
 
-      // Update both directions of the connection in a single transaction
+      // If we're creating a new connection
+      if (!req.params.id || req.params.id === 'new') {
+        const [connection] = await db
+          .insert(connections)
+          .values({
+            sourcePersonId,
+            targetPersonId,
+            connectionType,
+            graphId
+          })
+          .returning();
+
+        return res.json(connection);
+      }
+
+      // Update existing connection
+      const [existingConnection] = await db
+        .select()
+        .from(connections)
+        .where(eq(connections.id, parseInt(req.params.id)));
+
+      if (!existingConnection) {
+        return res.status(404).json({ error: "Connection not found" });
+      }
+
+      // Update both directions of the connection in a transaction
       await db.transaction(async (tx) => {
-        console.log("Looking up existing connection");
-        const [connection] = await tx
-          .select()
-          .from(connections)
-          .where(eq(connections.id, parseInt(req.params.id)));
-
-        if (!connection) {
-          return res.status(404).json({ error: "Connection not found" });
-        }
-
-        console.log("Updating forward connection");
         // Update the forward connection
         await tx
           .update(connections)
           .set({ connectionType })
           .where(eq(connections.id, parseInt(req.params.id)));
 
-        console.log("Updating reverse connection");
         // Find and update the reverse connection
         await tx
           .update(connections)
           .set({ connectionType })
           .where(
             and(
-              eq(connections.sourcePersonId, connection.targetPersonId),
-              eq(connections.targetPersonId, connection.sourcePersonId),
-              eq(connections.graphId, connection.graphId)
+              eq(connections.sourcePersonId, existingConnection.targetPersonId),
+              eq(connections.targetPersonId, existingConnection.sourcePersonId),
+              eq(connections.graphId, existingConnection.graphId)
             )
           );
       });
 
-      console.log("Successfully updated connection");
-      res.json({ success: true });
+      const [updatedConnection] = await db
+        .select()
+        .from(connections)
+        .where(eq(connections.id, parseInt(req.params.id)));
+
+      res.json(updatedConnection);
     } catch (error) {
       console.error("Error updating connection:", error);
       res.status(500).json({ error: "Failed to update connection" });

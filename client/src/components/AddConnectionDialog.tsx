@@ -73,7 +73,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
     }) => {
       const existingConnection = connections.find(c => 
         (c.sourcePersonId === sourceId && c.targetPersonId === targetId) ||
-        (c.targetPersonId === sourceId && c.sourcePersonId === targetId)
+        (c.sourcePersonId === targetId && c.targetPersonId === sourceId)
       );
 
       console.log("Updating connection:", {
@@ -84,15 +84,14 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
         graphId
       });
 
-      const endpoint = existingConnection 
-        ? `/api/relationships/${existingConnection.id}`
-        : "/api/relationships";
-      const method = existingConnection ? "PUT" : "POST";
-
       try {
+        const endpoint = existingConnection 
+          ? `/api/relationships/${existingConnection.id}`
+          : `/api/relationships/new`;
+
         const response = await fetch(endpoint, {
-          method,
-          headers: { "Content-Type": "application/json" },
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             graphId,
             connectionType,
@@ -102,12 +101,14 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Failed to update connection: ${errorText}`);
+          const errorData = await response.json().catch(() => null);
+          throw new Error(
+            errorData?.error || 
+            `Failed to update connection: ${response.status} ${response.statusText}`
+          );
         }
 
-        const data = await response.json();
-        return data;
+        return await response.json();
       } catch (error) {
         console.error("Connection update error:", error);
         throw error;
