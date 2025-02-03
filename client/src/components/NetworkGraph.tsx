@@ -93,6 +93,7 @@ const getRelationshipIcon = (relationshipId: number | undefined) => {
 };
 
 const getConnectionLineStyle = (connectionType: number) => {
+  console.log("Getting line style for connection type:", connectionType);
   switch (connectionType) {
     case 5: // Allied
       return { 
@@ -160,6 +161,9 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
   useEffect(() => {
     if (!svgRef.current || !nodes.length) return;
 
+    console.log("Rendering graph with nodes:", nodes);
+    console.log("Initial links:", links);
+
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
@@ -181,20 +185,34 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       return true;
     });
 
+    console.log("Filtered nodes:", filteredNodes);
 
     const filteredLinks = links
       .filter((link) => {
-        if (link.connectionType === 0) return false;
-        if (filters.relationshipType && link.connectionType !== filters.relationshipType) return false;
+        console.log("Processing link:", link);
+        if (link.connectionType === 0) {
+          console.log("Link filtered out - type 0");
+          return false;
+        }
+        if (filters.relationshipType && link.connectionType !== filters.relationshipType) {
+          console.log("Link filtered out - wrong type");
+          return false;
+        }
         const sourceExists = filteredNodes.some((n) => n.id === link.sourcePersonId);
         const targetExists = filteredNodes.some((n) => n.id === link.targetPersonId);
-        return sourceExists && targetExists;
+        if (!sourceExists || !targetExists) {
+          console.log("Link filtered out - missing nodes");
+          return false;
+        }
+        return true;
       })
       .map((link) => ({
         source: filteredNodes.find((n) => n.id === link.sourcePersonId)!,
         target: filteredNodes.find((n) => n.id === link.targetPersonId)!,
         type: link.connectionType,
       }));
+
+    console.log("Filtered links:", filteredLinks);
 
     const simulation = d3
       .forceSimulation(filteredNodes)
@@ -213,8 +231,12 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
 
     filteredLinks.forEach(d => {
       const style = getConnectionLineStyle(d.type);
+      console.log("Style for link:", { link: d, style });
 
-      if (!style) return;
+      if (!style) {
+        console.log("No style returned for link type:", d.type);
+        return;
+      }
 
       if (style.doubleStroke && style.doubleStrokeGap) {
         [-style.doubleStrokeGap/2, style.doubleStrokeGap/2].forEach(offset => {
@@ -290,12 +312,12 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
 
     simulation.on("tick", () => {
       linkGroup.selectAll("line")
-        .attr("x1", d => (d.source as any).x)
-        .attr("y1", d => (d.source as any).y)
-        .attr("x2", d => (d.target as any).x)
-        .attr("y2", d => (d.target as any).y);
+        .attr("x1", (d: any) => d.source.x)
+        .attr("y1", (d: any) => d.source.y)
+        .attr("x2", (d: any) => d.target.x)
+        .attr("y2", (d: any) => d.target.y);
 
-      nodeGroup.attr("transform", d => `translate(${(d as any).x},${(d as any).y})`);
+      nodeGroup.attr("transform", (d: any) => `translate(${d.x},${d.y})`);
     });
 
     return () => {
