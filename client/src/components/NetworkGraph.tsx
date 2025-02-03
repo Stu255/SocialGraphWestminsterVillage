@@ -94,38 +94,38 @@ const getRelationshipIcon = (relationshipId: number | undefined) => {
 
 const getConnectionLineStyle = (connectionType: number) => {
   switch (connectionType) {
-    case 5:
+    case 5: // Allied
       return { 
         strokeWidth: 6, 
         strokeDasharray: "none",
         doubleStroke: true,
         doubleStrokeGap: 8
       };
-    case 4:
+    case 4: // Trusted
       return { 
         strokeWidth: 4, 
         strokeDasharray: "none",
         doubleStroke: false 
       };
-    case 3:
+    case 3: // Close
       return { 
         strokeWidth: 2, 
         strokeDasharray: "none",
         doubleStroke: false 
       };
-    case 2:
+    case 2: // Familiar
       return { 
         strokeWidth: 1, 
         strokeDasharray: "none",
         doubleStroke: false 
       };
-    case 1:
+    case 1: // Acquainted
       return { 
         strokeWidth: 1, 
         strokeDasharray: "4,4",
         doubleStroke: false 
       };
-    case 0:
+    case 0: // None
     default:
       return null;
   }
@@ -181,12 +181,10 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
       return true;
     });
 
-    const uniqueLinks = links.filter((link) => {
-      return link.sourcePersonId < link.targetPersonId;
-    });
 
-    const filteredLinks = uniqueLinks
+    const filteredLinks = links
       .filter((link) => {
+        if (link.connectionType === 0) return false;
         if (filters.relationshipType && link.connectionType !== filters.relationshipType) return false;
         const sourceExists = filteredNodes.some((n) => n.id === link.sourcePersonId);
         const targetExists = filteredNodes.some((n) => n.id === link.targetPersonId);
@@ -216,19 +214,21 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
     filteredLinks.forEach(d => {
       const style = getConnectionLineStyle(d.type);
 
-      if (style?.doubleStroke && style?.doubleStrokeGap) {
-          [-style.doubleStrokeGap/2, style.doubleStrokeGap/2].forEach(offset => {
-            linkGroup
-              .append("line")
-              .datum(d)
-              .attr("stroke", getEdgeColor(d.source as Node, d.target as Node))
-              .attr("stroke-opacity", 0.6)
-              .attr("stroke-width", style.strokeWidth)
-              .attr("stroke-dasharray", style.strokeDasharray)
-              .attr("transform", `translate(0, ${offset})`);
-        });
-      } else if(style) {
+      if (!style) return;
+
+      if (style.doubleStroke && style.doubleStrokeGap) {
+        [-style.doubleStrokeGap/2, style.doubleStrokeGap/2].forEach(offset => {
           linkGroup
+            .append("line")
+            .datum(d)
+            .attr("stroke", getEdgeColor(d.source as Node, d.target as Node))
+            .attr("stroke-opacity", 0.6)
+            .attr("stroke-width", style.strokeWidth)
+            .attr("stroke-dasharray", style.strokeDasharray)
+            .attr("transform", `translate(0, ${offset})`);
+        });
+      } else {
+        linkGroup
           .append("line")
           .datum(d)
           .attr("stroke", getEdgeColor(d.source as Node, d.target as Node))

@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { CONNECTION_TYPES } from "./RelationshipTypeManager";
+import { CONNECTION_TYPES, getConnectionNameById, getConnectionIdByName } from "./RelationshipTypeManager";
 import { useToast } from "@/hooks/use-toast";
 
 interface Person {
@@ -48,22 +48,13 @@ interface AddConnectionDialogProps {
   graphId: number;
 }
 
-type SortField = "name" | "organization" | "jobTitle" | "connectionType";
-type SortDirection = "asc" | "desc";
-type FilterValues = Record<string, string>;
-type SortConfig = {
-  column: string | null;
-  direction: SortDirection | null;
-};
-
 export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnectionDialogProps) {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ column: null, direction: null });
-  const [filters, setFilters] = useState<FilterValues>({});
+  const [filters, setFilters] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Queries
+  // Fetch data
   const { data: people = [] } = useQuery<Person[]>({
     queryKey: ["/api/people", graphId],
     enabled: !!graphId,
@@ -79,21 +70,24 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     enabled: !!graphId,
   });
 
-  const organizationColors = new Map(
-    organizations.map((org: any) => [org.name, org.brandColor])
-  );
-
-
   // Handle connection updates
-  const mutation = useMutation({
-    mutationFn: async ({ sourceId, targetId, connectionType }: any) => {
+  const updateConnectionMutation = useMutation({
+    mutationFn: async ({ sourceId, targetId, connectionType }: { 
+      sourceId: number;
+      targetId: number;
+      connectionType: string;
+    }) => {
+      // Convert connection type name to ID (0-5)
+      const connectionTypeId = getConnectionIdByName(connectionType);
+      
       const payload = {
         graphId,
-        connectionType: connectionType === "None" ? 0 : 
-          CONNECTION_TYPES.find(t => t.name === connectionType)?.id || 0,
+        connectionType: connectionTypeId,
         sourcePersonId: sourceId,
         targetPersonId: targetId
       };
+
+      console.log("Updating connection with payload:", payload);
 
       const existingConnection = connections.find(r => 
         (r.sourcePersonId === sourceId && r.targetPersonId === targetId) ||
@@ -106,7 +100,12 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error("Failed to update connection");
+
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.message || "Failed to update connection");
+        }
+
         return res.json();
       }
 
@@ -115,7 +114,12 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Failed to create connection");
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to create connection");
+      }
+
       return res.json();
     },
     onSuccess: () => {
@@ -135,8 +139,8 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     },
   });
 
-  // Get current connection type (0-5) and convert to name
-  const getCurrentConnectionType = (targetPersonId: number) => {
+  // Get current connection type for a person
+  const getCurrentConnectionType = (targetPersonId: number): string => {
     if (!selectedPerson) return "None";
 
     const connection = connections.find(r => 
@@ -145,95 +149,30 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
     );
 
     if (!connection) return "None";
-    return CONNECTION_TYPES.find(t => t.id === connection.connectionType)?.name || "None";
+    return getConnectionNameById(connection.connectionType);
   };
 
+  // Handle connection selection
   const handleConnectionSelect = (targetPerson: Person, connectionType: string) => {
     if (!selectedPerson) return;
 
-    mutation.mutate({
+    updateConnectionMutation.mutate({
       sourceId: selectedPerson.id,
       targetId: targetPerson.id,
       connectionType,
     });
   };
 
-  const getOrganizationColor = (organizationName: string) => {
-    return organizationColors.get(organizationName) || "hsl(var(--primary))";
-  };
-
-  // Filter people based on search criteria
+  // Filter people
   const filteredPeople = people.filter(person => {
     if (selectedPerson && person.id === selectedPerson.id) return false;
 
     return Object.entries(filters).every(([key, value]) => {
       if (!value) return true;
-
-      if (key === "connectionType") {
-        const currentType = getCurrentConnectionType(person.id);
-        return value === "none" ? 
-          currentType === "none" : 
-          currentType.toLowerCase().includes(value.toLowerCase());
-      }
-
       const fieldValue = String(person[key as keyof Person] || "").toLowerCase();
       return fieldValue.includes(value.toLowerCase());
     });
   });
-
-  // Sort the filtered list
-  const sortedPeople = [...filteredPeople].sort((a, b) => {
-    if (!sortConfig.column || !sortConfig.direction) return 0;
-
-    if (sortConfig.column === "connectionType") {
-      const aType = getCurrentConnectionType(a.id);
-      const bType = getCurrentConnectionType(b.id);
-      return sortConfig.direction === "asc" ? 
-        aType.localeCompare(bType) : 
-        bType.localeCompare(aType);
-    }
-
-    const aValue = String(a[sortConfig.column as keyof Person] || "");
-    const bValue = String(b[sortConfig.column as keyof Person] || "");
-    return sortConfig.direction === "asc" ? 
-      aValue.localeCompare(bValue) : 
-      bValue.localeCompare(aValue);
-  });
-
-  const handleSort = (column: string) => {
-    setSortConfig(current => ({
-      column,
-      direction: current.column === column && current.direction === "asc" ? "desc" : "asc"
-    }));
-  };
-
-  const handleFilter = (column: string, value: string) => {
-    setFilters(prev => ({
-      ...prev,
-      [column]: value
-    }));
-  };
-
-  const renderColumnHeader = (column: string, label: string) => (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <Input
-          placeholder={`Filter ${label.toLowerCase()}...`}
-          value={filters[column] || ""}
-          onChange={(e) => handleFilter(column, e.target.value)}
-          className="h-8"
-        />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          onClick={() => handleSort(column)}
-        >
-        </Button>
-      </div>
-    </div>
-  );
-
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -266,25 +205,17 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[200px]">
-                  {renderColumnHeader("name", "Name")}
-                </TableHead>
-                <TableHead>
-                  {renderColumnHeader("organization", "Organization")}
-                </TableHead>
-                <TableHead>
-                  {renderColumnHeader("jobTitle", "Position")}
-                </TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Organization</TableHead>
+                <TableHead>Position</TableHead>
                 {selectedPerson && (
-                  <TableHead className="w-[150px]">
-                    {renderColumnHeader("connectionType", "Connection")}
-                  </TableHead>
+                  <TableHead>Connection</TableHead>
                 )}
-                <TableHead className="w-[100px]"></TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedPeople.map((person) => (
+              {filteredPeople.map((person) => (
                 <TableRow key={person.id}>
                   <TableCell>{person.name}</TableCell>
                   <TableCell>{person.organization || "—"}</TableCell>
@@ -296,10 +227,9 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: AddConnecti
                         onValueChange={(value) => handleConnectionSelect(person, value)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="None">None</SelectItem>
                           {CONNECTION_TYPES.map((type) => (
                             <SelectItem key={type.id} value={type.name}>
                               {type.name}

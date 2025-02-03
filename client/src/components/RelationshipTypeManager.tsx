@@ -35,12 +35,12 @@ export const RELATIONSHIP_TYPES = [
 
 // Define connection types (for edge lines)
 export const CONNECTION_TYPES = [
-  { id: 5, name: "Allied", style: "heavy-line", description: "Heavy line" },
-  { id: 4, name: "Trusted", style: "double-line", description: "Double line" },
-  { id: 3, name: "Close", style: "standard-line", description: "Standard line" },
-  { id: 2, name: "Familiar", style: "thin-line", description: "Thin line" },
-  { id: 1, name: "Acquainted", style: "dashed-line", description: "Thin dashed line" },
-  { id: 0, name: "None", style: "no-line", description: "No connection" }
+  { id: 5, name: "Allied", style: "heavy-line", description: "Heavy solid line indicating strongest connection" },
+  { id: 4, name: "Trusted", style: "double-line", description: "Double line indicating strong connection" },
+  { id: 3, name: "Close", style: "standard-line", description: "Standard solid line indicating regular connection" },
+  { id: 2, name: "Familiar", style: "thin-line", description: "Thin solid line indicating basic connection" },
+  { id: 1, name: "Acquainted", style: "dashed-line", description: "Dashed line indicating minimal connection" },
+  { id: 0, name: "None", style: "no-line", description: "No visible connection" }
 ];
 
 // Helper functions for relationship type conversion (node icons)
