@@ -111,10 +111,8 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
 
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
-      // Convert the relationship type to numeric value
-      const userRelationshipType = values.userRelationshipType ? 
-        getRelationshipIdByName(values.userRelationshipType) : 
-        1; // Default to Acquainted
+      // Convert the relationship type from name to ID
+      const userRelationshipType = getRelationshipIdByName(values.userRelationshipType);
 
       const payload = { 
         ...values,
@@ -212,7 +210,7 @@ export function AnalysisPanel({ selectedNode, nodes, relationships, onNodeDelete
         jobTitle: selectedNode.jobTitle || "",
         organization: selectedNode.organization || "",
         userRelationshipType: selectedNode.userRelationshipType ? 
-          getRelationshipNameById(selectedNode.userRelationshipType) : "",
+          getRelationshipNameById(selectedNode.userRelationshipType) : "Acquainted",
         lastContact: selectedNode.lastContact ? 
           new Date(selectedNode.lastContact).toISOString().split('T')[0] : "",
         officeNumber: selectedNode.officeNumber || "",

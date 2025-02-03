@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
-import { CONNECTION_TYPES } from "./ConnectionManager";
+import { CONNECTION_TYPES, getConnectionNameById } from "./ConnectionManager";
 import { useToast } from "@/hooks/use-toast";
 
 interface Person {
@@ -171,7 +171,9 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue>
+                            {getConnectionNameById(getCurrentConnection(person.id))}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {CONNECTION_TYPES.map((type) => (
