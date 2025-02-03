@@ -1,0 +1,93 @@
+Sending contact data: 
+Object {name: "afgashnf", graphId: 2, jobTitle: "abfsvc", organization: "Stratsor", relationshipToYou: 5, …}
+email1: null
+email2: null
+graphId: 2
+jobTitle: "abfsvc"
+linkedin: null
+mobileNumber: null
+name: "afgashnf"
+notes: "hsd"
+officeNumber: null
+organization: "Stratsor"
+relationshipToYou: 5
+twitter: null
+[[Prototype]]: Object
+constructor: ƒ Object()
+assign: ƒ assign()
+create: ƒ create()
+defineProperties: ƒ defineProperties()
+defineProperty: ƒ defineProperty()
+entries: ƒ entries()
+freeze: ƒ freeze()
+fromEntries: ƒ fromEntries()
+getOwnPropertyDescriptor: ƒ getOwnPropertyDescriptor()
+getOwnPropertyDescriptors: ƒ getOwnPropertyDescriptors()
+getOwnPropertyNames: ƒ getOwnPropertyNames()
+getOwnPropertySymbols: ƒ getOwnPropertySymbols()
+getPrototypeOf: ƒ getPrototypeOf()
+groupBy: ƒ groupBy()
+hasOwn: ƒ hasOwn()
+is: ƒ is()
+isExtensible: ƒ isExtensible()
+isFrozen: ƒ isFrozen()
+isSealed: ƒ isSealed()
+keys: ƒ keys()
+length: 1
+name: "Object"
+preventExtensions: ƒ preventExtensions()
+prototype: Object
+seal: ƒ seal()
+setPrototypeOf: ƒ setPrototypeOf()
+values: ƒ values()
+[[Prototype]]: ƒ ()
+hasOwnProperty: ƒ hasOwnProperty()
+length: 1
+name: "hasOwnProperty"
+[[Prototype]]: ƒ ()
+isPrototypeOf: ƒ isPrototypeOf()
+length: 1
+name: "isPrototypeOf"
+[[Prototype]]: ƒ ()
+propertyIsEnumerable: ƒ propertyIsEnumerable()
+length: 1
+name: "propertyIsEnumerable"
+[[Prototype]]: ƒ ()
+toLocaleString: ƒ toLocaleString()
+length: 0
+name: "toLocaleString"
+[[Prototype]]: ƒ ()
+toString: ƒ toString()
+length: 0
+name: "toString"
+[[Prototype]]: ƒ ()
+valueOf: ƒ valueOf()
+length: 0
+name: "valueOf"
+[[Prototype]]: ƒ ()
+__defineGetter__: ƒ __defineGetter__()
+length: 2
+name: "__defineGetter__"
+[[Prototype]]: ƒ ()
+__defineSetter__: ƒ __defineSetter__()
+length: 2
+name: "__defineSetter__"
+[[Prototype]]: ƒ ()
+__lookupGetter__: ƒ __lookupGetter__()
+length: 1
+name: "__lookupGetter__"
+[[Prototype]]: ƒ ()
+__lookupSetter__: ƒ __lookupSetter__()
+length: 1
+name: "__lookupSetter__"
+[[Prototype]]: ƒ ()
+__proto__: Object
+get __proto__: ƒ get __proto__()
+length: 0
+name: "get __proto__"
+[[Prototype]]: ƒ ()
+set __proto__: ƒ set __proto__()
+length: 1
+name: "set __proto__"
+[[Prototype]]: ƒ ()
+

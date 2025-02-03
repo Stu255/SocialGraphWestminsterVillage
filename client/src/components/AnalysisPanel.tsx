@@ -66,11 +66,16 @@ export function AnalysisPanel({ selectedNode, graphId }) {
 
   const updatePersonMutation = useMutation({
     mutationFn: async (values: any) => {
+      const relationshipToYou = getUserRelationshipIdByName(values.userRelationshipType);
+      console.log("Updating person with relationship:", relationshipToYou);
+
       const payload = { 
         ...values,
-        relationshipToYou: getUserRelationshipIdByName(values.userRelationshipType),
+        relationshipToYou,
         graphId 
       };
+
+      console.log("Sending contact data:", payload);
 
       const res = await fetch(`/api/people/${selectedNode.id}`, {
         method: 'PUT',
@@ -100,7 +105,7 @@ export function AnalysisPanel({ selectedNode, graphId }) {
         name: selectedNode.name || "",
         jobTitle: selectedNode.jobTitle || "",
         organization: selectedNode.organization || "",
-        userRelationshipType: getUserRelationshipNameById(selectedNode.relationshipToYou || 1),
+        userRelationshipType: getUserRelationshipNameById(selectedNode.relationshipToYou),
         lastContact: selectedNode.lastContact ? 
           new Date(selectedNode.lastContact).toISOString().split('T')[0] : "",
         officeNumber: selectedNode.officeNumber || "",
@@ -111,6 +116,7 @@ export function AnalysisPanel({ selectedNode, graphId }) {
         twitter: selectedNode.twitter || "",
         notes: selectedNode.notes || ""
       };
+      console.log("Setting form values:", formValues);
       form.reset(formValues);
     }
   }, [selectedNode, form]);

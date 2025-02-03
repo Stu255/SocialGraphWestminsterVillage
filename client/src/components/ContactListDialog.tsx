@@ -3,9 +3,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Settings2, ChevronLeft, ChevronRight, ArrowUpDown, ChevronFirst, ChevronLast } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ContactFormDialog } from "./ContactFormDialog";
+import { getUserRelationshipNameById } from "./RelationshipTypeManager";
 import { useForm } from "react-hook-form";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,8 +29,7 @@ import {
 } from "@/components/ui/popover";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { AddOrganizationDialog } from "./AddOrganizationDialog";
-import { ContactFormDialog } from "./ContactFormDialog";
-import { getUserRelationshipNameById } from "./RelationshipTypeManager";
+
 
 interface ContactListDialogProps {
   open: boolean;
@@ -362,10 +364,11 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
       if (!value) return true;
       if (key === 'relationshipToYou') {
         const relationshipName = getUserRelationshipNameById(person.relationshipToYou)?.toLowerCase() || '';
-        return relationshipName.startsWith(value.toLowerCase());
+        console.log("Filtering relationship:", person.name, relationshipName, value.toLowerCase());
+        return relationshipName.includes(value.toLowerCase());
       }
-      const fieldValue = person[key]?.toLowerCase() || "";
-      return fieldValue.startsWith(value.toLowerCase());
+      const fieldValue = String(person[key] || "").toLowerCase();
+      return fieldValue.includes(value.toLowerCase());
     });
   });
 
@@ -448,9 +451,7 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
         <DialogContent className="sm:max-w-[825px]">
           <DialogHeader>
             <DialogTitle>Contacts</DialogTitle>
-            <DialogDescription>
-              A list of all contacts in your network
-            </DialogDescription>
+            <DialogDescription>A list of all contacts in your network</DialogDescription>
           </DialogHeader>
 
           <div className="relative">
@@ -458,39 +459,35 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[200px]">
-                      {renderColumnHeader("name", "Name")}
-                    </TableHead>
-                    <TableHead>
-                      {renderColumnHeader("organization", "Organization")}
-                    </TableHead>
-                    <TableHead>
-                      {renderColumnHeader("jobTitle", "Job Title")}
-                    </TableHead>
-                    <TableHead>
-                      {renderColumnHeader("relationshipToYou", "Relationship")}
-                    </TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead>{renderColumnHeader("name", "Name")}</TableHead>
+                    <TableHead>{renderColumnHeader("organization", "Organization")}</TableHead>
+                    <TableHead>{renderColumnHeader("jobTitle", "Job Title")}</TableHead>
+                    <TableHead>{renderColumnHeader("relationshipToYou", "Relationship")}</TableHead>
+                    <TableHead className="w-[50px]" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedPeople.map((person) => (
-                    <TableRow key={person.id}>
-                      <TableCell className="font-medium">{person.name}</TableCell>
-                      <TableCell>{person.organization || "—"}</TableCell>
-                      <TableCell>{person.jobTitle || "—"}</TableCell>
-                      <TableCell>{getUserRelationshipNameById(person.relationshipToYou) || "—"}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setEditingContact(person)}
-                        >
-                          <Settings2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {paginatedPeople.map((person: any) => {
+                    const relationshipName = getUserRelationshipNameById(person.relationshipToYou);
+                    console.log("Rendering person:", person.name, "relationship:", person.relationshipToYou, "->", relationshipName);
+                    return (
+                      <TableRow key={person.id}>
+                        <TableCell className="font-medium">{person.name}</TableCell>
+                        <TableCell>{person.organization || "—"}</TableCell>
+                        <TableCell>{person.jobTitle || "—"}</TableCell>
+                        <TableCell>{relationshipName || "—"}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setEditingContact(person)}
+                          >
+                            <Settings2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>

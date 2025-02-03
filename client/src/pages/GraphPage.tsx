@@ -72,12 +72,13 @@ export default function GraphPage({ params }: Props) {
     setLocation("/");
   };
 
-  // Prepare nodes with proper type information
-  const preparedNodes = (people || []).map(person => ({
-    ...person,
-    // Ensure relationshipToYou is always present
-    relationshipToYou: person.relationshipToYou || 1, // Default to "Acquainted" if not set
-  }));
+  const preparedNodes = (people || []).map(person => {
+    console.log("Processing node:", person.name, "relationshipToYou:", person.relationshipToYou);
+    return {
+      ...person,
+      relationshipToYou: person.relationshipToYou !== undefined ? person.relationshipToYou : 1
+    };
+  });
 
   const graphComponent = (
     <NetworkGraph

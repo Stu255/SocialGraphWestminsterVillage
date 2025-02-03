@@ -60,7 +60,8 @@ const USER_RELATIONSHIP_ICONS = {
 };
 
 const getUserRelationshipIcon = (relationshipType: number | undefined) => {
-  const type = typeof relationshipType === 'number' ? relationshipType : 1;
+  const type = relationshipType ?? 1;
+  console.log("Getting icon for relationship type:", type);
 
   switch (type) {
     case 5:
