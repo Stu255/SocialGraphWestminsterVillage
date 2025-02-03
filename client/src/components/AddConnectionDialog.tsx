@@ -61,7 +61,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
   });
 
   const { data: connections = [] } = useQuery<Connection[]>({
-    queryKey: ["/api/relationships", graphId],
+    queryKey: ["/api/connections", graphId],
     enabled: !!graphId,
   });
 
@@ -115,10 +115,10 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/connections", graphId] });
       toast({ title: "Success", description: "Connection updated" });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({ 
         title: "Error", 
         description: error.message || "Failed to update connection",
@@ -127,7 +127,6 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
     }
   });
 
-  // Get current connection between two contacts
   const getCurrentConnection = (targetPersonId: number) => {
     const connection = connections.find(c => 
       (c.sourcePersonId === selectedPerson?.id && c.targetPersonId === targetPersonId) ||
@@ -165,8 +164,9 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
               <TableHead>Name</TableHead>
               <TableHead>Organization</TableHead>
               <TableHead>Position</TableHead>
-              <TableHead>Relationship</TableHead>
+              <TableHead>Relationship to You</TableHead>
               {selectedPerson && <TableHead>Connection Type</TableHead>}
+              <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
