@@ -128,7 +128,6 @@ const getConnectionLineStyle = (connectionType: number) => {
         strokeDasharray: "4,4",
         doubleStroke: false 
       };
-    case 0: // None
     default:
       return null;
   }
@@ -202,6 +201,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
           connectionType: link.connectionType
         });
 
+        // Only filter by relationship type if specified
         if (filters.relationshipType && link.connectionType !== filters.relationshipType) {
           console.log("Link filtered - wrong type:", link);
           return false;

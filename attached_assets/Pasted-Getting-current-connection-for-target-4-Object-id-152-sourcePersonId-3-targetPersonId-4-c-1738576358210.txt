@@ -1,0 +1,33 @@
+Getting current connection for target 4 : 
+Object {id: 152, sourcePersonId: 3, targetPersonId: 4, connectionType: 5, graphId: 2, …}
+Found connection type: 
+Object {id: 5, name: "Allied", style: "heavy-line", description: "Heavy solid line indicating strongest connection"}
+Checking connections: 
+(26) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Getting current connection for target 17 : 
+Object {id: 126, sourcePersonId: 3, targetPersonId: 17, connectionType: 5, graphId: 2, …}
+Found connection type: 
+Object {id: 5, name: "Allied", style: "heavy-line", description: "Heavy solid line indicating strongest connection"}
+Checking connections: 
+(26) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Getting current connection for target 11 : 
+Object {id: 98, sourcePersonId: 3, targetPersonId: 11, connectionType: 3, graphId: 2, …}
+Found connection type: 
+Object {id: 3, name: "Close", style: "standard-line", description: "Standard solid line indicating regular connection"}
+Checking connections: 
+(26) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Getting current connection for target 6 : 
+Object {id: 59, sourcePersonId: 6, targetPersonId: 3, connectionType: 5, graphId: 2, …}
+Found connection type: 
+Object {id: 5, name: "Allied", style: "heavy-line", description: "Heavy solid line indicating strongest connection"}
+Checking connections: 
+(26) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Getting current connection for target 8 : 
+Object {id: 61, sourcePersonId: 8, targetPersonId: 3, connectionType: null, graphId: 2, …}
+Found connection type: undefined
+Checking connections: 
+(26) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Getting current connection for target 7 : 
+Object {id: 103, sourcePersonId: 7, targetPersonId: 3, connectionType: 2, graphId: 2, …}
+Found connection type: 
+Object {id: 2, name: "Familiar", style: "thin-line", description: "Thin solid line indicating basic connection"}
