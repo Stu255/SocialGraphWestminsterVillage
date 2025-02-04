@@ -71,7 +71,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/graphs", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).send("Not logged in");
+      return res.status(401).json({ error: "Not logged in" }); // Changed to JSON response
     }
 
     try {
@@ -87,7 +87,7 @@ export function registerRoutes(app: Express): Server {
   
   app.post("/api/graphs", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).send("Not logged in");
+      return res.status(401).json({ error: "Not logged in" });
     }
 
     try {
@@ -115,7 +115,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/people", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).send("Not logged in");
+      return res.status(401).json({ error: "Not logged in" });
     }
 
     const { graphId } = req.query;
@@ -137,7 +137,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/people", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).send("Not logged in");
+      return res.status(401).json({ error: "Not logged in" });
     }
 
     try {
@@ -234,7 +234,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/connections", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).send("Not logged in");
+      return res.status(401).json({ error: "Not logged in" });
     }
     const { graphId } = req.query;
     if (!graphId) {
@@ -250,7 +250,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/connections", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).send("Not logged in");
+      return res.status(401).json({ error: "Not logged in" });
     }
 
     try {
@@ -320,7 +320,7 @@ export function registerRoutes(app: Express): Server {
 
   app.delete("/api/connections", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).send("Not logged in");
+      return res.status(401).json({ error: "Not logged in" });
     }
     try {
       const { sourcePersonId, targetPersonId, graphId } = req.query;
@@ -354,7 +354,7 @@ export function registerRoutes(app: Express): Server {
   
     app.delete("/api/connections/:id", async (req, res) => {
       if (!req.isAuthenticated()) {
-          return res.status(401).send("Not logged in");
+          return res.status(401).json({ error: "Not logged in" });
       }
       try {
           await db.delete(connections).where(eq(connections.id, parseInt(req.params.id)));
@@ -447,7 +447,7 @@ export function registerRoutes(app: Express): Server {
   // Add organization routes
   app.get("/api/organizations", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).send("Not logged in");
+      return res.status(401).json({ error: "Not logged in" });
     }
 
     const { graphId } = req.query;
@@ -469,7 +469,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/organizations", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).send("Not logged in");
+      return res.status(401).json({ error: "Not logged in" });
     }
 
     try {
@@ -504,7 +504,7 @@ export function registerRoutes(app: Express): Server {
 
   app.put("/api/organizations/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).send("Not logged in");
+      return res.status(401).json({ error: "Not logged in" });
     }
 
     try {
@@ -537,7 +537,7 @@ export function registerRoutes(app: Express): Server {
   // Add graph management routes
   app.put("/api/graphs/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).send("Not logged in");
+      return res.status(401).json({ error: "Not logged in" });
     }
 
     try {
@@ -563,7 +563,7 @@ export function registerRoutes(app: Express): Server {
 
     app.post("/api/graphs/:id/duplicate", async (req, res) => {
       if (!req.isAuthenticated()) {
-          return res.status(401).send("Not logged in");
+          return res.status(401).json({ error: "Not logged in" });
       }
   
       try {
@@ -598,7 +598,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/graphs/:id/delete", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).send("Not logged in");
+      return res.status(401).json({ error: "Not logged in" });
     }
 
     try {
@@ -627,7 +627,7 @@ export function registerRoutes(app: Express): Server {
   
     app.delete("/api/graphs/:id/delete-timer", async (req, res) => {
       if (!req.isAuthenticated()) {
-          return res.status(401).send("Not logged in");
+          return res.status(401).json({ error: "Not logged in" });
       }
   
       try {
@@ -648,11 +648,11 @@ export function registerRoutes(app: Express): Server {
           console.error("Error canceling delete timer:", error);
           res.status(500).json({ error: "Failed to cancel delete timer" });
       }
-  });
+    });
 
   app.delete("/api/graphs/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).send("Not logged in");
+      return res.status(401).json({ error: "Not logged in" });
     }
 
     try {

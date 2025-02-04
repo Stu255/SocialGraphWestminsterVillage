@@ -36,7 +36,14 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newGraphName }),
       });
-      if (!res.ok) throw new Error("Failed to create graph");
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ 
+          error: `HTTP error! status: ${res.status}` 
+        }));
+        throw new Error(errorData.error || "Failed to create graph");
+      }
+
       return res.json();
     },
     onSuccess: () => {
@@ -45,6 +52,13 @@ export default function Home() {
       toast({
         title: "Success",
         description: "Graph created successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create graph",
+        variant: "destructive",
       });
     },
   });
