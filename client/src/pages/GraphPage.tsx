@@ -29,7 +29,6 @@ interface Props {
 export default function GraphPage({ params }: Props) {
   const isMobile = useMobile();
   const [, setLocation] = useLocation();
-  const [selectedNode, setSelectedNode] = useState<any>(null);
   const [showRightSidebar, setShowRightSidebar] = useState(true);
   const [filters, setFilters] = useState({
     organization: [] as string[],
@@ -70,7 +69,7 @@ export default function GraphPage({ params }: Props) {
   });
 
   const handleNodeDeleted = () => {
-    setSelectedNode(null);
+    //setSelectedNode(null);  Removed
   };
 
   const handleHomeClick = () => {
@@ -91,7 +90,6 @@ export default function GraphPage({ params }: Props) {
         userRelationshipType: filters.userRelationshipType.length > 0 ? filters.userRelationshipType : undefined,
         connectionType: filters.connectionType.length > 0 ? filters.connectionType : undefined
       }}
-      onNodeSelect={setSelectedNode}
       graphId={graphId}
     />
   );
@@ -99,7 +97,6 @@ export default function GraphPage({ params }: Props) {
   if (isMobile) {
     return (
       <MobileLayout
-        selectedNode={selectedNode}
         nodes={preparedNodes}
         relationships={connections || []}
         filters={filters}
@@ -187,7 +184,6 @@ export default function GraphPage({ params }: Props) {
                 <div className="p-6 space-y-6">
                   <FilterPanel filters={filters} onFilterChange={setFilters} graphId={graphId} />
                   <AnalysisPanel
-                    selectedNode={selectedNode}
                     graphId={graphId}
                     onNodeDeleted={handleNodeDeleted}
                   />

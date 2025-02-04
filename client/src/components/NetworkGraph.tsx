@@ -1,9 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { USER_RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
 import { CONNECTION_TYPES } from "./ConnectionManager";
+import { NodeInfoDialog } from "./NodeInfoDialog";
 
 interface Node extends d3.SimulationNodeDatum {
   id: number;
@@ -12,6 +13,7 @@ interface Node extends d3.SimulationNodeDatum {
   relationshipToYou?: number;
   currentRole?: string;
   userRelationshipType?: number;
+  jobTitle?: string; // Added jobTitle
 }
 
 interface Link {
@@ -30,7 +32,6 @@ interface Props {
     userRelationshipType?: number[];
     connectionType?: number[];
   };
-  onNodeSelect: (node: Node | null) => void;
   graphId: number;
 }
 
@@ -53,8 +54,10 @@ const USER_RELATIONSHIP_ICONS = {
   }
 };
 
-export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: Props) {
+export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: organizations = [] } = useQuery<any[]>({
     queryKey: ["/api/organizations", graphId],
@@ -249,7 +252,10 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
         return icon.strokeDasharray;
       })
       .style("cursor", "pointer")
-      .on("click", (_event, d) => onNodeSelect(d));
+      .on("click", (_event, d) => {
+        setSelectedNode(d);
+        setDialogOpen(true);
+      });
 
     nodeGroup.append("text")
       .text(d => d.name)
@@ -271,11 +277,16 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
     return () => {
       simulation.stop();
     };
-  }, [nodes, links, filters, onNodeSelect, organizationColors]);
+  }, [nodes, links, filters, organizationColors]);
 
   return (
     <Card className="h-full w-full">
       <svg ref={svgRef} className="w-full h-full min-h-[600px]" style={{ background: "white" }} />
+      <NodeInfoDialog 
+        node={selectedNode}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
     </Card>
   );
 }
