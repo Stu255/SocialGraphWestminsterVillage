@@ -27,9 +27,9 @@ interface Props {
   nodes: Node[];
   links: Link[];
   filters: {
-    affiliation?: string;
-    userRelationshipType?: number;
-    connectionType?: number;
+    affiliation?: string[];
+    userRelationshipType?: number[];
+    connectionType?: number[];
   };
   onNodeSelect: (node: Node | null) => void;
   graphId: number;
@@ -106,8 +106,12 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
     svg.call(zoom);
 
     const filteredNodes = nodes.filter((node) => {
-      if (filters.affiliation && node.affiliation !== filters.affiliation) return false;
-      if (filters.userRelationshipType && node.relationshipToYou !== filters.userRelationshipType) return false;
+      if (filters.affiliation && filters.affiliation.length > 0) {
+        if (!filters.affiliation.includes(node.affiliation)) return false;
+      }
+      if (filters.userRelationshipType && filters.userRelationshipType.length > 0) {
+        if (!filters.userRelationshipType.includes(node.relationshipToYou || 1)) return false;
+      }
       return true;
     });
 
@@ -120,8 +124,8 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
         if (link.connectionType === 0) return false;
 
         // Apply connection type filter if specified
-        if (filters.connectionType && link.connectionType !== filters.connectionType) {
-          return false;
+        if (filters.connectionType && filters.connectionType.length > 0) {
+          if (!filters.connectionType.includes(link.connectionType)) return false;
         }
 
         const sourceNode = nodeMap.get(link.sourcePersonId);
