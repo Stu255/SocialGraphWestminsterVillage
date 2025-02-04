@@ -154,7 +154,19 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
 
       if (!style) return;
 
-      if (style.doubleStroke) {
+      if (style.tripleStroke) {
+        // Render three parallel lines with equal spacing
+        [-style.strokeGap, 0, style.strokeGap].forEach(offset => {
+          linkGroup.append("line")
+            .datum(link)
+            .attr("stroke", getEdgeColor(link.source as Node, link.target as Node))
+            .attr("stroke-opacity", 0.6)
+            .attr("stroke-width", style.strokeWidth)
+            .attr("stroke-dasharray", style.strokeDasharray)
+            .attr("transform", `translate(0, ${offset})`);
+        });
+      } else if (style.doubleStroke) {
+        // Render two parallel lines
         [-style.doubleStrokeGap/2, style.doubleStrokeGap/2].forEach(offset => {
           linkGroup.append("line")
             .datum(link)
@@ -165,6 +177,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
             .attr("transform", `translate(0, ${offset})`);
         });
       } else {
+        // Single line
         linkGroup.append("line")
           .datum(link)
           .attr("stroke", getEdgeColor(link.source as Node, link.target as Node))
@@ -259,15 +272,14 @@ const getConnectionLineStyle = (connectionType: number) => {
   // Base line weights
   const thinWeight = 1;
   const standardWeight = 2;
-  const heavyWeight = 3;
 
   switch (type.id) {
     case 5: // Allied
       return { 
-        strokeWidth: heavyWeight, 
+        strokeWidth: standardWeight, 
         strokeDasharray: "none",
-        doubleStroke: true,
-        doubleStrokeGap: heavyWeight * 3 // 9px gap for 3px lines
+        tripleStroke: true, // New property for triple lines
+        strokeGap: standardWeight * 3 // 6px gap between lines
       } as const;
     case 4: // Trusted
       return { 

@@ -71,7 +71,6 @@ function ConnectionListDialog({ open, onOpenChange }: ConnectionListDialogProps)
   // Base line weights (in pixels)
   const thinWeight = 1;
   const standardWeight = 2;
-  const heavyWeight = 3;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -90,23 +89,27 @@ function ConnectionListDialog({ open, onOpenChange }: ConnectionListDialogProps)
                 <p className="text-sm text-muted-foreground">{type.description}</p>
               </div>
               <div className={`w-24 ${
-                type.style === 'double-heavy-line' ? `h-${heavyWeight * 4} flex flex-col justify-between` : 
+                type.style === 'double-heavy-line' ? `h-${standardWeight * 8} flex flex-col justify-between` : 
                 type.style === 'double-line' ? `h-${standardWeight * 4} flex flex-col justify-between` :
                 type.style === 'standard-line' ? `h-${standardWeight} bg-foreground` :
                 type.style === 'thin-line' ? `h-${thinWeight} bg-foreground/70` :
                 type.style === 'thin-dashed-line' ? `h-0 border-t border-dashed border-foreground/50 [border-width:${thinWeight}px]` :
                 'hidden' // for "None" type
               }`}>
-                {(type.style === 'double-heavy-line' || type.style === 'double-line') && (
+                {type.style === 'double-heavy-line' ? (
+                  // Triple standard lines for Allied connections
                   <>
-                    <div className={`w-full bg-foreground ${
-                      type.style === 'double-heavy-line' ? `h-${heavyWeight}` : `h-${standardWeight}`
-                    }`} />
-                    <div className={`w-full bg-foreground ${
-                      type.style === 'double-heavy-line' ? `h-${heavyWeight}` : `h-${standardWeight}`
-                    }`} />
+                    <div className={`w-full bg-foreground h-${standardWeight}`} />
+                    <div className={`w-full bg-foreground h-${standardWeight}`} />
+                    <div className={`w-full bg-foreground h-${standardWeight}`} />
                   </>
-                )}
+                ) : type.style === 'double-line' ? (
+                  // Double standard lines for Trusted connections
+                  <>
+                    <div className={`w-full bg-foreground h-${standardWeight}`} />
+                    <div className={`w-full bg-foreground h-${standardWeight}`} />
+                  </>
+                ) : null}
               </div>
             </div>
           ))}
