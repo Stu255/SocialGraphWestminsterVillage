@@ -35,27 +35,27 @@ export function ConnectionManager({ graphId, title = "Connections" }: Connection
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="pb-1 flex-shrink-0">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2 flex-shrink-0">
         <CardTitle className="text-base font-semibold">
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-1 flex-1">
+      <CardContent className="p-2 space-y-1 flex-1">
         <Button 
-          className="w-full justify-start h-7"
+          className="w-full justify-start h-8 text-sm"
           onClick={() => setShowAddDialog(true)}
         >
           <Plus className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
-          <span className="text-xs truncate">Add Connection</span>
+          Add Connection
         </Button>
 
         <Button 
-          className="w-full justify-start h-7"
+          className="w-full justify-start h-8 text-sm"
           variant="outline"
           onClick={() => setShowListDialog(true)}
         >
           <Users className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
-          <span className="text-xs truncate">Connection Types</span>
+          Connection Types
         </Button>
 
         <AddConnectionDialog
@@ -67,12 +67,12 @@ export function ConnectionManager({ graphId, title = "Connections" }: Connection
         {showListDialog && (
           <div className="space-y-1">
             {CONNECTION_TYPES.map((type) => (
-              <div key={type.id} className="flex items-center justify-between p-1.5 rounded-lg border bg-card">
+              <div key={type.id} className="flex items-center justify-between p-2 rounded-lg border bg-card">
                 <div className="min-w-0">
-                  <h4 className="text-xs font-medium truncate">
+                  <h4 className="text-sm font-medium">
                     {type.name}
                   </h4>
-                  <p className="text-[10px] text-muted-foreground line-clamp-2">
+                  <p className="text-xs text-muted-foreground">
                     {type.description}
                   </p>
                 </div>

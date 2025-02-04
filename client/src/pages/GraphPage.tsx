@@ -127,19 +127,19 @@ export default function GraphPage({ params }: Props) {
             </div>
 
             {/* Main content section with fixed height panels */}
-            <div className="flex-1 flex flex-col p-4 gap-4">
+            <div className="flex-1 flex flex-col p-4 gap-3">
               {graph && (
-                <div className="h-[50px]">
+                <div className="h-[45px]">
                   <NetworkManager graphId={graphId} currentName={graph.name} />
                 </div>
               )}
-              <div className="h-[120px]">
+              <div className="h-[100px]">
                 <NodeForm graphId={graphId} />
               </div>
-              <div className="h-[120px]">
+              <div className="h-[100px]">
                 <OrganizationManager graphId={graphId} />
               </div>
-              <div className="h-[120px]">
+              <div className="h-[100px]">
                 <ConnectionManager graphId={graphId} title="Connections" />
               </div>
             </div>

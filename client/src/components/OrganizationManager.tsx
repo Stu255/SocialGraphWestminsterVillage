@@ -52,27 +52,27 @@ export function OrganizationManager({ graphId }: OrganizationManagerProps) {
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 flex-shrink-0">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2 flex-shrink-0">
         <CardTitle className="text-base font-semibold">
           Organizations
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-1 flex-1">
+      <CardContent className="p-2 space-y-1 flex-1">
         <Button
-          className="w-full justify-start h-7"
+          className="w-full justify-start h-8 text-sm"
           onClick={() => setShowAddDialog(true)}
         >
           <Plus className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
-          <span className="text-xs truncate">Add Organization</span>
+          Add Organization
         </Button>
 
         <Button
-          className="w-full justify-start h-7"
+          className="w-full justify-start h-8 text-sm"
           variant="outline"
           onClick={() => setShowListDialog(true)}
         >
           <Users className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
-          <span className="text-xs truncate">See Organizations</span>
+          See Organizations
         </Button>
 
         <AddOrganizationDialog
