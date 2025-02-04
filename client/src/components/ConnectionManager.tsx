@@ -65,24 +65,24 @@ export function ConnectionManager({ graphId, title = "Connections" }: Connection
 
   return (
     <Card className="h-full">
-      <CardHeader className="pb-3">
-        <CardTitle>{title}</CardTitle>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-1.5">
         <Button 
-          className="w-full justify-start"
+          className="w-full justify-start h-8 text-xs"
           onClick={() => setShowAddDialog(true)}
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-3.5 w-3.5 mr-1.5" />
           Add Connection
         </Button>
 
         <Button 
-          className="w-full justify-start"
+          className="w-full justify-start h-8 text-xs"
           variant="outline"
           onClick={() => setShowListDialog(true)}
         >
-          <Users className="h-4 w-4 mr-2" />
+          <Users className="h-3.5 w-3.5 mr-1.5" />
           Connection Types
         </Button>
 
@@ -93,12 +93,12 @@ export function ConnectionManager({ graphId, title = "Connections" }: Connection
         />
 
         {showListDialog && (
-          <div className="space-y-2 mt-2">
+          <div className="space-y-1.5 mt-1.5">
             {CONNECTION_TYPES.map((type) => (
-              <div key={type.id} className="flex items-center justify-between p-2 rounded-lg border bg-card">
+              <div key={type.id} className="flex items-center justify-between p-1.5 rounded-lg border bg-card">
                 <div>
-                  <h4 className="font-medium text-sm">{type.name}</h4>
-                  <p className="text-xs text-muted-foreground">{type.description}</p>
+                  <h4 className="text-xs font-medium">{type.name}</h4>
+                  <p className="text-[10px] text-muted-foreground">{type.description}</p>
                 </div>
               </div>
             ))}
