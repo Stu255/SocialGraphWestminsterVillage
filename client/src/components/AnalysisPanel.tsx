@@ -58,6 +58,32 @@ export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }: Analysis
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+
+  // Query hooks moved to top level
+  const { data: connections = [] } = useQuery({
+    queryKey: ["/api/connections", graphId],
+    enabled: !!graphId,
+  });
+
+  const { data: centrality } = useQuery({
+    queryKey: ["/api/analysis/centrality", graphId],
+  });
+
+  const { data: fieldPreferences } = useQuery({
+    queryKey: ["/api/field-preferences", graphId],
+    enabled: !!graphId,
+  });
+
+  const { data: nodes = [] } = useQuery({
+    queryKey: ["/api/people", graphId],
+    enabled: !!graphId,
+  });
+
+  const { data: organizations = [] } = useQuery({
+    queryKey: ["/api/organizations", graphId],
+    enabled: !!graphId,
+  });
+
   const form = useForm({
     defaultValues: {
       name: "",
@@ -168,21 +194,6 @@ export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }: Analysis
     );
   };
 
-  const { data: fieldPreferences } = useQuery({
-    queryKey: ["/api/field-preferences", graphId],
-    enabled: !!graphId,
-  });
-
-  const { data: nodes = [] } = useQuery({
-    queryKey: ["/api/people", graphId],
-    enabled: !!graphId,
-  });
-
-  const { data: organizations = [] } = useQuery({
-    queryKey: ["/api/organizations", graphId],
-    enabled: !!graphId,
-  });
-
   const getOrganizationColor = () => {
     const org = organizations.find((o: any) => o.name === selectedNode?.organization);
     return org?.brandColor || 'hsl(var(--primary))';
@@ -191,11 +202,6 @@ export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }: Analysis
   const visibleFields = fieldPreferences?.order?.filter(
     (field: string) => !fieldPreferences?.hidden?.includes(field)
   ) || Object.keys(FIELD_LABELS);
-
-  const { data: centrality } = useQuery({
-    queryKey: ["/api/analysis/centrality", graphId],
-    enabled: !!nodes.length,
-  });
 
   const topPeople = centrality
     ?.sort((a: any, b: any) => b.centrality - a.centrality)
@@ -212,6 +218,23 @@ export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }: Analysis
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
       if (onNodeDeleted) onNodeDeleted();
+    },
+  });
+
+  const deleteConnectionMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/connections/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error("Failed to delete connection");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/connections", graphId] });
+      toast({
+        title: "Success",
+        description: "Connection deleted successfully",
+      });
     },
   });
 
@@ -253,10 +276,6 @@ export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }: Analysis
   }
 
   const nodeMetrics = centrality?.find((c: any) => c.id === selectedNode.id);
-  const { data: connections = [] } = useQuery({
-    queryKey: ["/api/connections", graphId],
-    enabled: !!graphId,
-  });
 
   const nodeConnections = connections.filter((r: any) =>
     r.sourcePersonId === selectedNode?.id ||
