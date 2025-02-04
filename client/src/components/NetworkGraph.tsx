@@ -8,7 +8,6 @@ import { CONNECTION_TYPES } from "./ConnectionManager";
 interface Node extends d3.SimulationNodeDatum {
   id: number;
   name: string;
-  affiliation: string;
   organization?: string;
   relationshipToYou?: number;
   currentRole?: string;
@@ -27,7 +26,7 @@ interface Props {
   nodes: Node[];
   links: Link[];
   filters: {
-    affiliation?: string[];
+    organization?: string[];
     userRelationshipType?: number[];
     connectionType?: number[];
   };
@@ -106,9 +105,12 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
     svg.call(zoom);
 
     const filteredNodes = nodes.filter((node) => {
-      if (filters.affiliation && filters.affiliation.length > 0) {
-        if (!filters.affiliation.includes(node.affiliation)) return false;
+      // Apply organization filter
+      if (filters.organization && filters.organization.length > 0) {
+        if (!filters.organization.includes(node.organization || '')) return false;
       }
+
+      // Apply relationship type filter
       if (filters.userRelationshipType && filters.userRelationshipType.length > 0) {
         if (!filters.userRelationshipType.includes(node.relationshipToYou || 1)) return false;
       }
@@ -128,6 +130,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
           if (!filters.connectionType.includes(link.connectionType)) return false;
         }
 
+        // Only include links where both nodes are visible
         const sourceNode = nodeMap.get(link.sourcePersonId);
         const targetNode = nodeMap.get(link.targetPersonId);
         return sourceNode && targetNode;
