@@ -256,40 +256,45 @@ const getConnectionLineStyle = (connectionType: number) => {
   const type = CONNECTION_TYPES.find(t => t.id === connectionType);
   if (!type) return null;
 
+  // Base line weights
+  const thinWeight = 1;
+  const standardWeight = 2;
+  const heavyWeight = 3;
+
   switch (type.id) {
-    case 5: 
+    case 5: // Allied
       return { 
-        strokeWidth: 3, 
+        strokeWidth: heavyWeight, 
         strokeDasharray: "none",
         doubleStroke: true,
-        doubleStrokeGap: 4 
+        doubleStrokeGap: heavyWeight * 3 // 9px gap for 3px lines
       } as const;
-    case 4: 
+    case 4: // Trusted
       return { 
-        strokeWidth: 2.5, 
+        strokeWidth: standardWeight, 
         strokeDasharray: "none",
         doubleStroke: true,
-        doubleStrokeGap: 3
+        doubleStrokeGap: standardWeight * 3 // 6px gap for 2px lines
       } as const;
-    case 3: 
+    case 3: // Close
       return { 
-        strokeWidth: 2, 
+        strokeWidth: standardWeight, 
         strokeDasharray: "none",
         doubleStroke: false
       } as const;
-    case 2: 
+    case 2: // Familiar
       return { 
-        strokeWidth: 1.5, 
+        strokeWidth: thinWeight, 
         strokeDasharray: "none",
         doubleStroke: false
       } as const;
-    case 1: 
+    case 1: // Acquainted
       return { 
-        strokeWidth: 1, 
+        strokeWidth: thinWeight, 
         strokeDasharray: "4,4",
         doubleStroke: false
       } as const;
-    case 0: 
+    case 0: // None
     default:
       return null;
   }

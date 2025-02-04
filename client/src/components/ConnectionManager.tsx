@@ -11,15 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { AddConnectionDialog } from "./AddConnectionDialog";
 
-/**
- * Constants defining the connection types between contacts
- * 
- * Contact Connections (Edge Lines):
- * - Represents frequency and strength of contact between people
- * - Values 0-5, displayed as different line styles
- * - Includes "None" (0) for no meaningful connection
- */
-
 // Define connection types (for edge lines)
 export const CONNECTION_TYPES = [
   { 
@@ -77,6 +68,11 @@ interface ConnectionListDialogProps {
 }
 
 function ConnectionListDialog({ open, onOpenChange }: ConnectionListDialogProps) {
+  // Base line weights (in pixels)
+  const thinWeight = 1;
+  const standardWeight = 2;
+  const heavyWeight = 3;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -94,17 +90,21 @@ function ConnectionListDialog({ open, onOpenChange }: ConnectionListDialogProps)
                 <p className="text-sm text-muted-foreground">{type.description}</p>
               </div>
               <div className={`w-24 ${
-                type.style === 'double-heavy-line' ? 'h-4 flex flex-col justify-between' : 
-                type.style === 'double-line' ? 'h-3 flex flex-col justify-between' :
-                type.style === 'standard-line' ? 'h-1 bg-foreground' :
-                type.style === 'thin-line' ? 'h-px bg-foreground/70' :
-                type.style === 'thin-dashed-line' ? 'h-0 border-t border-dashed border-foreground/50 [border-width:0.5px]' :
+                type.style === 'double-heavy-line' ? `h-${heavyWeight * 4} flex flex-col justify-between` : 
+                type.style === 'double-line' ? `h-${standardWeight * 4} flex flex-col justify-between` :
+                type.style === 'standard-line' ? `h-${standardWeight} bg-foreground` :
+                type.style === 'thin-line' ? `h-${thinWeight} bg-foreground/70` :
+                type.style === 'thin-dashed-line' ? `h-0 border-t border-dashed border-foreground/50 [border-width:${thinWeight}px]` :
                 'hidden' // for "None" type
               }`}>
                 {(type.style === 'double-heavy-line' || type.style === 'double-line') && (
                   <>
-                    <div className={`w-full bg-foreground ${type.style === 'double-heavy-line' ? 'h-1.5' : 'h-0.5'}`} />
-                    <div className={`w-full bg-foreground ${type.style === 'double-heavy-line' ? 'h-1.5' : 'h-0.5'}`} />
+                    <div className={`w-full bg-foreground ${
+                      type.style === 'double-heavy-line' ? `h-${heavyWeight}` : `h-${standardWeight}`
+                    }`} />
+                    <div className={`w-full bg-foreground ${
+                      type.style === 'double-heavy-line' ? `h-${heavyWeight}` : `h-${standardWeight}`
+                    }`} />
                   </>
                 )}
               </div>
