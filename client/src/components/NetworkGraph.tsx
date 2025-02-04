@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { USER_RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
 import { CONNECTION_TYPES } from "./ConnectionManager";
 import { ContactFormDialog } from "./ContactFormDialog";
-import { ContactListDialog } from "./ContactListDialog";
+import { AddConnectionDialog } from "./AddConnectionDialog";
 
 interface Node extends d3.SimulationNodeDatum {
   id: number;
@@ -259,8 +259,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
         setDialogOpen(true);
       })
       .on("contextmenu", (event, d) => {
-        event.preventDefault(); 
-        setSelectedNode(d);
+        event.preventDefault();
         setConnectionsDialogOpen(true);
       });
 
@@ -308,8 +307,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
             />
           )}
           {connectionsDialogOpen && (
-            <ContactListDialog
-              contact={selectedNode}
+            <AddConnectionDialog
               open={connectionsDialogOpen}
               onOpenChange={(open) => {
                 setConnectionsDialogOpen(open);
