@@ -78,31 +78,26 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
         graphId
       });
 
-      try {
-        const response = await fetch(`/api/connections`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            graphId,
-            connectionType,
-            sourcePersonId: sourceId,
-            targetPersonId: targetId
-          })
-        });
+      const res = await fetch(`/api/connections`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          graphId,
+          connectionType,
+          sourcePersonId: sourceId,
+          targetPersonId: targetId
+        })
+      });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          throw new Error(
-            errorData?.error || 
-            `Failed to update connection: ${response.status} ${response.statusText}`
-          );
-        }
-
-        return await response.json();
-      } catch (error) {
-        console.error("Connection update error:", error);
-        throw error;
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(
+          errorData?.error || 
+          `Failed to update connection: ${res.status} ${res.statusText}`
+        );
       }
+
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/connections", graphId] });
@@ -118,9 +113,10 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
   });
 
   const getCurrentConnection = (targetPersonId: number) => {
+    if (!selectedPerson) return 0;
     const connection = connections.find(c => 
-      (c.sourcePersonId === selectedPerson?.id && c.targetPersonId === targetPersonId) ||
-      (c.sourcePersonId === targetPersonId && c.targetPersonId === selectedPerson?.id)
+      (c.sourcePersonId === selectedPerson.id && c.targetPersonId === targetPersonId) ||
+      (c.sourcePersonId === targetPersonId && c.targetPersonId === selectedPerson.id)
     );
     return connection?.connectionType ?? 0;
   };
@@ -173,10 +169,12 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
                       <Select
                         value={String(getCurrentConnection(person.id))}
                         onValueChange={(value) => {
+                          const connectionType = parseInt(value, 10);
+                          console.log("Setting connection type:", connectionType);
                           updateConnection.mutate({
                             sourceId: selectedPerson.id,
                             targetId: person.id,
-                            connectionType: Number(value)
+                            connectionType
                           });
                         }}
                       >
