@@ -48,7 +48,13 @@ const FIELD_LABELS: Record<string, string> = {
   notes: "Notes"
 };
 
-export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }) {
+interface AnalysisPanelProps {
+  selectedNode: any;
+  graphId: number;
+  onNodeDeleted: () => void;
+}
+
+export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }: AnalysisPanelProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
@@ -137,23 +143,7 @@ export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }) {
             <FormItem>
               <FormLabel>{FIELD_LABELS[fieldName]}</FormLabel>
               <FormControl>
-                {fieldName === "userRelationshipType" ? (
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select relationship type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {USER_RELATIONSHIP_TYPES.map(type => (
-                        <SelectItem key={type.id} value={type.name}>
-                          {type.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : fieldName === "notes" ? (
+                {fieldName === "notes" ? (
                   <Textarea {...field} />
                 ) : (
                   <Input {...field} />
@@ -188,11 +178,6 @@ export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }) {
     enabled: !!graphId,
   });
 
-  const { data: relationships = [] } = useQuery({
-    queryKey: ["/api/relationships", graphId],
-    enabled: !!graphId,
-  });
-
   const { data: organizations = [] } = useQuery({
     queryKey: ["/api/organizations", graphId],
     enabled: !!graphId,
@@ -203,8 +188,8 @@ export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }) {
     return org?.brandColor || 'hsl(var(--primary))';
   };
 
-  const visibleFields = fieldPreferences?.order.filter(
-    field => !fieldPreferences?.hidden.includes(field)
+  const visibleFields = fieldPreferences?.order?.filter(
+    (field: string) => !fieldPreferences?.hidden?.includes(field)
   ) || Object.keys(FIELD_LABELS);
 
   const { data: centrality } = useQuery({
@@ -226,21 +211,7 @@ export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
       if (onNodeDeleted) onNodeDeleted();
-    },
-  });
-
-  const deleteConnectionMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const res = await fetch(`/api/relationships/${id}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error("Failed to delete connection");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/relationships", graphId] });
     },
   });
 
@@ -253,7 +224,6 @@ export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }) {
     }
     updatePersonMutation.mutate(data);
   };
-
 
   if (!selectedNode) {
     return (
@@ -282,17 +252,13 @@ export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }) {
     );
   }
 
-  const onNodeDeleted = () => {
-    queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
-  };
-
   const nodeMetrics = centrality?.find((c: any) => c.id === selectedNode.id);
   const { data: connections = [] } = useQuery({
     queryKey: ["/api/connections", graphId],
     enabled: !!graphId,
   });
 
-  const nodeConnections = connections.filter(r =>
+  const nodeConnections = connections.filter((r: any) =>
     r.sourcePersonId === selectedNode?.id ||
     r.targetPersonId === selectedNode?.id
   );
@@ -397,7 +363,7 @@ export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }) {
         <CardContent>
           <div className="space-y-2">
             {nodeConnections.map(rel => {
-              const otherNode = nodes.find(n =>
+              const otherNode = nodes.find((n: any) =>
                 n.id === (rel.sourcePersonId === selectedNode.id ?
                   rel.targetPersonId :
                   rel.sourcePersonId
