@@ -14,6 +14,13 @@ interface Node extends d3.SimulationNodeDatum {
   currentRole?: string;
   userRelationshipType?: number;
   jobTitle?: string;
+  officeNumber?: string;
+  mobileNumber?: string;
+  email1?: string;
+  email2?: string;
+  linkedin?: string;
+  twitter?: string;
+  notes?: string;
 }
 
 interface Link {
@@ -225,7 +232,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
       .attr("transform", d => {
         const icon = getUserRelationshipIcon(d.relationshipToYou);
         const yOffset = icon.viewBox === "0 -6 24 36" ? -15 : 
-                      icon.viewBox === "0 0 24 32" ? -16 : -12;
+                     icon.viewBox === "0 0 24 32" ? -16 : -12;
         return `translate(-12, ${yOffset}) scale(1)`;
       })
       .attr("fill", d => {
@@ -240,7 +247,21 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
       })
       .style("cursor", "pointer")
       .on("click", (_event, d) => {
-        setSelectedNode(d);
+        const contact = {
+          id: d.id,
+          name: d.name,
+          organization: d.organization,
+          jobTitle: d.jobTitle,
+          relationshipToYou: d.relationshipToYou,
+          officeNumber: d.officeNumber,
+          mobileNumber: d.mobileNumber,
+          email1: d.email1,
+          email2: d.email2,
+          linkedin: d.linkedin,
+          twitter: d.twitter,
+          notes: d.notes
+        };
+        setSelectedNode(contact);
         setDialogOpen(true);
       });
 
@@ -269,12 +290,17 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
   return (
     <Card className="h-full w-full">
       <svg ref={svgRef} className="w-full h-full min-h-[600px]" style={{ background: "white" }} />
-      <ContactFormDialog 
-        contact={selectedNode}
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        graphId={graphId}
-      />
+      {selectedNode && (
+        <ContactFormDialog 
+          contact={selectedNode}
+          open={dialogOpen}
+          onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) setSelectedNode(null);
+          }}
+          graphId={graphId}
+        />
+      )}
     </Card>
   );
 }
