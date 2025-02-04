@@ -125,7 +125,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
       }
 
       if (filters.userRelationshipType && filters.userRelationshipType.length > 0) {
-        if (!filters.userRelationshipType.includes(node.relationshipToYou || 1)) return false;
+        if (!filters.userRelationshipType.includes(node.userRelationshipType || 1)) return false;
       }
       return true;
     });
@@ -222,27 +222,27 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
 
     nodeGroup.append("path")
       .attr("d", d => {
-        const icon = getUserRelationshipIcon(d.relationshipToYou);
+        const icon = getUserRelationshipIcon(d.userRelationshipType);
         return icon.path;
       })
       .attr("viewBox", d => {
-        const icon = getUserRelationshipIcon(d.relationshipToYou);
+        const icon = getUserRelationshipIcon(d.userRelationshipType);
         return icon.viewBox;
       })
       .attr("transform", d => {
-        const icon = getUserRelationshipIcon(d.relationshipToYou);
+        const icon = getUserRelationshipIcon(d.userRelationshipType);
         const yOffset = icon.viewBox === "0 -6 24 36" ? -15 : 
                      icon.viewBox === "0 0 24 32" ? -16 : -12;
         return `translate(-12, ${yOffset}) scale(1)`;
       })
       .attr("fill", d => {
-        const icon = getUserRelationshipIcon(d.relationshipToYou);
+        const icon = getUserRelationshipIcon(d.userRelationshipType);
         return icon.fill ? getNodeColor(d) : "white";
       })
       .attr("stroke", d => getNodeColor(d))
       .attr("stroke-width", 1.5)
       .attr("stroke-dasharray", d => {
-        const icon = getUserRelationshipIcon(d.relationshipToYou);
+        const icon = getUserRelationshipIcon(d.userRelationshipType);
         return icon.strokeDasharray;
       })
       .style("cursor", "pointer")
@@ -252,7 +252,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
           name: d.name,
           organization: d.organization,
           jobTitle: d.jobTitle,
-          relationshipToYou: d.relationshipToYou,
+          relationshipToYou: d.userRelationshipType,
           officeNumber: d.officeNumber,
           mobileNumber: d.mobileNumber,
           email1: d.email1,
