@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { USER_RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
 import { CONNECTION_TYPES } from "./ConnectionManager";
-import { NodeInfoDialog } from "./NodeInfoDialog";
+import { ContactFormDialog } from "./ContactFormDialog";
 
 interface Node extends d3.SimulationNodeDatum {
   id: number;
@@ -13,7 +13,7 @@ interface Node extends d3.SimulationNodeDatum {
   relationshipToYou?: number;
   currentRole?: string;
   userRelationshipType?: number;
-  jobTitle?: string; // Added jobTitle
+  jobTitle?: string;
 }
 
 interface Link {
@@ -108,20 +108,15 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
     svg.call(zoom);
 
     const filteredNodes = nodes.filter((node) => {
-      // Apply organization filter
       if (filters.organization && filters.organization.length > 0) {
         const nodeOrg = node.organization || '';
         if (filters.organization.includes('__none__')) {
-          // If "No Organisation Recorded" is selected, include nodes with no organization
-          // along with nodes from other selected organizations
           return nodeOrg === '' || !nodeOrg || filters.organization.includes(nodeOrg);
         } else {
-          // Only include nodes from selected organizations
           return filters.organization.includes(nodeOrg);
         }
       }
 
-      // Apply relationship type filter
       if (filters.userRelationshipType && filters.userRelationshipType.length > 0) {
         if (!filters.userRelationshipType.includes(node.relationshipToYou || 1)) return false;
       }
@@ -130,18 +125,14 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
 
     const nodeMap = new Map(filteredNodes.map(node => [node.id, node]));
 
-    // Filter and process links
     const processedLinks = links
       .filter(link => {
-        // Only show links if connection type is greater than 0 (not None)
         if (link.connectionType === 0) return false;
 
-        // Apply connection type filter if specified
         if (filters.connectionType && filters.connectionType.length > 0) {
           if (!filters.connectionType.includes(link.connectionType)) return false;
         }
 
-        // Only include links where both nodes are visible
         const sourceNode = nodeMap.get(link.sourcePersonId);
         const targetNode = nodeMap.get(link.targetPersonId);
         return sourceNode && targetNode;
@@ -162,7 +153,6 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collision", d3.forceCollide().radius(30));
 
-    // Render links with appropriate styles
     const linkGroup = g.append("g")
       .attr("class", "links");
 
@@ -173,7 +163,6 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
       if (!style) return;
 
       if (style.tripleStroke) {
-        // Render three parallel lines with equal spacing
         [-style.strokeGap, 0, style.strokeGap].forEach(offset => {
           linkGroup.append("line")
             .datum(link)
@@ -184,7 +173,6 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
             .attr("transform", `translate(0, ${offset})`);
         });
       } else if (style.doubleStroke) {
-        // Render two parallel lines
         [-style.doubleStrokeGap/2, style.doubleStrokeGap/2].forEach(offset => {
           linkGroup.append("line")
             .datum(link)
@@ -195,7 +183,6 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
             .attr("transform", `translate(0, ${offset})`);
         });
       } else {
-        // Single line
         linkGroup.append("line")
           .datum(link)
           .attr("stroke", getEdgeColor(link.source as Node, link.target as Node))
@@ -282,10 +269,11 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
   return (
     <Card className="h-full w-full">
       <svg ref={svgRef} className="w-full h-full min-h-[600px]" style={{ background: "white" }} />
-      <NodeInfoDialog 
-        node={selectedNode}
+      <ContactFormDialog 
+        contact={selectedNode}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        graphId={graphId}
       />
     </Card>
   );
@@ -295,44 +283,43 @@ const getConnectionLineStyle = (connectionType: number) => {
   const type = CONNECTION_TYPES.find(t => t.id === connectionType);
   if (!type) return null;
 
-  // Base line weights
   const thinWeight = 1;
   const standardWeight = 2;
 
   switch (type.id) {
-    case 5: // Allied
+    case 5: 
       return { 
         strokeWidth: standardWeight, 
         strokeDasharray: "none",
-        tripleStroke: true, // New property for triple lines
-        strokeGap: standardWeight * 3 // 6px gap between lines
+        tripleStroke: true, 
+        strokeGap: standardWeight * 3 
       } as const;
-    case 4: // Trusted
+    case 4: 
       return { 
         strokeWidth: standardWeight, 
         strokeDasharray: "none",
         doubleStroke: true,
-        doubleStrokeGap: standardWeight * 3 // 6px gap for 2px lines
+        doubleStrokeGap: standardWeight * 3 
       } as const;
-    case 3: // Close
+    case 3: 
       return { 
         strokeWidth: standardWeight, 
         strokeDasharray: "none",
         doubleStroke: false
       } as const;
-    case 2: // Familiar
+    case 2: 
       return { 
         strokeWidth: thinWeight, 
         strokeDasharray: "none",
         doubleStroke: false
       } as const;
-    case 1: // Acquainted
+    case 1: 
       return { 
         strokeWidth: thinWeight, 
         strokeDasharray: "4,4",
         doubleStroke: false
       } as const;
-    case 0: // None
+    case 0: 
     default:
       return null;
   }
