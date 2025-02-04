@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Plus } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { AddConnectionDialog } from "./AddConnectionDialog";
 
 // Define connection types (for edge lines)
@@ -34,18 +34,18 @@ export function ConnectionManager({ graphId, title = "Connections" }: Connection
   const [showAddDialog, setShowAddDialog] = useState(false);
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2 flex-shrink-0">
+    <Card className="h-full">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 py-1.5 px-3">
         <CardTitle className="text-base font-semibold">
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-2 space-y-1 flex-1">
+      <CardContent className="px-3 pb-3 pt-0 space-y-2">
         <Button 
           className="w-full justify-start h-8 text-sm"
           onClick={() => setShowAddDialog(true)}
         >
-          <Plus className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+          <Plus className="h-4 w-4 mr-2" />
           Add Connection
         </Button>
 
@@ -54,7 +54,7 @@ export function ConnectionManager({ graphId, title = "Connections" }: Connection
           variant="outline"
           onClick={() => setShowListDialog(true)}
         >
-          <Users className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+          <Users className="h-4 w-4 mr-2" />
           Connection Types
         </Button>
 
@@ -65,7 +65,7 @@ export function ConnectionManager({ graphId, title = "Connections" }: Connection
         />
 
         {showListDialog && (
-          <div className="space-y-1">
+          <div className="space-y-2">
             {CONNECTION_TYPES.map((type) => (
               <div key={type.id} className="flex items-center justify-between p-2 rounded-lg border bg-card">
                 <div className="min-w-0">

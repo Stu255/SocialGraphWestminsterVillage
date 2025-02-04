@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Users } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { AddOrganizationDialog } from "./AddOrganizationDialog";
 import { OrganizationListDialog } from "./OrganizationListDialog";
 
@@ -15,54 +13,19 @@ export function OrganizationManager({ graphId }: OrganizationManagerProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showListDialog, setShowListDialog] = useState(false);
 
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: async (values: any) => {
-      const res = await fetch("/api/organizations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, graph_id: graphId }),
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || "Failed to create organization");
-      }
-
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/organizations", graphId] });
-      setShowAddDialog(false);
-      toast({
-        title: "Success",
-        description: "Organization added successfully",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2 flex-shrink-0">
+    <Card className="h-full">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 py-1.5 px-3">
         <CardTitle className="text-base font-semibold">
           Organizations
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-2 space-y-1 flex-1">
+      <CardContent className="px-3 pb-3 pt-0 space-y-2">
         <Button
           className="w-full justify-start h-8 text-sm"
           onClick={() => setShowAddDialog(true)}
         >
-          <Plus className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+          <Plus className="h-4 w-4 mr-2" />
           Add Organization
         </Button>
 
@@ -71,7 +34,7 @@ export function OrganizationManager({ graphId }: OrganizationManagerProps) {
           variant="outline"
           onClick={() => setShowListDialog(true)}
         >
-          <Users className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+          <Users className="h-4 w-4 mr-2" />
           See Organizations
         </Button>
 

@@ -15,19 +15,19 @@ export function NodeForm({ graphId }: NodeFormProps) {
   const [showListDialog, setShowListDialog] = useState(false);
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2 flex-shrink-0">
+    <Card className="h-full">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 py-1.5 px-3">
         <CardTitle className="text-base font-semibold">
           People
         </CardTitle>
         <FieldSettingsDialog graphId={graphId} />
       </CardHeader>
-      <CardContent className="p-2 space-y-1 flex-1">
+      <CardContent className="px-3 pb-3 pt-0 space-y-2">
         <Button 
           className="w-full justify-start h-8 text-sm"
           onClick={() => setShowAddDialog(true)}
         >
-          <Plus className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+          <Plus className="h-4 w-4 mr-2" />
           Add Person
         </Button>
 
@@ -36,7 +36,7 @@ export function NodeForm({ graphId }: NodeFormProps) {
           variant="outline"
           onClick={() => setShowListDialog(true)}
         >
-          <Users className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+          <Users className="h-4 w-4 mr-2" />
           See People
         </Button>
 

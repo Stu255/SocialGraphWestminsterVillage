@@ -114,7 +114,6 @@ export default function GraphPage({ params }: Props) {
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={20} minSize={20} maxSize={20}>
           <div className="h-full flex flex-col">
-            {/* Header section for navigation buttons */}
             <div className="p-4 border-b flex items-center gap-2">
               <Button
                 variant="outline"
@@ -126,7 +125,6 @@ export default function GraphPage({ params }: Props) {
               </Button>
             </div>
 
-            {/* Main content section with fixed height panels */}
             <div className="flex-1 flex flex-col p-4 gap-3">
               {graph && (
                 <div className="h-[45px]">
