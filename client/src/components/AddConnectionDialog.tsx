@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
 import { CONNECTION_TYPES, getConnectionNameById } from "./ConnectionManager";
 import { useToast } from "@/hooks/use-toast";
 import { getUserRelationshipNameById } from "./RelationshipTypeManager";
@@ -50,8 +50,19 @@ interface Props {
   graphId: number;
 }
 
+type SortField = "name" | "organization" | "jobTitle" | "relationshipToYou";
+type SortDirection = "asc" | "desc";
+
 export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [filters, setFilters] = useState({
+    name: "",
+    organization: "",
+    jobTitle: "",
+    relationshipToYou: "",
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -144,6 +155,49 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
     return connection?.connectionType ?? 0;
   };
 
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="ml-2 h-4 w-4" />;
+    return sortDirection === "asc" ? (
+      <ChevronUp className="ml-2 h-4 w-4" />
+    ) : (
+      <ChevronDown className="ml-2 h-4 w-4" />
+    );
+  };
+
+  const filteredAndSortedPeople = people
+    .filter(person => person.id !== selectedPerson?.id)
+    .filter(person => {
+      return (
+        person.name.toLowerCase().includes(filters.name.toLowerCase()) &&
+        (person.organization || "").toLowerCase().includes(filters.organization.toLowerCase()) &&
+        (person.jobTitle || "").toLowerCase().includes(filters.jobTitle.toLowerCase()) &&
+        (filters.relationshipToYou === "" || 
+         getUserRelationshipNameById(person.relationshipToYou).toLowerCase().includes(filters.relationshipToYou.toLowerCase()))
+      );
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      if (sortField === "name") {
+        comparison = a.name.localeCompare(b.name);
+      } else if (sortField === "organization") {
+        comparison = (a.organization || "").localeCompare(b.organization || "");
+      } else if (sortField === "jobTitle") {
+        comparison = (a.jobTitle || "").localeCompare(b.jobTitle || "");
+      } else if (sortField === "relationshipToYou") {
+        comparison = a.relationshipToYou - b.relationshipToYou;
+      }
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px]">
@@ -167,21 +221,59 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Organization</TableHead>
-              <TableHead>Position</TableHead>
-              <TableHead>Relationship to You</TableHead>
-              {selectedPerson && <TableHead>Connection Type</TableHead>}
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {people
-              .filter(person => person.id !== selectedPerson?.id)
-              .map((person) => (
+        <div className="space-y-4">
+          <div className="grid grid-cols-4 gap-2">
+            <input
+              type="text"
+              placeholder="Filter by name"
+              className="px-2 py-1 border rounded"
+              value={filters.name}
+              onChange={(e) => setFilters({ ...filters, name: e.target.value })}
+            />
+            <input
+              type="text"
+              placeholder="Filter by organization"
+              className="px-2 py-1 border rounded"
+              value={filters.organization}
+              onChange={(e) => setFilters({ ...filters, organization: e.target.value })}
+            />
+            <input
+              type="text"
+              placeholder="Filter by position"
+              className="px-2 py-1 border rounded"
+              value={filters.jobTitle}
+              onChange={(e) => setFilters({ ...filters, jobTitle: e.target.value })}
+            />
+            <input
+              type="text"
+              placeholder="Filter by relationship"
+              className="px-2 py-1 border rounded"
+              value={filters.relationshipToYou}
+              onChange={(e) => setFilters({ ...filters, relationshipToYou: e.target.value })}
+            />
+          </div>
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead onClick={() => handleSort("name")} className="cursor-pointer">
+                  Name {getSortIcon("name")}
+                </TableHead>
+                <TableHead onClick={() => handleSort("organization")} className="cursor-pointer">
+                  Organization {getSortIcon("organization")}
+                </TableHead>
+                <TableHead onClick={() => handleSort("jobTitle")} className="cursor-pointer">
+                  Position {getSortIcon("jobTitle")}
+                </TableHead>
+                <TableHead onClick={() => handleSort("relationshipToYou")} className="cursor-pointer">
+                  Relationship to You {getSortIcon("relationshipToYou")}
+                </TableHead>
+                {selectedPerson && <TableHead>Connection Type</TableHead>}
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredAndSortedPeople.map((person) => (
                 <TableRow key={person.id}>
                   <TableCell>{person.name}</TableCell>
                   <TableCell>{person.organization || "—"}</TableCell>
@@ -229,8 +321,9 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
                   </TableCell>
                 </TableRow>
               ))}
-          </TableBody>
-        </Table>
+            </TableBody>
+          </Table>
+        </div>
       </DialogContent>
     </Dialog>
   );
