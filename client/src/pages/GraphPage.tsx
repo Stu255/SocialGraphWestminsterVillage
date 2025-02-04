@@ -143,15 +143,12 @@ export default function GraphPage({ params }: Props) {
                   </div>
                 )}
                 <div className="space-y-2">
-                  <h2 className="text-sm font-medium text-foreground/70">People</h2>
                   <NodeForm graphId={graphId} />
                 </div>
                 <div className="space-y-2">
-                  <h2 className="text-sm font-medium text-foreground/70">Organizations</h2>
                   <OrganizationManager graphId={graphId} />
                 </div>
                 <div className="space-y-2">
-                  <h2 className="text-sm font-medium text-foreground/70">Connections</h2>
                   <ConnectionManager graphId={graphId} />
                 </div>
               </div>
@@ -188,30 +185,24 @@ export default function GraphPage({ params }: Props) {
             )}>
               <div className="h-full overflow-y-auto">
                 <div className="p-6 space-y-6">
-                  <div className="space-y-2">
-                    <h2 className="text-sm font-medium text-foreground/70">Filters</h2>
-                    <FilterPanel filters={filters} onFilterChange={setFilters} />
-                  </div>
-                  <div className="space-y-2">
-                    <h2 className="text-sm font-medium text-foreground/70">Analysis</h2>
-                    <AnalysisPanel
-                      selectedNode={selectedNode}
-                      graphId={graphId}
-                      onNodeDeleted={handleNodeDeleted}
-                    />
-                  </div>
+                  <FilterPanel filters={filters} onFilterChange={setFilters} />
+                  <AnalysisPanel
+                    selectedNode={selectedNode}
+                    graphId={graphId}
+                    onNodeDeleted={handleNodeDeleted}
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Collapse/Expand Button - Bottom */}
+            {/* Collapse/Expand Button */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowRightSidebar(!showRightSidebar)}
               className={cn(
-                "absolute bottom-4 left-0 z-10 rounded-full bg-background shadow-md border",
-                !showRightSidebar && "-left-10"
+                "absolute bottom-4 z-10 rounded-full bg-background shadow-md border",
+                showRightSidebar ? "left-0" : "left-[-3rem]"
               )}
             >
               <ChevronRight className={cn("h-4 w-4", !showRightSidebar && "rotate-180")} />
