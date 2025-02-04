@@ -21,15 +21,22 @@ interface Filters {
 interface FilterPanelProps {
   filters: Filters;
   onFilterChange: (filters: Filters) => void;
+  graphId: number;
 }
 
-export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
+export function FilterPanel({ filters, onFilterChange, graphId }: FilterPanelProps) {
   const [openOrgDialog, setOpenOrgDialog] = useState(false);
   const [openRelDialog, setOpenRelDialog] = useState(false);
   const [openConnDialog, setOpenConnDialog] = useState(false);
 
   const { data: organizations = [] } = useQuery<Organization[]>({
-    queryKey: ["/api/organizations"],
+    queryKey: ["/api/organizations", graphId],
+    queryFn: async () => {
+      const res = await fetch(`/api/organizations?graphId=${graphId}`);
+      if (!res.ok) throw new Error("Failed to fetch organizations");
+      return res.json();
+    },
+    enabled: !!graphId,
   });
 
   const handleOrganizationChange = (selectedIds: (string | number)[]) => {
@@ -53,7 +60,6 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
     });
   };
 
-  // Sort relationship types from strongest to weakest
   const sortedRelationshipTypes = [...USER_RELATIONSHIP_TYPES].sort((a, b) => b.id - a.id);
   const sortedConnectionTypes = [...CONNECTION_TYPES].sort((a, b) => b.id - a.id);
 

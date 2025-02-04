@@ -185,7 +185,7 @@ export default function GraphPage({ params }: Props) {
             )}>
               <div className="h-full overflow-y-auto">
                 <div className="p-6 space-y-6">
-                  <FilterPanel filters={filters} onFilterChange={setFilters} />
+                  <FilterPanel filters={filters} onFilterChange={setFilters} graphId={graphId} />
                   <AnalysisPanel
                     selectedNode={selectedNode}
                     graphId={graphId}
