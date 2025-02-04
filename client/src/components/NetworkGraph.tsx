@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { USER_RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
 import { CONNECTION_TYPES } from "./ConnectionManager";
 import { ContactFormDialog } from "./ContactFormDialog";
-import { AddConnectionDialog } from "./AddConnectionDialog";
+import { ContactListDialog } from "./ContactListDialog";
 
 interface Node extends d3.SimulationNodeDatum {
   id: number;
@@ -66,7 +66,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [connectionDialogOpen, setConnectionDialogOpen] = useState(false);
+  const [connectionsDialogOpen, setConnectionsDialogOpen] = useState(false);
 
   const { data: organizations = [] } = useQuery<any[]>({
     queryKey: ["/api/organizations", graphId],
@@ -240,7 +240,6 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
       })
       .style("cursor", "pointer")
       .on("click", (_event, d) => {
-        // Create a delay to differentiate between single and double clicks
         setTimeout(() => {
           if (!d3.event?.detail || d3.event.detail === 1) {
             const contact = {
@@ -260,10 +259,10 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
             setSelectedNode(contact);
             setDialogOpen(true);
           }
-        }, 250); // 250ms delay
+        }, 250);
       })
       .on("dblclick", (event, d) => {
-        event.preventDefault(); // Prevent default double-click behavior
+        event.preventDefault();
         const contact = {
           id: d.id,
           name: d.name,
@@ -272,7 +271,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
           relationshipToYou: d.userRelationshipType,
         };
         setSelectedNode(contact);
-        setConnectionDialogOpen(true);
+        setConnectionsDialogOpen(true);
       });
 
     nodeGroup.append("text")
@@ -311,13 +310,13 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
             }}
             graphId={graphId}
           />
-          <AddConnectionDialog
-            open={connectionDialogOpen}
+          <ContactListDialog
+            selectedPerson={selectedNode}
+            open={connectionsDialogOpen}
             onOpenChange={(open) => {
-              setConnectionDialogOpen(open);
+              setConnectionsDialogOpen(open);
               if (!open) setSelectedNode(null);
             }}
-            sourceNode={selectedNode}
             graphId={graphId}
           />
         </>
