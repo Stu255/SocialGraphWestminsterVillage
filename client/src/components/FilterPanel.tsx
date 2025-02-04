@@ -42,16 +42,20 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
   const handleRelationshipChange = (selectedIds: (string | number)[]) => {
     onFilterChange({
       ...filters,
-      userRelationshipType: selectedIds.length === 0 ? null : selectedIds[0] as number
+      userRelationshipType: selectedIds.length === 0 ? null : selectedIds[selectedIds.length - 1] as number
     });
   };
 
   const handleConnectionChange = (selectedIds: (string | number)[]) => {
     onFilterChange({
       ...filters,
-      connectionType: selectedIds.length === 0 ? null : selectedIds[0] as number
+      connectionType: selectedIds.length === 0 ? null : selectedIds[selectedIds.length - 1] as number
     });
   };
+
+  // Sort relationship types from strongest to weakest
+  const sortedRelationshipTypes = [...USER_RELATIONSHIP_TYPES].sort((a, b) => b.id - a.id);
+  const sortedConnectionTypes = [...CONNECTION_TYPES].sort((a, b) => b.id - a.id);
 
   return (
     <Card>
@@ -123,24 +127,27 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
           items={organizations.map(org => ({ id: org.name, name: org.name }))}
           selectedItems={filters.organization ? [filters.organization] : []}
           onSelectedItemsChange={handleOrganizationChange}
+          enableSorting={true}
         />
 
         <FilterDialog
           open={openRelDialog}
           onOpenChange={setOpenRelDialog}
           title="Filter Relationship Types"
-          items={USER_RELATIONSHIP_TYPES.map(type => ({ id: type.id, name: type.name }))}
+          items={sortedRelationshipTypes.map(type => ({ id: type.id, name: type.name }))}
           selectedItems={filters.userRelationshipType ? [filters.userRelationshipType] : []}
           onSelectedItemsChange={handleRelationshipChange}
+          enableSorting={false}
         />
 
         <FilterDialog
           open={openConnDialog}
           onOpenChange={setOpenConnDialog}
           title="Filter Connection Types"
-          items={CONNECTION_TYPES.map(type => ({ id: type.id, name: type.name }))}
+          items={sortedConnectionTypes.map(type => ({ id: type.id, name: type.name }))}
           selectedItems={filters.connectionType ? [filters.connectionType] : []}
           onSelectedItemsChange={handleConnectionChange}
+          enableSorting={false}
         />
       </CardContent>
     </Card>

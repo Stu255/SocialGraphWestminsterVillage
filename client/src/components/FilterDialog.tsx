@@ -13,6 +13,7 @@ interface FilterDialogProps {
   items: { id: string | number; name: string }[];
   selectedItems: (string | number)[];
   onSelectedItemsChange: (items: (string | number)[]) => void;
+  enableSorting?: boolean;
 }
 
 type SortDirection = "asc" | "desc";
@@ -23,7 +24,8 @@ export function FilterDialog({
   title,
   items,
   selectedItems,
-  onSelectedItemsChange
+  onSelectedItemsChange,
+  enableSorting = true
 }: FilterDialogProps) {
   const [filter, setFilter] = useState("");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
@@ -34,11 +36,13 @@ export function FilterDialog({
       item.name.toLowerCase().includes(filter.toLowerCase())
     )
     .sort((a, b) => {
+      if (!enableSorting) return 0;
       const comparison = a.name.localeCompare(b.name);
       return sortDirection === "asc" ? comparison : -comparison;
     });
 
   const toggleSort = () => {
+    if (!enableSorting) return;
     setSortDirection(prev => prev === "asc" ? "desc" : "asc");
   };
 
@@ -58,22 +62,24 @@ export function FilterDialog({
         </DialogHeader>
 
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder="Filter..."
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="h-8"
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={toggleSort}
-            >
-              <ArrowUpDown className="h-4 w-4" />
-            </Button>
-          </div>
+          {enableSorting && (
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Filter..."
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="h-8"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={toggleSort}
+              >
+                <ArrowUpDown className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
 
           <Table>
             <TableHeader>
