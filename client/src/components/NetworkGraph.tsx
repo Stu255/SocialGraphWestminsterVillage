@@ -263,14 +263,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
       })
       .on("dblclick", (event, d) => {
         event.preventDefault();
-        const contact = {
-          id: d.id,
-          name: d.name,
-          organization: d.organization,
-          jobTitle: d.jobTitle,
-          relationshipToYou: d.userRelationshipType,
-        };
-        setSelectedNode(contact);
+        setSelectedNode(d);
         setConnectionsDialogOpen(true);
       });
 
@@ -301,24 +294,28 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
       <svg ref={svgRef} className="w-full h-full min-h-[600px]" style={{ background: "white" }} />
       {selectedNode && (
         <>
-          <ContactFormDialog
-            contact={selectedNode}
-            open={dialogOpen}
-            onOpenChange={(open) => {
-              setDialogOpen(open);
-              if (!open) setSelectedNode(null);
-            }}
-            graphId={graphId}
-          />
-          <ContactListDialog
-            selectedPerson={selectedNode}
-            open={connectionsDialogOpen}
-            onOpenChange={(open) => {
-              setConnectionsDialogOpen(open);
-              if (!open) setSelectedNode(null);
-            }}
-            graphId={graphId}
-          />
+          {dialogOpen && (
+            <ContactFormDialog
+              contact={selectedNode}
+              open={dialogOpen}
+              onOpenChange={(open) => {
+                setDialogOpen(open);
+                if (!open) setSelectedNode(null);
+              }}
+              graphId={graphId}
+            />
+          )}
+          {connectionsDialogOpen && (
+            <ContactListDialog
+              selectedPerson={selectedNode}
+              open={connectionsDialogOpen}
+              onOpenChange={(open) => {
+                setConnectionsDialogOpen(open);
+                if (!open) setSelectedNode(null);
+              }}
+              graphId={graphId}
+            />
+          )}
         </>
       )}
     </Card>
