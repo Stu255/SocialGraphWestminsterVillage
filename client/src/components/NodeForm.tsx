@@ -16,28 +16,28 @@ export function NodeForm({ graphId }: NodeFormProps) {
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 flex-shrink-0">
-        <CardTitle className="text-[0.875rem] font-semibold truncate">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 flex-shrink-0">
+        <CardTitle className="text-base font-semibold">
           People
         </CardTitle>
         <FieldSettingsDialog graphId={graphId} />
       </CardHeader>
-      <CardContent className="space-y-1.5 flex-1">
+      <CardContent className="space-y-1 flex-1">
         <Button 
-          className="w-full justify-start h-8"
+          className="w-full justify-start h-7"
           onClick={() => setShowAddDialog(true)}
         >
           <Plus className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
-          <span className="text-[0.813rem]">Add Person</span>
+          <span className="text-xs truncate">Add Person</span>
         </Button>
 
         <Button 
-          className="w-full justify-start h-8"
+          className="w-full justify-start h-7"
           variant="outline"
           onClick={() => setShowListDialog(true)}
         >
           <Users className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
-          <span className="text-[0.813rem]">See People</span>
+          <span className="text-xs truncate">See People</span>
         </Button>
 
         <ContactFormDialog
