@@ -87,7 +87,7 @@ export default function GraphPage({ params }: Props) {
       nodes={preparedNodes}
       links={connections || []}
       filters={{
-        affiliation: filters.organization.length > 0 ? filters.organization : undefined,
+        organization: filters.organization.length > 0 ? filters.organization : undefined,
         userRelationshipType: filters.userRelationshipType.length > 0 ? filters.userRelationshipType : undefined,
         connectionType: filters.connectionType.length > 0 ? filters.connectionType : undefined
       }}
