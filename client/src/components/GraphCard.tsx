@@ -5,6 +5,17 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface GraphCardProps {
   id: number;
@@ -186,7 +197,7 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
   };
 
   return (
-    <Card 
+    <Card
       className={`p-4 ${isInDeleteWindow() ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-secondary/50'} transition-colors cursor-pointer`}
       onClick={handleCardClick}
     >
@@ -222,8 +233,8 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
           >
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
