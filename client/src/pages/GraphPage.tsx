@@ -144,7 +144,7 @@ export default function GraphPage({ params }: Props) {
                   </div>
                 )}
                 <div className="space-y-2">
-                  <h2 className="text-sm font-medium text-foreground/70 truncate">Add Person</h2>
+                  <h2 className="text-sm font-medium text-foreground/70 truncate">People</h2>
                   <NodeForm graphId={graphId} />
                 </div>
                 <div className="space-y-2">
@@ -153,7 +153,7 @@ export default function GraphPage({ params }: Props) {
                 </div>
                 <div className="space-y-2">
                   <h2 className="text-sm font-medium text-foreground/70 truncate">Connections</h2>
-                  <ConnectionManager graphId={graphId} title="Connections" />
+                  <ConnectionManager graphId={graphId} />
                 </div>
               </div>
             </div>
