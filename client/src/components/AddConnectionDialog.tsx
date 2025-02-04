@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronLeft, ArrowUpDown, ChevronDown, ChevronUp, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { CONNECTION_TYPES, getConnectionNameById } from "./ConnectionManager";
 import { useToast } from "@/hooks/use-toast";
 import { getUserRelationshipNameById } from "./RelationshipTypeManager";
@@ -57,6 +57,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
     name: "",
     organization: "",
@@ -65,6 +66,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const itemsPerPage = 10;
 
   const { data: people = [] } = useQuery<Person[]>({
     queryKey: ["/api/people", graphId],
@@ -93,35 +95,35 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
   });
 
   const updateConnection = useMutation({
-    mutationFn: async ({ sourceId, targetId, connectionType }: { 
-      sourceId: number, 
-      targetId: number, 
-      connectionType: number 
+    mutationFn: async ({ sourceId, targetId, connectionType }: {
+      sourceId: number;
+      targetId: number;
+      connectionType: number;
     }) => {
       console.log("Updating connection in dialog:", {
         sourceId,
         targetId,
         connectionType,
-        graphId
+        graphId,
       });
 
       const res = await fetch(`/api/connections`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           graphId,
           connectionType,
           sourcePersonId: sourceId,
-          targetPersonId: targetId
-        })
+          targetPersonId: targetId,
+        }),
       });
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => null);
         console.error("Connection update failed:", errorData);
         throw new Error(
-          errorData?.error || 
-          `Failed to update connection: ${res.status} ${res.statusText}`
+          errorData?.error ||
+            `Failed to update connection: ${res.status} ${res.statusText}`
         );
       }
 
@@ -136,20 +138,28 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
     },
     onError: (error: any) => {
       console.error("Connection update mutation error:", error);
-      toast({ 
-        title: "Error", 
+      toast({
+        title: "Error",
         description: error.message || "Failed to update connection",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   const getCurrentConnection = (targetPersonId: number) => {
     if (!selectedPerson) return 0;
-    console.log("Getting current connection for target", targetPersonId, "connections:", connections);
-    const connection = connections.find(c => 
-      (c.sourcePersonId === selectedPerson.id && c.targetPersonId === targetPersonId) ||
-      (c.sourcePersonId === targetPersonId && c.targetPersonId === selectedPerson.id)
+    console.log(
+      "Getting current connection for target",
+      targetPersonId,
+      "connections:",
+      connections
+    );
+    const connection = connections.find(
+      (c) =>
+        (c.sourcePersonId === selectedPerson.id &&
+          c.targetPersonId === targetPersonId) ||
+        (c.sourcePersonId === targetPersonId &&
+          c.targetPersonId === selectedPerson.id)
     );
     console.log("Found connection:", connection);
     return connection?.connectionType ?? 0;
@@ -174,14 +184,14 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
   };
 
   const filteredAndSortedPeople = people
-    .filter(person => person.id !== selectedPerson?.id)
-    .filter(person => {
+    .filter((person) => person.id !== selectedPerson?.id)
+    .filter((person) => {
       return (
         person.name.toLowerCase().includes(filters.name.toLowerCase()) &&
         (person.organization || "").toLowerCase().includes(filters.organization.toLowerCase()) &&
         (person.jobTitle || "").toLowerCase().includes(filters.jobTitle.toLowerCase()) &&
-        (filters.relationshipToYou === "" || 
-         getUserRelationshipNameById(person.relationshipToYou).toLowerCase().includes(filters.relationshipToYou.toLowerCase()))
+        (filters.relationshipToYou === "" ||
+          getUserRelationshipNameById(person.relationshipToYou).toLowerCase().includes(filters.relationshipToYou.toLowerCase()))
       );
     })
     .sort((a, b) => {
@@ -198,6 +208,10 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
       return sortDirection === "asc" ? comparison : -comparison;
     });
 
+  const totalPages = Math.ceil(filteredAndSortedPeople.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedPeople = filteredAndSortedPeople.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px]">
@@ -213,7 +227,9 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
               </Button>
             )}
             <DialogTitle>
-              {selectedPerson ? `Manage Connections for ${selectedPerson.name}` : "Select Contact"}
+              {selectedPerson
+                ? `Manage Connections for ${selectedPerson.name}`
+                : "Select Contact"}
             </DialogTitle>
           </div>
           <DialogDescription>
@@ -221,7 +237,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-2">
           <div className="grid grid-cols-4 gap-2">
             <input
               type="text"
@@ -235,7 +251,9 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
               placeholder="Filter by organization"
               className="px-2 py-1 border rounded"
               value={filters.organization}
-              onChange={(e) => setFilters({ ...filters, organization: e.target.value })}
+              onChange={(e) =>
+                setFilters({ ...filters, organization: e.target.value })
+              }
             />
             <input
               type="text"
@@ -249,23 +267,37 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
               placeholder="Filter by relationship"
               className="px-2 py-1 border rounded"
               value={filters.relationshipToYou}
-              onChange={(e) => setFilters({ ...filters, relationshipToYou: e.target.value })}
+              onChange={(e) =>
+                setFilters({ ...filters, relationshipToYou: e.target.value })
+              }
             />
           </div>
 
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead onClick={() => handleSort("name")} className="cursor-pointer">
+              <TableRow className="hover:bg-transparent">
+                <TableHead
+                  onClick={() => handleSort("name")}
+                  className="cursor-pointer"
+                >
                   Name {getSortIcon("name")}
                 </TableHead>
-                <TableHead onClick={() => handleSort("organization")} className="cursor-pointer">
+                <TableHead
+                  onClick={() => handleSort("organization")}
+                  className="cursor-pointer"
+                >
                   Organization {getSortIcon("organization")}
                 </TableHead>
-                <TableHead onClick={() => handleSort("jobTitle")} className="cursor-pointer">
+                <TableHead
+                  onClick={() => handleSort("jobTitle")}
+                  className="cursor-pointer"
+                >
                   Position {getSortIcon("jobTitle")}
                 </TableHead>
-                <TableHead onClick={() => handleSort("relationshipToYou")} className="cursor-pointer">
+                <TableHead
+                  onClick={() => handleSort("relationshipToYou")}
+                  className="cursor-pointer"
+                >
                   Relationship to You {getSortIcon("relationshipToYou")}
                 </TableHead>
                 {selectedPerson && <TableHead>Connection Type</TableHead>}
@@ -273,23 +305,26 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAndSortedPeople.map((person) => (
-                <TableRow key={person.id}>
-                  <TableCell>{person.name}</TableCell>
-                  <TableCell>{person.organization || "—"}</TableCell>
-                  <TableCell>{person.jobTitle || "—"}</TableCell>
-                  <TableCell>{getUserRelationshipNameById(person.relationshipToYou)}</TableCell>
+              {paginatedPeople.map((person) => (
+                <TableRow key={person.id} className="h-8 hover:bg-muted/50">
+                  <TableCell className="py-1">{person.name}</TableCell>
+                  <TableCell className="py-1">
+                    {person.organization || "—"}
+                  </TableCell>
+                  <TableCell className="py-1">{person.jobTitle || "—"}</TableCell>
+                  <TableCell className="py-1">
+                    {getUserRelationshipNameById(person.relationshipToYou)}
+                  </TableCell>
                   {selectedPerson && (
-                    <TableCell>
+                    <TableCell className="py-1">
                       <Select
                         value={String(getCurrentConnection(person.id))}
                         onValueChange={(value) => {
                           const connectionType = parseInt(value, 10);
-                          console.log("Setting connection type:", connectionType);
                           updateConnection.mutate({
                             sourceId: selectedPerson.id,
                             targetId: person.id,
-                            connectionType
+                            connectionType,
                           });
                         }}
                       >
@@ -308,7 +343,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
                       </Select>
                     </TableCell>
                   )}
-                  <TableCell>
+                  <TableCell className="py-1">
                     {!selectedPerson && (
                       <Button
                         variant="ghost"
@@ -323,6 +358,34 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
               ))}
             </TableBody>
           </Table>
+
+          <div className="flex items-center justify-between py-2">
+            <div className="text-sm text-muted-foreground">
+              Showing{" "}
+              {startIndex + 1}-
+              {Math.min(startIndex + itemsPerPage, filteredAndSortedPeople.length)}{" "}
+              of {filteredAndSortedPeople.length}
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeftIcon className="h-4 w-4" />
+              </Button>
+              <div className="text-sm">Page {currentPage} of {totalPages}</div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRightIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
