@@ -94,12 +94,6 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
   useEffect(() => {
     if (!svgRef.current || !nodes.length) return;
 
-    console.log("NetworkGraph rendering with data:", { 
-      nodes, 
-      links,
-      filters
-    });
-
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
@@ -152,8 +146,6 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
         type: link.connectionType
       }));
 
-    console.log("Processed links for rendering:", processedLinks);
-
     const simulation = d3.forceSimulation(filteredNodes)
       .force("link", d3.forceLink(processedLinks)
         .id((d: any) => d.id)
@@ -167,7 +159,6 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
 
     processedLinks.forEach(link => {
       const style = getConnectionLineStyle(link.type);
-      console.log("Link and style:", { link, style });
 
       if (!style) return;
 
@@ -233,7 +224,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
       })
       .attr("transform", d => {
         const icon = getUserRelationshipIcon(d.userRelationshipType);
-        const yOffset = icon.viewBox === "0 -6 24 36" ? -15 : 
+        const yOffset = icon.viewBox === "0 -6 24 36" ? -15 :
                      icon.viewBox === "0 0 24 32" ? -16 : -12;
         return `translate(-12, ${yOffset}) scale(1)`;
       })
@@ -249,25 +240,30 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
       })
       .style("cursor", "pointer")
       .on("click", (_event, d) => {
-        const contact = {
-          id: d.id,
-          name: d.name,
-          organization: d.organization,
-          jobTitle: d.jobTitle,
-          relationshipToYou: d.userRelationshipType,
-          officeNumber: d.officeNumber,
-          mobileNumber: d.mobileNumber,
-          email1: d.email1,
-          email2: d.email2,
-          linkedin: d.linkedin,
-          twitter: d.twitter,
-          notes: d.notes
-        };
-        setSelectedNode(contact);
-        setDialogOpen(true);
+        // Create a delay to differentiate between single and double clicks
+        setTimeout(() => {
+          if (!d3.event?.detail || d3.event.detail === 1) {
+            const contact = {
+              id: d.id,
+              name: d.name,
+              organization: d.organization,
+              jobTitle: d.jobTitle,
+              relationshipToYou: d.userRelationshipType,
+              officeNumber: d.officeNumber,
+              mobileNumber: d.mobileNumber,
+              email1: d.email1,
+              email2: d.email2,
+              linkedin: d.linkedin,
+              twitter: d.twitter,
+              notes: d.notes
+            };
+            setSelectedNode(contact);
+            setDialogOpen(true);
+          }
+        }, 250); // 250ms delay
       })
-      .on("dblclick", (_event, d) => {
-        d3.event?.preventDefault(); // Prevent default double-click behavior
+      .on("dblclick", (event, d) => {
+        event.preventDefault(); // Prevent default double-click behavior
         const contact = {
           id: d.id,
           name: d.name,
@@ -306,7 +302,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
       <svg ref={svgRef} className="w-full h-full min-h-[600px]" style={{ background: "white" }} />
       {selectedNode && (
         <>
-          <ContactFormDialog 
+          <ContactFormDialog
             contact={selectedNode}
             open={dialogOpen}
             onOpenChange={(open) => {
@@ -338,39 +334,39 @@ const getConnectionLineStyle = (connectionType: number) => {
   const standardWeight = 2;
 
   switch (type.id) {
-    case 5: 
-      return { 
-        strokeWidth: standardWeight, 
+    case 5:
+      return {
+        strokeWidth: standardWeight,
         strokeDasharray: "none",
-        tripleStroke: true, 
-        strokeGap: standardWeight * 3 
+        tripleStroke: true,
+        strokeGap: standardWeight * 3
       } as const;
-    case 4: 
-      return { 
-        strokeWidth: standardWeight, 
+    case 4:
+      return {
+        strokeWidth: standardWeight,
         strokeDasharray: "none",
         doubleStroke: true,
-        doubleStrokeGap: standardWeight * 3 
+        doubleStrokeGap: standardWeight * 3
       } as const;
-    case 3: 
-      return { 
-        strokeWidth: standardWeight, 
+    case 3:
+      return {
+        strokeWidth: standardWeight,
         strokeDasharray: "none",
         doubleStroke: false
       } as const;
-    case 2: 
-      return { 
-        strokeWidth: thinWeight, 
+    case 2:
+      return {
+        strokeWidth: thinWeight,
         strokeDasharray: "none",
         doubleStroke: false
       } as const;
-    case 1: 
-      return { 
-        strokeWidth: thinWeight, 
+    case 1:
+      return {
+        strokeWidth: thinWeight,
         strokeDasharray: "4,4",
         doubleStroke: false
       } as const;
-    case 0: 
+    case 0:
     default:
       return null;
   }
@@ -378,45 +374,44 @@ const getConnectionLineStyle = (connectionType: number) => {
 
 const getUserRelationshipIcon = (relationshipType: number | undefined) => {
   const type = relationshipType === undefined || relationshipType === null ? 1 : relationshipType;
-  console.log("Getting icon for relationship type:", type);
 
   switch (type) {
     case 5:
-      return { 
+      return {
         ...USER_RELATIONSHIP_ICONS.strong,
-        fill: true, 
-        strokeDasharray: "none" 
+        fill: true,
+        strokeDasharray: "none"
       };
     case 4:
-      return { 
+      return {
         ...USER_RELATIONSHIP_ICONS.regular,
-        fill: true, 
-        strokeDasharray: "none" 
+        fill: true,
+        strokeDasharray: "none"
       };
     case 3:
-      return { 
+      return {
         ...USER_RELATIONSHIP_ICONS.basic,
-        fill: true, 
-        strokeDasharray: "none" 
+        fill: true,
+        strokeDasharray: "none"
       };
     case 2:
-      return { 
+      return {
         ...USER_RELATIONSHIP_ICONS.basic,
-        fill: false, 
-        strokeDasharray: "none" 
+        fill: false,
+        strokeDasharray: "none"
       };
     case 1:
-      return { 
+      return {
         ...USER_RELATIONSHIP_ICONS.basic,
-        fill: false, 
-        strokeDasharray: "2,2" 
+        fill: false,
+        strokeDasharray: "2,2"
       };
     default:
       console.warn("Unexpected relationship type:", type);
-      return { 
+      return {
         ...USER_RELATIONSHIP_ICONS.basic,
-        fill: false, 
-        strokeDasharray: "2,2" 
+        fill: false,
+        strokeDasharray: "2,2"
       };
   }
 };
