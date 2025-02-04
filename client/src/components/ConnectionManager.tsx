@@ -64,26 +64,28 @@ export function ConnectionManager({ graphId, title = "Connections" }: Connection
   const [showAddDialog, setShowAddDialog] = useState(false);
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold">{title}</CardTitle>
+    <Card className="h-full flex flex-col min-w-[180px]">
+      <CardHeader className="pb-2 flex-shrink-0">
+        <CardTitle className="text-[clamp(0.75rem,1.2vw,0.875rem)] font-semibold truncate">
+          {title}
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-1.5">
+      <CardContent className="space-y-1.5 flex-1 overflow-hidden">
         <Button 
-          className="w-full justify-start h-8 text-xs"
+          className="w-full justify-start h-8 text-[clamp(0.7rem,1vw,0.75rem)] min-h-[2rem]"
           onClick={() => setShowAddDialog(true)}
         >
-          <Plus className="h-3.5 w-3.5 mr-1.5" />
-          Add Connection
+          <Plus className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+          <span className="truncate">Add Connection</span>
         </Button>
 
         <Button 
-          className="w-full justify-start h-8 text-xs"
+          className="w-full justify-start h-8 text-[clamp(0.7rem,1vw,0.75rem)] min-h-[2rem]"
           variant="outline"
           onClick={() => setShowListDialog(true)}
         >
-          <Users className="h-3.5 w-3.5 mr-1.5" />
-          Connection Types
+          <Users className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+          <span className="truncate">Connection Types</span>
         </Button>
 
         <AddConnectionDialog
@@ -96,9 +98,13 @@ export function ConnectionManager({ graphId, title = "Connections" }: Connection
           <div className="space-y-1.5 mt-1.5">
             {CONNECTION_TYPES.map((type) => (
               <div key={type.id} className="flex items-center justify-between p-1.5 rounded-lg border bg-card">
-                <div>
-                  <h4 className="text-xs font-medium">{type.name}</h4>
-                  <p className="text-[10px] text-muted-foreground">{type.description}</p>
+                <div className="min-w-0">
+                  <h4 className="text-[clamp(0.7rem,1vw,0.75rem)] font-medium truncate">
+                    {type.name}
+                  </h4>
+                  <p className="text-[clamp(0.65rem,0.9vw,0.7rem)] text-muted-foreground line-clamp-2">
+                    {type.description}
+                  </p>
                 </div>
               </div>
             ))}
