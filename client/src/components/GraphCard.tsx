@@ -5,17 +5,6 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 interface GraphCardProps {
   id: number;
@@ -32,6 +21,32 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
   const [timeRemaining, setTimeRemaining] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const updateLastAccessedMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/graphs/${id}/access`, {
+        method: 'POST',
+      });
+      if (!res.ok) throw new Error("Failed to update last accessed time");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/graphs"] });
+    },
+  });
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (
+      !target.closest('button') &&
+      !target.closest('input') &&
+      !isEditing &&
+      onClick
+    ) {
+      updateLastAccessedMutation.mutate();
+      onClick();
+    }
+  };
 
   // Check if deleteAt is within 48 hours
   const isInDeleteWindow = () => {
@@ -151,17 +166,6 @@ export function GraphCard({ id, name, modifiedAt: initialModifiedAt, deleteAt, o
     }
   };
 
-  const handleCardClick = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (
-      !target.closest('button') &&
-      !target.closest('input') &&
-      !isEditing &&
-      onClick
-    ) {
-      onClick();
-    }
-  };
 
   const formatModifiedDate = (date: string) => {
     // If no date provided, use current time
