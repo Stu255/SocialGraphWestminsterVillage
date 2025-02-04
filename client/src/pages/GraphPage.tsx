@@ -30,9 +30,9 @@ export default function GraphPage({ params }: Props) {
   const [, setLocation] = useLocation();
   const [selectedNode, setSelectedNode] = useState<any>(null);
   const [filters, setFilters] = useState({
-    affiliation: null,
-    connectionType: null,
-    userRelationshipType: null,
+    organization: null as string | null,
+    connectionType: null as number | null,
+    userRelationshipType: null as number | null,
   });
 
   const graphId = parseInt(params.id);
@@ -40,27 +40,36 @@ export default function GraphPage({ params }: Props) {
   const { data: people } = useQuery({
     queryKey: ["/api/people", graphId],
     queryFn: async () => {
+      console.log("Fetching people for graph:", graphId);
       const res = await fetch(`/api/people?graphId=${graphId}`);
       if (!res.ok) throw new Error("Failed to fetch people");
-      return res.json();
+      const data = await res.json();
+      console.log("Fetched people data:", data);
+      return data;
     },
   });
 
   const { data: connections } = useQuery({
     queryKey: ["/api/connections", graphId],
     queryFn: async () => {
+      console.log("Fetching connections for graph:", graphId);
       const res = await fetch(`/api/connections?graphId=${graphId}`);
       if (!res.ok) throw new Error("Failed to fetch connections");
-      return res.json();
+      const data = await res.json();
+      console.log("Fetched connections data:", data);
+      return data;
     },
   });
 
   const { data: graph } = useQuery({
     queryKey: ["/api/graphs", graphId],
     queryFn: async () => {
+      console.log("Fetching graph:", graphId);
       const res = await fetch(`/api/graphs/${graphId}`);
       if (!res.ok) throw new Error("Failed to fetch graph");
-      return res.json();
+      const data = await res.json();
+      console.log("Fetched graph data:", data);
+      return data;
     },
   });
 
@@ -80,6 +89,9 @@ export default function GraphPage({ params }: Props) {
     };
   });
 
+  console.log("Prepared nodes:", preparedNodes);
+  console.log("Current connections:", connections);
+
   const graphComponent = (
     <NetworkGraph
       nodes={preparedNodes}
@@ -95,7 +107,6 @@ export default function GraphPage({ params }: Props) {
       <MobileLayout
         selectedNode={selectedNode}
         nodes={preparedNodes}
-        connections={connections || []}
         filters={filters}
         graphId={graphId}
         onFilterChange={setFilters}

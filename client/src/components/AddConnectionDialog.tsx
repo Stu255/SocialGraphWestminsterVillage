@@ -57,11 +57,27 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
 
   const { data: people = [] } = useQuery<Person[]>({
     queryKey: ["/api/people", graphId],
+    queryFn: async () => {
+      console.log("Fetching people for connection dialog, graphId:", graphId);
+      const res = await fetch(`/api/people?graphId=${graphId}`);
+      if (!res.ok) throw new Error("Failed to fetch people");
+      const data = await res.json();
+      console.log("People data for connections:", data);
+      return data;
+    },
     enabled: !!graphId,
   });
 
   const { data: connections = [] } = useQuery<Connection[]>({
     queryKey: ["/api/connections", graphId],
+    queryFn: async () => {
+      console.log("Fetching connections for dialog, graphId:", graphId);
+      const res = await fetch(`/api/connections?graphId=${graphId}`);
+      if (!res.ok) throw new Error("Failed to fetch connections");
+      const data = await res.json();
+      console.log("Connections data for dialog:", data);
+      return data;
+    },
     enabled: !!graphId,
   });
 
@@ -71,7 +87,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
       targetId: number, 
       connectionType: number 
     }) => {
-      console.log("Updating connection:", {
+      console.log("Updating connection in dialog:", {
         sourceId,
         targetId,
         connectionType,
@@ -91,19 +107,24 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => null);
+        console.error("Connection update failed:", errorData);
         throw new Error(
           errorData?.error || 
           `Failed to update connection: ${res.status} ${res.statusText}`
         );
       }
 
-      return res.json();
+      const data = await res.json();
+      console.log("Connection update successful:", data);
+      return data;
     },
     onSuccess: () => {
+      console.log("Invalidating connections query after update");
       queryClient.invalidateQueries({ queryKey: ["/api/connections", graphId] });
       toast({ title: "Success", description: "Connection updated" });
     },
     onError: (error: any) => {
+      console.error("Connection update mutation error:", error);
       toast({ 
         title: "Error", 
         description: error.message || "Failed to update connection",
@@ -114,10 +135,12 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
 
   const getCurrentConnection = (targetPersonId: number) => {
     if (!selectedPerson) return 0;
+    console.log("Getting current connection for target", targetPersonId, "connections:", connections);
     const connection = connections.find(c => 
       (c.sourcePersonId === selectedPerson.id && c.targetPersonId === targetPersonId) ||
       (c.sourcePersonId === targetPersonId && c.targetPersonId === selectedPerson.id)
     );
+    console.log("Found connection:", connection);
     return connection?.connectionType ?? 0;
   };
 
