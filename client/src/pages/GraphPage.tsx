@@ -16,8 +16,9 @@ import { RelationshipTypeManager } from "@/components/RelationshipTypeManager";
 import { ConnectionManager } from "@/components/ConnectionManager";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
 import { Button } from "@/components/ui/button";
-import { Home } from "lucide-react";
+import { ChevronRight, Home } from "lucide-react";
 import { NetworkManager } from "@/components/NetworkManager";
+import { cn } from "@/lib/utils";
 
 interface Props {
   params: {
@@ -29,6 +30,7 @@ export default function GraphPage({ params }: Props) {
   const isMobile = useMobile();
   const [, setLocation] = useLocation();
   const [selectedNode, setSelectedNode] = useState<any>(null);
+  const [showRightSidebar, setShowRightSidebar] = useState(true);
   const [filters, setFilters] = useState({
     organization: null as string | null,
     connectionType: null as number | null,
@@ -131,10 +133,9 @@ export default function GraphPage({ params }: Props) {
         </Button>
       </div>
       <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel defaultSize={25} minSize={20}>
+        <ResizablePanel defaultSize={20} minSize={15}>
           <div className="h-full p-6 border-r overflow-y-auto space-y-6">
             {graph && <NetworkManager graphId={graphId} currentName={graph.name} />}
-            <FilterPanel filters={filters} onFilterChange={setFilters} />
             <NodeForm graphId={graphId} />
             <OrganizationManager graphId={graphId} />
             <ConnectionManager graphId={graphId} />
@@ -143,19 +144,45 @@ export default function GraphPage({ params }: Props) {
 
         <ResizableHandle />
 
-        <ResizablePanel defaultSize={55}>
+        <ResizablePanel defaultSize={showRightSidebar ? 60 : 80}>
           {graphComponent}
         </ResizablePanel>
 
         <ResizableHandle />
 
-        <ResizablePanel defaultSize={20} minSize={15}>
-          <div className="h-full p-6 border-l overflow-y-auto">
-            <AnalysisPanel
-              selectedNode={selectedNode}
-              graphId={graphId}
-              onNodeDeleted={handleNodeDeleted}
-            />
+        <ResizablePanel 
+          defaultSize={20} 
+          minSize={15}
+          className={cn(
+            "transition-all duration-300",
+            !showRightSidebar && "!w-[40px] !min-w-[40px] flex-none"
+          )}
+        >
+          <div className="relative h-full">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowRightSidebar(!showRightSidebar)}
+              className={cn(
+                "absolute -left-3 top-3 z-10 rounded-full bg-background shadow-md border",
+                !showRightSidebar && "rotate-180"
+              )}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <div className={cn(
+              "h-full transition-all duration-300",
+              showRightSidebar ? "opacity-100" : "opacity-0 pointer-events-none"
+            )}>
+              <div className="h-full p-6 border-l overflow-y-auto space-y-6">
+                <FilterPanel filters={filters} onFilterChange={setFilters} />
+                <AnalysisPanel
+                  selectedNode={selectedNode}
+                  graphId={graphId}
+                  onNodeDeleted={handleNodeDeleted}
+                />
+              </div>
+            </div>
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>

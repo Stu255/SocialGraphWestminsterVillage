@@ -59,7 +59,6 @@ export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }: Analysis
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
 
-  // Query hooks moved to top level
   const { data: connections = [] } = useQuery({
     queryKey: ["/api/connections", graphId],
     enabled: !!graphId,
@@ -250,28 +249,40 @@ export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }: Analysis
 
   if (!selectedNode) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Network Analysis</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground mb-4">
-              Select a node to view detailed analysis
-            </p>
+      <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Network Analysis</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Select a node to view detailed analysis
+              </p>
 
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium">Top 10 Most Connected People</h3>
-              {topPeople.map((person: any, index: number) => (
-                <div key={person.id} className="flex justify-between items-center text-sm">
-                  <span>{index + 1}. {person.name}</span>
-                  <span className="text-muted-foreground">{person.centrality.toFixed(3)}</span>
+              {topPeople.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium mb-2">Top Connected People</h3>
+                  <div className="space-y-1">
+                    {topPeople.map((person: any, index: number) => (
+                      <div 
+                        key={person.id} 
+                        className="flex justify-between items-center text-sm p-2 rounded-md hover:bg-muted"
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className="text-muted-foreground">{index + 1}.</span>
+                          <span>{person.name}</span>
+                        </span>
+                        <span className="text-muted-foreground">{person.centrality.toFixed(3)}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -284,75 +295,75 @@ export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }: Analysis
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onNodeDeleted}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h2 className="text-lg font-semibold">{selectedNode.name}</h2>
-      </div>
-
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle>Profile</CardTitle>
-          <div className="flex gap-2">
-            {isEditing ? (
-              <>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setIsEditing(false)}
-                >
-                  <X className="h-4 w-4" style={{ color: getOrganizationColor() }} />
-                </Button>
-                <Button
-                  variant="default"
-                  size="icon"
-                  onClick={form.handleSubmit(onSubmit)}
-                  disabled={updatePersonMutation.isPending}
-                >
-                  <Check className="h-4 w-4" style={{ color: getOrganizationColor() }} />
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setIsEditing(true)}
-                >
-                  <Pencil className="h-4 w-4" style={{ color: getOrganizationColor() }} />
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="icon">
-                      <Trash2 className="h-4 w-4" style={{ color: getOrganizationColor() }} />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Person</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will permanently delete {selectedNode.name} and all their connections.
-                        This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => deletePersonMutation.mutate(selectedNode.id)}
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </>
-            )}
-          </div>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onNodeDeleted}
+              className="h-8 w-8"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            {selectedNode.name}
+          </CardTitle>
+          {isEditing ? (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setIsEditing(false)}
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="default"
+                size="icon"
+                onClick={form.handleSubmit(onSubmit)}
+                disabled={updatePersonMutation.isPending}
+                className="h-8 w-8"
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setIsEditing(true)}
+                className="h-8 w-8"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="icon" className="h-8 w-8">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Contact</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete {selectedNode.name} and all their connections.
+                      This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => deletePersonMutation.mutate(selectedNode.id)}
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -369,45 +380,60 @@ export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }: Analysis
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <p><strong>Centrality Score:</strong> {nodeMetrics?.centrality.toFixed(3) || 0}</p>
-            <p><strong>Direct Connections:</strong> {nodeConnections.length}</p>
+            <div className="flex justify-between items-center py-1">
+              <span className="text-sm font-medium">Centrality Score</span>
+              <span className="text-sm">{nodeMetrics?.centrality.toFixed(3) || 0}</span>
+            </div>
+            <div className="flex justify-between items-center py-1">
+              <span className="text-sm font-medium">Direct Connections</span>
+              <span className="text-sm">{nodeConnections.length}</span>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Network Connections</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {nodeConnections.map(rel => {
-              const otherNode = nodes.find((n: any) =>
-                n.id === (rel.sourcePersonId === selectedNode.id ?
-                  rel.targetPersonId :
-                  rel.sourcePersonId
-                )
-              );
+      {nodeConnections.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Network Connections</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1">
+              {nodeConnections.map(rel => {
+                const otherNode = nodes.find((n: any) =>
+                  n.id === (rel.sourcePersonId === selectedNode.id ?
+                    rel.targetPersonId :
+                    rel.sourcePersonId
+                  )
+                );
 
-              return (
-                <div key={rel.id} className="flex items-center justify-between">
-                  <span>
-                    {rel.sourcePersonId === selectedNode.id ? "→" : "←"} {otherNode?.name}
-                    ({getConnectionNameById(rel.connectionType)})
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteConnectionMutation.mutate(rel.id)}
+                return (
+                  <div 
+                    key={rel.id} 
+                    className="flex items-center justify-between p-2 rounded-md hover:bg-muted"
                   >
-                    <Trash2 className="h-4 w-4" style={{ color: getOrganizationColor() }} />
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                    <span className="text-sm flex items-center gap-2">
+                      <span>{rel.sourcePersonId === selectedNode.id ? "→" : "←"}</span>
+                      <span>{otherNode?.name}</span>
+                      <span className="text-muted-foreground">
+                        ({getConnectionNameById(rel.connectionType)})
+                      </span>
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteConnectionMutation.mutate(rel.id)}
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
