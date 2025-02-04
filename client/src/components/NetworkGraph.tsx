@@ -239,30 +239,27 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
         return icon.strokeDasharray;
       })
       .style("cursor", "pointer")
-      .on("click", (_event, d) => {
-        setTimeout(() => {
-          if (!d3.event?.detail || d3.event.detail === 1) {
-            const contact = {
-              id: d.id,
-              name: d.name,
-              organization: d.organization,
-              jobTitle: d.jobTitle,
-              relationshipToYou: d.userRelationshipType,
-              officeNumber: d.officeNumber,
-              mobileNumber: d.mobileNumber,
-              email1: d.email1,
-              email2: d.email2,
-              linkedin: d.linkedin,
-              twitter: d.twitter,
-              notes: d.notes
-            };
-            setSelectedNode(contact);
-            setDialogOpen(true);
-          }
-        }, 250);
-      })
-      .on("dblclick", (event, d) => {
+      .on("click", (event, d) => {
         event.preventDefault();
+        const contact = {
+          id: d.id,
+          name: d.name,
+          organization: d.organization,
+          jobTitle: d.jobTitle,
+          relationshipToYou: d.userRelationshipType,
+          officeNumber: d.officeNumber,
+          mobileNumber: d.mobileNumber,
+          email1: d.email1,
+          email2: d.email2,
+          linkedin: d.linkedin,
+          twitter: d.twitter,
+          notes: d.notes
+        };
+        setSelectedNode(contact);
+        setDialogOpen(true);
+      })
+      .on("contextmenu", (event, d) => {
+        event.preventDefault(); 
         setSelectedNode(d);
         setConnectionsDialogOpen(true);
       });
@@ -291,7 +288,12 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
 
   return (
     <Card className="h-full w-full">
-      <svg ref={svgRef} className="w-full h-full min-h-[600px]" style={{ background: "white" }} />
+      <svg 
+        ref={svgRef} 
+        className="w-full h-full min-h-[600px]" 
+        style={{ background: "white" }}
+        onContextMenu={(e) => e.preventDefault()} 
+      />
       {selectedNode && (
         <>
           {dialogOpen && (
@@ -307,7 +309,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
           )}
           {connectionsDialogOpen && (
             <ContactListDialog
-              selectedPerson={selectedNode}
+              contact={selectedNode}
               open={connectionsDialogOpen}
               onOpenChange={(open) => {
                 setConnectionsDialogOpen(open);
