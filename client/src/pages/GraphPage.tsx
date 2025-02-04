@@ -83,13 +83,10 @@ export default function GraphPage({ params }: Props) {
     setLocation("/");
   };
 
-  const preparedNodes = (people || []).map(person => {
-    console.log("Processing node:", person.name, "relationshipToYou:", person.relationshipToYou);
-    return {
-      ...person,
-      relationshipToYou: person.relationshipToYou === undefined || person.relationshipToYou === null ? 1 : person.relationshipToYou
-    };
-  });
+  const preparedNodes = (people || []).map(person => ({
+    ...person,
+    relationshipToYou: person.relationshipToYou === undefined || person.relationshipToYou === null ? 1 : person.relationshipToYou
+  }));
 
   console.log("Prepared nodes:", preparedNodes);
   console.log("Current connections:", connections);
@@ -109,6 +106,7 @@ export default function GraphPage({ params }: Props) {
       <MobileLayout
         selectedNode={selectedNode}
         nodes={preparedNodes}
+        relationships={connections || []}
         filters={filters}
         graphId={graphId}
         onFilterChange={setFilters}
@@ -122,23 +120,38 @@ export default function GraphPage({ params }: Props) {
 
   return (
     <div className="h-screen w-full bg-background overflow-hidden">
-      <div className="absolute top-4 left-4 z-10">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={handleHomeClick}
-          className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-        >
-          <Home className="h-4 w-4" />
-        </Button>
-      </div>
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={20} minSize={15}>
-          <div className="h-full p-6 border-r overflow-y-auto space-y-6">
-            {graph && <NetworkManager graphId={graphId} currentName={graph.name} />}
-            <NodeForm graphId={graphId} />
-            <OrganizationManager graphId={graphId} />
-            <ConnectionManager graphId={graphId} />
+          <div className="h-full flex flex-col">
+            {/* Header section for navigation buttons */}
+            <div className="p-4 border-b flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleHomeClick}
+                className="h-8 w-8"
+              >
+                <Home className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Main content section with auto-scaling panels */}
+            <div className="flex-1 flex flex-col p-4 gap-4">
+              {graph && (
+                <div className="flex-initial">
+                  <NetworkManager graphId={graphId} currentName={graph.name} />
+                </div>
+              )}
+              <div className="flex-1">
+                <NodeForm graphId={graphId} />
+              </div>
+              <div className="flex-1">
+                <OrganizationManager graphId={graphId} />
+              </div>
+              <div className="flex-1">
+                <ConnectionManager graphId={graphId} title="Connections" />
+              </div>
+            </div>
           </div>
         </ResizablePanel>
 
