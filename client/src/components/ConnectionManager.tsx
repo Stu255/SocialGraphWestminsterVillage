@@ -15,19 +15,49 @@ import { AddConnectionDialog } from "./AddConnectionDialog";
  * Constants defining the connection types between contacts
  * 
  * Contact Connections (Edge Lines):
- * - Represents how contacts are connected to each other
+ * - Represents frequency and strength of contact between people
  * - Values 0-5, displayed as different line styles
- * - Includes "None" (0) for no connection
+ * - Includes "None" (0) for no meaningful connection
  */
 
 // Define connection types (for edge lines)
 export const CONNECTION_TYPES = [
-  { id: 5, name: "Allied", style: "heavy-line", description: "Heavy solid line indicating strongest connection" },
-  { id: 4, name: "Trusted", style: "double-line", description: "Double line indicating strong connection" },
-  { id: 3, name: "Close", style: "standard-line", description: "Standard solid line indicating regular connection" },
-  { id: 2, name: "Familiar", style: "thin-line", description: "Thin solid line indicating basic connection" },
-  { id: 1, name: "Acquainted", style: "dashed-line", description: "Dashed line indicating minimal connection" },
-  { id: 0, name: "None", style: "no-line", description: "No visible connection" }
+  { 
+    id: 5, 
+    name: "Allied", 
+    style: "double-heavy-line", 
+    description: "Life long trusted connections with allied interests" 
+  },
+  { 
+    id: 4, 
+    name: "Trusted", 
+    style: "double-line", 
+    description: "Long lasting / permanent trusted connections" 
+  },
+  { 
+    id: 3, 
+    name: "Close", 
+    style: "standard-line", 
+    description: "Contact on a weekly/daily basis" 
+  },
+  { 
+    id: 2, 
+    name: "Familiar", 
+    style: "thin-line", 
+    description: "Contact on a monthly/weekly basis" 
+  },
+  { 
+    id: 1, 
+    name: "Acquainted", 
+    style: "thin-dashed-line", 
+    description: "Contact on a quarterly/monthly basis" 
+  },
+  { 
+    id: 0, 
+    name: "None", 
+    style: "no-line", 
+    description: "No meaningful connection" 
+  }
 ];
 
 // Helper functions for connection types (edge lines)
@@ -53,7 +83,7 @@ function ConnectionListDialog({ open, onOpenChange }: ConnectionListDialogProps)
         <DialogHeader>
           <DialogTitle>Contact Connection Types</DialogTitle>
           <DialogDescription>
-            How contacts are connected to each other, shown as lines between nodes
+            How frequently contacts interact with each other, shown as lines between nodes
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -64,13 +94,20 @@ function ConnectionListDialog({ open, onOpenChange }: ConnectionListDialogProps)
                 <p className="text-sm text-muted-foreground">{type.description}</p>
               </div>
               <div className={`w-24 ${
-                type.style === 'heavy-line' ? 'h-2 bg-foreground' :
-                type.style === 'double-line' ? 'h-3 border-t-2 border-b-2 border-foreground' :
+                type.style === 'double-heavy-line' ? 'h-4 flex flex-col justify-between' : 
+                type.style === 'double-line' ? 'h-3 flex flex-col justify-between' :
                 type.style === 'standard-line' ? 'h-1 bg-foreground' :
                 type.style === 'thin-line' ? 'h-px bg-foreground/70' :
-                type.style === 'dashed-line' ? 'h-0 border-t border-dashed border-foreground/50 [border-width:1px] [border-spacing:6px]' :
+                type.style === 'thin-dashed-line' ? 'h-0 border-t border-dashed border-foreground/50 [border-width:0.5px]' :
                 'hidden' // for "None" type
-              }`} />
+              }`}>
+                {(type.style === 'double-heavy-line' || type.style === 'double-line') && (
+                  <>
+                    <div className={`w-full bg-foreground ${type.style === 'double-heavy-line' ? 'h-1.5' : 'h-0.5'}`} />
+                    <div className={`w-full bg-foreground ${type.style === 'double-heavy-line' ? 'h-1.5' : 'h-0.5'}`} />
+                  </>
+                )}
+              </div>
             </div>
           ))}
         </div>
