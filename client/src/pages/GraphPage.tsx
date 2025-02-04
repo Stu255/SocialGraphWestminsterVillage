@@ -77,7 +77,7 @@ export default function GraphPage({ params }: Props) {
     setLocation("/");
   };
 
-  const preparedNodes = (people || []).map(person => ({
+  const preparedNodes = (people || []).map((person: any) => ({
     ...person,
     relationshipToYou: person.relationshipToYou === undefined || person.relationshipToYou === null ? 1 : person.relationshipToYou
   }));
@@ -86,7 +86,11 @@ export default function GraphPage({ params }: Props) {
     <NetworkGraph
       nodes={preparedNodes}
       links={connections || []}
-      filters={filters}
+      filters={{
+        affiliation: filters.organization,
+        userRelationshipType: filters.userRelationshipType || undefined,
+        connectionType: filters.connectionType || undefined
+      }}
       onNodeSelect={setSelectedNode}
       graphId={graphId}
     />
@@ -110,9 +114,10 @@ export default function GraphPage({ params }: Props) {
   }
 
   return (
-    <div className="h-screen w-full bg-background overflow-hidden">
+    <div className="h-screen w-full bg-background overflow-hidden font-sans">
       <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel defaultSize={20} minSize={20} maxSize={20}>
+        {/* Left Sidebar */}
+        <ResizablePanel defaultSize={20} minSize={15} maxSize={25} className="border-r">
           <div className="h-full flex flex-col">
             <div className="p-4 border-b flex items-center gap-2">
               <Button
@@ -125,20 +130,26 @@ export default function GraphPage({ params }: Props) {
               </Button>
             </div>
 
-            <div className="flex-1 flex flex-col p-4 gap-3">
-              {graph && (
-                <div className="h-[45px]">
-                  <NetworkManager graphId={graphId} currentName={graph.name} />
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-4 space-y-6">
+                {graph && (
+                  <div className="space-y-2">
+                    <h2 className="text-sm font-medium text-foreground/70">Network</h2>
+                    <NetworkManager graphId={graphId} currentName={graph.name} />
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <h2 className="text-sm font-medium text-foreground/70">Add Person</h2>
+                  <NodeForm graphId={graphId} />
                 </div>
-              )}
-              <div className="h-[100px]">
-                <NodeForm graphId={graphId} />
-              </div>
-              <div className="h-[100px]">
-                <OrganizationManager graphId={graphId} />
-              </div>
-              <div className="h-[100px]">
-                <ConnectionManager graphId={graphId} title="Connections" />
+                <div className="space-y-2">
+                  <h2 className="text-sm font-medium text-foreground/70">Organizations</h2>
+                  <OrganizationManager graphId={graphId} />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-sm font-medium text-foreground/70">Connections</h2>
+                  <ConnectionManager graphId={graphId} title="Connections" />
+                </div>
               </div>
             </div>
           </div>
@@ -146,18 +157,24 @@ export default function GraphPage({ params }: Props) {
 
         <ResizableHandle />
 
-        <ResizablePanel defaultSize={showRightSidebar ? 60 : 80}>
+        {/* Main Content */}
+        <ResizablePanel 
+          defaultSize={showRightSidebar ? 60 : 80}
+          className="relative"
+        >
           {graphComponent}
         </ResizablePanel>
 
         <ResizableHandle />
 
+        {/* Right Sidebar */}
         <ResizablePanel 
-          defaultSize={20} 
-          minSize={15}
+          defaultSize={20}
+          minSize={0}
+          maxSize={25}
           className={cn(
             "transition-all duration-300",
-            !showRightSidebar && "!w-[40px] !min-w-[40px] flex-none"
+            !showRightSidebar && "!w-0 !min-w-0"
           )}
         >
           <div className="relative h-full">
@@ -174,15 +191,23 @@ export default function GraphPage({ params }: Props) {
             </Button>
             <div className={cn(
               "h-full transition-all duration-300",
-              showRightSidebar ? "opacity-100" : "opacity-0 pointer-events-none"
+              !showRightSidebar ? "opacity-0 pointer-events-none" : "opacity-100"
             )}>
-              <div className="h-full p-6 border-l overflow-y-auto space-y-6">
-                <FilterPanel filters={filters} onFilterChange={setFilters} />
-                <AnalysisPanel
-                  selectedNode={selectedNode}
-                  graphId={graphId}
-                  onNodeDeleted={handleNodeDeleted}
-                />
+              <div className="h-full overflow-y-auto">
+                <div className="p-6 space-y-6">
+                  <div className="space-y-2">
+                    <h2 className="text-sm font-medium text-foreground/70">Filters</h2>
+                    <FilterPanel filters={filters} onFilterChange={setFilters} />
+                  </div>
+                  <div className="space-y-2">
+                    <h2 className="text-sm font-medium text-foreground/70">Analysis</h2>
+                    <AnalysisPanel
+                      selectedNode={selectedNode}
+                      graphId={graphId}
+                      onNodeDeleted={handleNodeDeleted}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
