@@ -42,11 +42,9 @@ export default function GraphPage({ params }: Props) {
   const { data: people } = useQuery({
     queryKey: ["/api/people", graphId],
     queryFn: async () => {
-      console.log("Fetching people for graph:", graphId);
       const res = await fetch(`/api/people?graphId=${graphId}`);
       if (!res.ok) throw new Error("Failed to fetch people");
       const data = await res.json();
-      console.log("Fetched people data:", data);
       return data;
     },
   });
@@ -54,11 +52,9 @@ export default function GraphPage({ params }: Props) {
   const { data: connections } = useQuery({
     queryKey: ["/api/connections", graphId],
     queryFn: async () => {
-      console.log("Fetching connections for graph:", graphId);
       const res = await fetch(`/api/connections?graphId=${graphId}`);
       if (!res.ok) throw new Error("Failed to fetch connections");
       const data = await res.json();
-      console.log("Fetched connections data:", data);
       return data;
     },
   });
@@ -66,11 +62,9 @@ export default function GraphPage({ params }: Props) {
   const { data: graph } = useQuery({
     queryKey: ["/api/graphs", graphId],
     queryFn: async () => {
-      console.log("Fetching graph:", graphId);
       const res = await fetch(`/api/graphs/${graphId}`);
       if (!res.ok) throw new Error("Failed to fetch graph");
       const data = await res.json();
-      console.log("Fetched graph data:", data);
       return data;
     },
   });
@@ -87,9 +81,6 @@ export default function GraphPage({ params }: Props) {
     ...person,
     relationshipToYou: person.relationshipToYou === undefined || person.relationshipToYou === null ? 1 : person.relationshipToYou
   }));
-
-  console.log("Prepared nodes:", preparedNodes);
-  console.log("Current connections:", connections);
 
   const graphComponent = (
     <NetworkGraph
@@ -121,7 +112,7 @@ export default function GraphPage({ params }: Props) {
   return (
     <div className="h-screen w-full bg-background overflow-hidden">
       <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel defaultSize={20} minSize={15}>
+        <ResizablePanel defaultSize={20} minSize={20} maxSize={20}>
           <div className="h-full flex flex-col">
             {/* Header section for navigation buttons */}
             <div className="p-4 border-b flex items-center gap-2">
@@ -135,20 +126,20 @@ export default function GraphPage({ params }: Props) {
               </Button>
             </div>
 
-            {/* Main content section with auto-scaling panels */}
+            {/* Main content section with fixed height panels */}
             <div className="flex-1 flex flex-col p-4 gap-4">
               {graph && (
-                <div className="flex-initial">
+                <div className="h-[60px]">
                   <NetworkManager graphId={graphId} currentName={graph.name} />
                 </div>
               )}
-              <div className="flex-1">
+              <div className="h-[140px]">
                 <NodeForm graphId={graphId} />
               </div>
-              <div className="flex-1">
+              <div className="h-[140px]">
                 <OrganizationManager graphId={graphId} />
               </div>
-              <div className="flex-1">
+              <div className="h-[140px]">
                 <ConnectionManager graphId={graphId} title="Connections" />
               </div>
             </div>
