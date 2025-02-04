@@ -48,13 +48,15 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   graphId: number;
+  selectedNode?: Person;  // Make selectedNode optional but use it to determine initial state
 }
 
 type SortField = "name" | "organization" | "jobTitle" | "relationshipToYou";
 type SortDirection = "asc" | "desc";
 
-export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
-  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+export function AddConnectionDialog({ open, onOpenChange, graphId, selectedNode }: Props) {
+  // If selectedNode is provided, we're in edit mode for that node
+  const [currentNode, setCurrentNode] = useState<Person | null>(selectedNode || null);
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [currentPage, setCurrentPage] = useState(1);
@@ -147,7 +149,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
   });
 
   const getCurrentConnection = (targetPersonId: number) => {
-    if (!selectedPerson) return 0;
+    if (!currentNode) return 0;
     console.log(
       "Getting current connection for target",
       targetPersonId,
@@ -156,10 +158,10 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
     );
     const connection = connections.find(
       (c) =>
-        (c.sourcePersonId === selectedPerson.id &&
+        (c.sourcePersonId === currentNode.id &&
           c.targetPersonId === targetPersonId) ||
         (c.sourcePersonId === targetPersonId &&
-          c.targetPersonId === selectedPerson.id)
+          c.targetPersonId === currentNode.id)
     );
     console.log("Found connection:", connection);
     return connection?.connectionType ?? 0;
@@ -184,7 +186,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
   };
 
   const filteredAndSortedPeople = people
-    .filter((person) => person.id !== selectedPerson?.id)
+    .filter((person) => person.id !== currentNode?.id)
     .filter((person) => {
       return (
         person.name.toLowerCase().includes(filters.name.toLowerCase()) &&
@@ -217,18 +219,18 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
       <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            {selectedPerson && (
+            {currentNode && !selectedNode && ( // Only show back button in selection mode
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setSelectedPerson(null)}
+                onClick={() => setCurrentNode(null)}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
             )}
             <DialogTitle>
-              {selectedPerson
-                ? `Manage Connections for ${selectedPerson.name}`
+              {currentNode || selectedNode
+                ? `Manage Connections for ${(currentNode || selectedNode)?.name}`
                 : "Select Contact"}
             </DialogTitle>
           </div>
@@ -300,7 +302,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
                 >
                   Relationship to You {getSortIcon("relationshipToYou")}
                 </TableHead>
-                {selectedPerson && <TableHead>Connection Type</TableHead>}
+                {currentNode && <TableHead>Connection Type</TableHead>}
                 <TableHead />
               </TableRow>
             </TableHeader>
@@ -315,14 +317,14 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
                   <TableCell className="py-1">
                     {getUserRelationshipNameById(person.relationshipToYou)}
                   </TableCell>
-                  {selectedPerson && (
+                  {currentNode && (
                     <TableCell className="py-1">
                       <Select
                         value={String(getCurrentConnection(person.id))}
                         onValueChange={(value) => {
                           const connectionType = parseInt(value, 10);
                           updateConnection.mutate({
-                            sourceId: selectedPerson.id,
+                            sourceId: currentNode.id,
                             targetId: person.id,
                             connectionType,
                           });
@@ -344,11 +346,11 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
                     </TableCell>
                   )}
                   <TableCell className="py-1">
-                    {!selectedPerson && (
+                    {!currentNode && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setSelectedPerson(person)}
+                        onClick={() => setCurrentNode(person)}
                       >
                         Manage
                       </Button>

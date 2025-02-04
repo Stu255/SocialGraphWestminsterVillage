@@ -260,7 +260,14 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
       })
       .on("contextmenu", (event, d) => {
         event.preventDefault();
-        setSelectedNode(d);
+        const contact = {
+          id: d.id,
+          name: d.name,
+          organization: d.organization,
+          jobTitle: d.jobTitle,
+          relationshipToYou: d.userRelationshipType
+        };
+        setSelectedNode(contact);
         setConnectionsDialogOpen(true);
       });
 
@@ -309,7 +316,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
           )}
           {connectionsDialogOpen && (
             <AddConnectionDialog
-              selectedNode={selectedNode} //Adding selectedNode prop here
+              selectedNode={selectedNode}
               open={connectionsDialogOpen}
               onOpenChange={(open) => {
                 setConnectionsDialogOpen(open);
