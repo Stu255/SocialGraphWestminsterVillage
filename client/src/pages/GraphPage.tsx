@@ -195,6 +195,16 @@ export default function GraphPage({ params }: Props) {
               <ChevronRight className="h-4 w-4" />
             </Button>
 
+            {/* Recall tab - only visible when sidebar is collapsed */}
+            {!showRightSidebar && (
+              <div 
+                onClick={() => setShowRightSidebar(true)}
+                className="absolute -left-8 top-1/2 -translate-y-1/2 rotate-90 bg-background border rounded-t-lg px-2 py-1.5 cursor-pointer shadow-md hover:bg-accent transition-colors"
+              >
+                <span className="text-xs font-medium text-muted-foreground">Analysis & Filters</span>
+              </div>
+            )}
+
             <div className={cn(
               "h-full transition-all duration-300 border-l",
               !showRightSidebar ? "opacity-0 pointer-events-none w-0" : "opacity-100 w-full"
