@@ -30,7 +30,7 @@ export default function GraphPage({ params }: Props) {
   const [, setLocation] = useLocation();
   const [selectedNode, setSelectedNode] = useState<any>(null);
   const [filters, setFilters] = useState({
-    organization: null,
+    affiliation: null,
     connectionType: null,
     userRelationshipType: null,
   });
@@ -46,11 +46,11 @@ export default function GraphPage({ params }: Props) {
     },
   });
 
-  const { data: relationships } = useQuery({
-    queryKey: ["/api/relationships", graphId],
+  const { data: connections } = useQuery({
+    queryKey: ["/api/connections", graphId],
     queryFn: async () => {
-      const res = await fetch(`/api/relationships?graphId=${graphId}`);
-      if (!res.ok) throw new Error("Failed to fetch relationships");
+      const res = await fetch(`/api/connections?graphId=${graphId}`);
+      if (!res.ok) throw new Error("Failed to fetch connections");
       return res.json();
     },
   });
@@ -76,7 +76,6 @@ export default function GraphPage({ params }: Props) {
     console.log("Processing node:", person.name, "relationshipToYou:", person.relationshipToYou);
     return {
       ...person,
-      // Only set default if relationshipToYou is strictly undefined or null
       relationshipToYou: person.relationshipToYou === undefined || person.relationshipToYou === null ? 1 : person.relationshipToYou
     };
   });
@@ -84,7 +83,7 @@ export default function GraphPage({ params }: Props) {
   const graphComponent = (
     <NetworkGraph
       nodes={preparedNodes}
-      links={relationships || []}
+      links={connections || []}
       filters={filters}
       onNodeSelect={setSelectedNode}
       graphId={graphId}
@@ -96,7 +95,7 @@ export default function GraphPage({ params }: Props) {
       <MobileLayout
         selectedNode={selectedNode}
         nodes={preparedNodes}
-        relationships={relationships || []}
+        connections={connections || []}
         filters={filters}
         graphId={graphId}
         onFilterChange={setFilters}
