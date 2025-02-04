@@ -194,21 +194,21 @@ export default function GraphPage({ params }: Props) {
                 </div>
               </div>
             </div>
-
-            {/* Collapse/Expand Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowRightSidebar(!showRightSidebar)}
-              className={cn(
-                "absolute bottom-4 z-10 rounded-full bg-background shadow-md border",
-                showRightSidebar ? "left-0" : "left-[-3rem]"
-              )}
-            >
-              <ChevronRight className={cn("h-4 w-4", !showRightSidebar && "rotate-180")} />
-            </Button>
           </div>
         </ResizablePanel>
+
+        {/* Fixed Expand/Collapse Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowRightSidebar(!showRightSidebar)}
+          className={cn(
+            "fixed bottom-4 right-4 z-[5] rounded-full bg-background shadow-md border",
+            showRightSidebar && "opacity-0 pointer-events-none"
+          )}
+        >
+          <ChevronRight className={cn("h-4 w-4", !showRightSidebar && "rotate-180")} />
+        </Button>
       </ResizablePanelGroup>
     </div>
   );
