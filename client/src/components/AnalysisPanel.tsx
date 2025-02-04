@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Pencil, Trash2, X, Check, ArrowLeft } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -13,20 +11,27 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
-import { 
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { getConnectionNameById } from "./ConnectionManager";
+import {
   USER_RELATIONSHIP_TYPES,
   getUserRelationshipNameById,
   getUserRelationshipIdByName,
 } from "./RelationshipTypeManager";
-import { useToast } from "@/hooks/use-toast";
 
 const FIELD_LABELS: Record<string, string> = {
   name: "Name",
@@ -43,7 +48,7 @@ const FIELD_LABELS: Record<string, string> = {
   notes: "Notes"
 };
 
-export function AnalysisPanel({ selectedNode, graphId }) {
+export function AnalysisPanel({ selectedNode, graphId, onNodeDeleted }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
@@ -69,10 +74,10 @@ export function AnalysisPanel({ selectedNode, graphId }) {
       const relationshipToYou = getUserRelationshipIdByName(values.userRelationshipType);
       console.log("Updating person with relationship:", relationshipToYou);
 
-      const payload = { 
+      const payload = {
         ...values,
         relationshipToYou,
-        graphId 
+        graphId
       };
 
       console.log("Sending contact data:", payload);
@@ -106,7 +111,7 @@ export function AnalysisPanel({ selectedNode, graphId }) {
         jobTitle: selectedNode.jobTitle || "",
         organization: selectedNode.organization || "",
         userRelationshipType: getUserRelationshipNameById(selectedNode.relationshipToYou),
-        lastContact: selectedNode.lastContact ? 
+        lastContact: selectedNode.lastContact ?
           new Date(selectedNode.lastContact).toISOString().split('T')[0] : "",
         officeNumber: selectedNode.officeNumber || "",
         mobileNumber: selectedNode.mobileNumber || "",
@@ -179,8 +184,8 @@ export function AnalysisPanel({ selectedNode, graphId }) {
   });
 
   const { data: nodes = [] } = useQuery({
-      queryKey: ["/api/people", graphId],
-      enabled: !!graphId,
+    queryKey: ["/api/people", graphId],
+    enabled: !!graphId,
   });
 
   const { data: relationships = [] } = useQuery({
@@ -198,7 +203,7 @@ export function AnalysisPanel({ selectedNode, graphId }) {
     return org?.brandColor || 'hsl(var(--primary))';
   };
 
-    const visibleFields = fieldPreferences?.order.filter(
+  const visibleFields = fieldPreferences?.order.filter(
     field => !fieldPreferences?.hidden.includes(field)
   ) || Object.keys(FIELD_LABELS);
 
@@ -240,12 +245,12 @@ export function AnalysisPanel({ selectedNode, graphId }) {
   });
 
   const onSubmit = (data: any) => {
-      if (!data.name?.trim()) {
-          return;
-      }
-      if (!data.userRelationshipType) {
-          return;
-      }
+    if (!data.name?.trim()) {
+      return;
+    }
+    if (!data.userRelationshipType) {
+      return;
+    }
     updatePersonMutation.mutate(data);
   };
 
@@ -276,15 +281,20 @@ export function AnalysisPanel({ selectedNode, graphId }) {
       </Card>
     );
   }
-    
+
   const onNodeDeleted = () => {
-        queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
+    queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
   };
 
   const nodeMetrics = centrality?.find((c: any) => c.id === selectedNode.id);
-    const nodeConnections = relationships.filter(r =>
-    r.sourcePersonId === selectedNode.id ||
-    r.targetPersonId === selectedNode.id
+  const { data: connections = [] } = useQuery({
+    queryKey: ["/api/connections", graphId],
+    enabled: !!graphId,
+  });
+
+  const nodeConnections = connections.filter(r =>
+    r.sourcePersonId === selectedNode?.id ||
+    r.targetPersonId === selectedNode?.id
   );
 
   return (
@@ -398,7 +408,7 @@ export function AnalysisPanel({ selectedNode, graphId }) {
                 <div key={rel.id} className="flex items-center justify-between">
                   <span>
                     {rel.sourcePersonId === selectedNode.id ? "→" : "←"} {otherNode?.name}
-                    ({rel.relationshipType})
+                    ({getConnectionNameById(rel.connectionType)})
                   </span>
                   <Button
                     variant="ghost"

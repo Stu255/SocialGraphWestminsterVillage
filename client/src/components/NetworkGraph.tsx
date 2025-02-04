@@ -61,7 +61,6 @@ const USER_RELATIONSHIP_ICONS = {
 };
 
 const getUserRelationshipIcon = (relationshipType: number | undefined) => {
-  // Only default to Acquainted if strictly undefined or null
   const type = relationshipType === undefined || relationshipType === null ? 1 : relationshipType;
   console.log("Getting icon for relationship type:", type);
 
@@ -107,43 +106,44 @@ const getUserRelationshipIcon = (relationshipType: number | undefined) => {
 };
 
 const getConnectionLineStyle = (connectionType: number) => {
-  console.log("Getting line style for connection type:", connectionType);
-  switch (connectionType) {
-    case 5:
+  const type = CONNECTION_TYPES.find(t => t.id === connectionType);
+  if (!type) return null;
+
+  switch (type.id) {
+    case 5: 
       return { 
         strokeWidth: 3, 
         strokeDasharray: "none",
         doubleStroke: true,
         doubleStrokeGap: 4 
       } as const;
-    case 4:
+    case 4: 
       return { 
         strokeWidth: 2.5, 
         strokeDasharray: "none",
         doubleStroke: true,
         doubleStrokeGap: 3
       } as const;
-    case 3:
+    case 3: 
       return { 
         strokeWidth: 2, 
         strokeDasharray: "none",
         doubleStroke: false
       } as const;
-    case 2:
+    case 2: 
       return { 
         strokeWidth: 1.5, 
         strokeDasharray: "none",
         doubleStroke: false
       } as const;
-    case 1:
+    case 1: 
       return { 
         strokeWidth: 1, 
         strokeDasharray: "4,4",
         doubleStroke: false
       } as const;
-    case 0:
+    case 0: 
     default:
-      console.log("No line style for connection type:", connectionType);
       return null;
   }
 };
@@ -219,7 +219,7 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
 
         const sourceNode = nodeMap.get(link.sourcePersonId);
         const targetNode = nodeMap.get(link.targetPersonId);
-        return sourceNode && targetNode;
+        return sourceNode && targetNode && link.connectionType > 0; 
       })
       .map(link => ({
         source: nodeMap.get(link.sourcePersonId)!,
