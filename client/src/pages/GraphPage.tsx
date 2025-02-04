@@ -117,7 +117,12 @@ export default function GraphPage({ params }: Props) {
     <div className="h-screen w-full bg-background overflow-hidden font-sans">
       <ResizablePanelGroup direction="horizontal">
         {/* Left Sidebar */}
-        <ResizablePanel defaultSize={20} minSize={15} maxSize={25} className="border-r">
+        <ResizablePanel 
+          defaultSize={20} 
+          minSize={15} 
+          maxSize={25}
+          className="border-r min-w-[250px] max-w-[350px]"
+        >
           <div className="h-full flex flex-col">
             <div className="p-4 border-b flex items-center gap-2">
               <Button
@@ -134,20 +139,20 @@ export default function GraphPage({ params }: Props) {
               <div className="p-4 space-y-6">
                 {graph && (
                   <div className="space-y-2">
-                    <h2 className="text-sm font-medium text-foreground/70">Network</h2>
+                    <h2 className="text-sm font-medium text-foreground/70 truncate">Network</h2>
                     <NetworkManager graphId={graphId} currentName={graph.name} />
                   </div>
                 )}
                 <div className="space-y-2">
-                  <h2 className="text-sm font-medium text-foreground/70">Add Person</h2>
+                  <h2 className="text-sm font-medium text-foreground/70 truncate">Add Person</h2>
                   <NodeForm graphId={graphId} />
                 </div>
                 <div className="space-y-2">
-                  <h2 className="text-sm font-medium text-foreground/70">Organizations</h2>
+                  <h2 className="text-sm font-medium text-foreground/70 truncate">Organizations</h2>
                   <OrganizationManager graphId={graphId} />
                 </div>
                 <div className="space-y-2">
-                  <h2 className="text-sm font-medium text-foreground/70">Connections</h2>
+                  <h2 className="text-sm font-medium text-foreground/70 truncate">Connections</h2>
                   <ConnectionManager graphId={graphId} title="Connections" />
                 </div>
               </div>
@@ -169,12 +174,12 @@ export default function GraphPage({ params }: Props) {
 
         {/* Right Sidebar */}
         <ResizablePanel 
-          defaultSize={20}
+          defaultSize={showRightSidebar ? 20 : 0}
           minSize={0}
           maxSize={25}
           className={cn(
-            "transition-all duration-300",
-            !showRightSidebar && "!w-0 !min-w-0"
+            "transition-all duration-300 min-w-[250px] max-w-[350px]",
+            !showRightSidebar && "!w-0 !min-w-0 !max-w-0 !p-0"
           )}
         >
           <div className="relative h-full">
@@ -189,18 +194,19 @@ export default function GraphPage({ params }: Props) {
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
+
             <div className={cn(
-              "h-full transition-all duration-300",
-              !showRightSidebar ? "opacity-0 pointer-events-none" : "opacity-100"
+              "h-full transition-all duration-300 border-l",
+              !showRightSidebar ? "opacity-0 pointer-events-none w-0" : "opacity-100 w-full"
             )}>
               <div className="h-full overflow-y-auto">
                 <div className="p-6 space-y-6">
                   <div className="space-y-2">
-                    <h2 className="text-sm font-medium text-foreground/70">Filters</h2>
+                    <h2 className="text-sm font-medium text-foreground/70 truncate">Filters</h2>
                     <FilterPanel filters={filters} onFilterChange={setFilters} />
                   </div>
                   <div className="space-y-2">
-                    <h2 className="text-sm font-medium text-foreground/70">Analysis</h2>
+                    <h2 className="text-sm font-medium text-foreground/70 truncate">Analysis</h2>
                     <AnalysisPanel
                       selectedNode={selectedNode}
                       graphId={graphId}
