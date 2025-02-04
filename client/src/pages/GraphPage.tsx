@@ -139,20 +139,19 @@ export default function GraphPage({ params }: Props) {
               <div className="p-4 space-y-6">
                 {graph && (
                   <div className="space-y-2">
-                    <h2 className="text-sm font-medium text-foreground/70 truncate">Network</h2>
                     <NetworkManager graphId={graphId} currentName={graph.name} />
                   </div>
                 )}
                 <div className="space-y-2">
-                  <h2 className="text-sm font-medium text-foreground/70 truncate">People</h2>
+                  <h2 className="text-sm font-medium text-foreground/70">People</h2>
                   <NodeForm graphId={graphId} />
                 </div>
                 <div className="space-y-2">
-                  <h2 className="text-sm font-medium text-foreground/70 truncate">Organizations</h2>
+                  <h2 className="text-sm font-medium text-foreground/70">Organizations</h2>
                   <OrganizationManager graphId={graphId} />
                 </div>
                 <div className="space-y-2">
-                  <h2 className="text-sm font-medium text-foreground/70 truncate">Connections</h2>
+                  <h2 className="text-sm font-medium text-foreground/70">Connections</h2>
                   <ConnectionManager graphId={graphId} />
                 </div>
               </div>
@@ -178,43 +177,23 @@ export default function GraphPage({ params }: Props) {
           minSize={0}
           maxSize={25}
           className={cn(
-            "transition-all duration-300 min-w-[250px] max-w-[350px]",
+            "transition-all duration-300 min-w-[250px] max-w-[350px] relative",
             !showRightSidebar && "!w-0 !min-w-0 !max-w-0 !p-0"
           )}
         >
-          <div className="relative h-full">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowRightSidebar(!showRightSidebar)}
-              className={cn(
-                "absolute -left-3 top-3 z-10 rounded-full bg-background shadow-md border",
-                !showRightSidebar && "rotate-180"
-              )}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-
-            {/* Recall tab - always present behind the sidebar */}
-            <div 
-              onClick={() => setShowRightSidebar(true)}
-              className="absolute -left-8 top-1/2 -translate-y-1/2 rotate-90 bg-background border rounded-t-lg px-2 py-1.5 cursor-pointer shadow-md hover:bg-accent transition-colors"
-            >
-              <span className="text-xs font-medium text-muted-foreground">Analysis & Filters</span>
-            </div>
-
+          <div className="h-full flex flex-col">
             <div className={cn(
-              "h-full transition-all duration-300 border-l",
+              "flex-1 transition-all duration-300 border-l",
               !showRightSidebar ? "opacity-0 pointer-events-none w-0" : "opacity-100 w-full"
             )}>
               <div className="h-full overflow-y-auto">
                 <div className="p-6 space-y-6">
                   <div className="space-y-2">
-                    <h2 className="text-sm font-medium text-foreground/70 truncate">Filters</h2>
+                    <h2 className="text-sm font-medium text-foreground/70">Filters</h2>
                     <FilterPanel filters={filters} onFilterChange={setFilters} />
                   </div>
                   <div className="space-y-2">
-                    <h2 className="text-sm font-medium text-foreground/70 truncate">Analysis</h2>
+                    <h2 className="text-sm font-medium text-foreground/70">Analysis</h2>
                     <AnalysisPanel
                       selectedNode={selectedNode}
                       graphId={graphId}
@@ -224,6 +203,19 @@ export default function GraphPage({ params }: Props) {
                 </div>
               </div>
             </div>
+
+            {/* Collapse/Expand Button - Bottom */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowRightSidebar(!showRightSidebar)}
+              className={cn(
+                "absolute bottom-4 left-0 z-10 rounded-full bg-background shadow-md border",
+                !showRightSidebar && "-left-10"
+              )}
+            >
+              <ChevronRight className={cn("h-4 w-4", !showRightSidebar && "rotate-180")} />
+            </Button>
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
