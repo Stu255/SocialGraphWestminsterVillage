@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { USER_RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
 import { CONNECTION_TYPES } from "./ConnectionManager";
 import { ContactFormDialog } from "./ContactFormDialog";
+import { AddConnectionDialog } from "./AddConnectionDialog";
 
 interface Node extends d3.SimulationNodeDatum {
   id: number;
@@ -65,6 +66,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [connectionDialogOpen, setConnectionDialogOpen] = useState(false);
 
   const { data: organizations = [] } = useQuery<any[]>({
     queryKey: ["/api/organizations", graphId],
@@ -263,6 +265,18 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
         };
         setSelectedNode(contact);
         setDialogOpen(true);
+      })
+      .on("dblclick", (_event, d) => {
+        d3.event?.preventDefault(); // Prevent default double-click behavior
+        const contact = {
+          id: d.id,
+          name: d.name,
+          organization: d.organization,
+          jobTitle: d.jobTitle,
+          relationshipToYou: d.userRelationshipType,
+        };
+        setSelectedNode(contact);
+        setConnectionDialogOpen(true);
       });
 
     nodeGroup.append("text")
@@ -291,15 +305,26 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
     <Card className="h-full w-full">
       <svg ref={svgRef} className="w-full h-full min-h-[600px]" style={{ background: "white" }} />
       {selectedNode && (
-        <ContactFormDialog 
-          contact={selectedNode}
-          open={dialogOpen}
-          onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) setSelectedNode(null);
-          }}
-          graphId={graphId}
-        />
+        <>
+          <ContactFormDialog 
+            contact={selectedNode}
+            open={dialogOpen}
+            onOpenChange={(open) => {
+              setDialogOpen(open);
+              if (!open) setSelectedNode(null);
+            }}
+            graphId={graphId}
+          />
+          <AddConnectionDialog
+            open={connectionDialogOpen}
+            onOpenChange={(open) => {
+              setConnectionDialogOpen(open);
+              if (!open) setSelectedNode(null);
+            }}
+            sourceNode={selectedNode}
+            graphId={graphId}
+          />
+        </>
       )}
     </Card>
   );
