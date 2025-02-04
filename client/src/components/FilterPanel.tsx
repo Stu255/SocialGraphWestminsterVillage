@@ -13,9 +13,9 @@ interface Organization {
 }
 
 interface Filters {
-  organization: string | null;
-  userRelationshipType: number | null;
-  connectionType: number | null;
+  organization: string[];
+  userRelationshipType: number[];
+  connectionType: number[];
 }
 
 interface FilterPanelProps {
@@ -35,21 +35,21 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
   const handleOrganizationChange = (selectedIds: (string | number)[]) => {
     onFilterChange({
       ...filters,
-      organization: selectedIds.length === 0 ? null : selectedIds[0] as string
+      organization: selectedIds.map(id => String(id))
     });
   };
 
   const handleRelationshipChange = (selectedIds: (string | number)[]) => {
     onFilterChange({
       ...filters,
-      userRelationshipType: selectedIds.length === 0 ? null : selectedIds[selectedIds.length - 1] as number
+      userRelationshipType: selectedIds.map(id => Number(id))
     });
   };
 
   const handleConnectionChange = (selectedIds: (string | number)[]) => {
     onFilterChange({
       ...filters,
-      connectionType: selectedIds.length === 0 ? null : selectedIds[selectedIds.length - 1] as number
+      connectionType: selectedIds.map(id => Number(id))
     });
   };
 
@@ -64,14 +64,14 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
           <label className="text-sm font-medium">Organization</label>
           <div className="flex gap-2">
             <Button
-              variant={filters.organization === null ? "default" : "outline"}
+              variant={filters.organization.length === 0 ? "default" : "outline"}
               className="flex-1"
               onClick={() => handleOrganizationChange([])}
             >
               All
             </Button>
             <Button
-              variant={filters.organization !== null ? "default" : "outline"}
+              variant={filters.organization.length > 0 ? "default" : "outline"}
               className="flex-1"
               onClick={() => setOpenOrgDialog(true)}
             >
@@ -84,14 +84,14 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
           <label className="text-sm font-medium">Your Relationship Type</label>
           <div className="flex gap-2">
             <Button
-              variant={filters.userRelationshipType === null ? "default" : "outline"}
+              variant={filters.userRelationshipType.length === 0 ? "default" : "outline"}
               className="flex-1"
               onClick={() => handleRelationshipChange([])}
             >
               All
             </Button>
             <Button
-              variant={filters.userRelationshipType !== null ? "default" : "outline"}
+              variant={filters.userRelationshipType.length > 0 ? "default" : "outline"}
               className="flex-1"
               onClick={() => setOpenRelDialog(true)}
             >
@@ -104,14 +104,14 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
           <label className="text-sm font-medium">Connection Type</label>
           <div className="flex gap-2">
             <Button
-              variant={filters.connectionType === null ? "default" : "outline"}
+              variant={filters.connectionType.length === 0 ? "default" : "outline"}
               className="flex-1"
               onClick={() => handleConnectionChange([])}
             >
               All
             </Button>
             <Button
-              variant={filters.connectionType !== null ? "default" : "outline"}
+              variant={filters.connectionType.length > 0 ? "default" : "outline"}
               className="flex-1"
               onClick={() => setOpenConnDialog(true)}
             >
@@ -125,7 +125,7 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
           onOpenChange={setOpenOrgDialog}
           title="Filter Organizations"
           items={organizations.map(org => ({ id: org.name, name: org.name }))}
-          selectedItems={filters.organization ? [filters.organization] : []}
+          selectedItems={filters.organization}
           onSelectedItemsChange={handleOrganizationChange}
           enableSorting={true}
         />
@@ -135,7 +135,7 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
           onOpenChange={setOpenRelDialog}
           title="Filter Relationship Types"
           items={sortedRelationshipTypes.map(type => ({ id: type.id, name: type.name }))}
-          selectedItems={filters.userRelationshipType ? [filters.userRelationshipType] : []}
+          selectedItems={filters.userRelationshipType}
           onSelectedItemsChange={handleRelationshipChange}
           enableSorting={false}
         />
@@ -145,7 +145,7 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
           onOpenChange={setOpenConnDialog}
           title="Filter Connection Types"
           items={sortedConnectionTypes.map(type => ({ id: type.id, name: type.name }))}
-          selectedItems={filters.connectionType ? [filters.connectionType] : []}
+          selectedItems={filters.connectionType}
           onSelectedItemsChange={handleConnectionChange}
           enableSorting={false}
         />

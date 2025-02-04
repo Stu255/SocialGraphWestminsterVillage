@@ -32,9 +32,9 @@ export default function GraphPage({ params }: Props) {
   const [selectedNode, setSelectedNode] = useState<any>(null);
   const [showRightSidebar, setShowRightSidebar] = useState(true);
   const [filters, setFilters] = useState({
-    organization: null as string | null,
-    connectionType: null as number | null,
-    userRelationshipType: null as number | null,
+    organization: [] as string[],
+    connectionType: [] as number[],
+    userRelationshipType: [] as number[],
   });
 
   const graphId = parseInt(params.id);
@@ -87,9 +87,9 @@ export default function GraphPage({ params }: Props) {
       nodes={preparedNodes}
       links={connections || []}
       filters={{
-        affiliation: filters.organization,
-        userRelationshipType: filters.userRelationshipType || undefined,
-        connectionType: filters.connectionType || undefined
+        affiliation: filters.organization.length > 0 ? filters.organization : undefined,
+        userRelationshipType: filters.userRelationshipType.length > 0 ? filters.userRelationshipType : undefined,
+        connectionType: filters.connectionType.length > 0 ? filters.connectionType : undefined
       }}
       onNodeSelect={setSelectedNode}
       graphId={graphId}
