@@ -71,26 +71,16 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
       targetId: number, 
       connectionType: number 
     }) => {
-      const existingConnection = connections.find(c => 
-        (c.sourcePersonId === sourceId && c.targetPersonId === targetId) ||
-        (c.sourcePersonId === targetId && c.targetPersonId === sourceId)
-      );
-
       console.log("Updating connection:", {
         sourceId,
         targetId,
         connectionType,
-        existing: existingConnection,
         graphId
       });
 
       try {
-        const endpoint = existingConnection 
-          ? `/api/relationships/${existingConnection.id}`
-          : `/api/relationships/new`;
-
-        const response = await fetch(endpoint, {
-          method: 'PUT',
+        const response = await fetch(`/api/connections`, {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             graphId,
@@ -130,7 +120,7 @@ export function AddConnectionDialog({ open, onOpenChange, graphId }: Props) {
   const getCurrentConnection = (targetPersonId: number) => {
     const connection = connections.find(c => 
       (c.sourcePersonId === selectedPerson?.id && c.targetPersonId === targetPersonId) ||
-      (c.targetPersonId === selectedPerson?.id && c.sourcePersonId === targetPersonId)
+      (c.sourcePersonId === targetPersonId && c.targetPersonId === selectedPerson?.id)
     );
     return connection?.connectionType ?? 0;
   };
