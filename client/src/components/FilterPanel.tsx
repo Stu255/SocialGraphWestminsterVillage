@@ -39,6 +39,12 @@ export function FilterPanel({ filters, onFilterChange, graphId }: FilterPanelPro
     enabled: !!graphId,
   });
 
+  // Add "No Organisation Recorded" to organizations list
+  const orgItems = [
+    { id: "__none__", name: "No Organisation Recorded" },
+    ...organizations.map(org => ({ id: org.name, name: org.name }))
+  ];
+
   const handleOrganizationChange = (selectedIds: (string | number)[]) => {
     onFilterChange({
       ...filters,
@@ -130,7 +136,7 @@ export function FilterPanel({ filters, onFilterChange, graphId }: FilterPanelPro
           open={openOrgDialog}
           onOpenChange={setOpenOrgDialog}
           title="Filter Organizations"
-          items={organizations.map(org => ({ id: org.name, name: org.name }))}
+          items={orgItems}
           selectedItems={filters.organization}
           onSelectedItemsChange={handleOrganizationChange}
           enableSorting={true}

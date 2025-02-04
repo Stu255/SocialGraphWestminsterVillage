@@ -107,7 +107,15 @@ export function NetworkGraph({ nodes, links, filters, onNodeSelect, graphId }: P
     const filteredNodes = nodes.filter((node) => {
       // Apply organization filter
       if (filters.organization && filters.organization.length > 0) {
-        if (!filters.organization.includes(node.organization || '')) return false;
+        const nodeOrg = node.organization || '';
+        if (filters.organization.includes('__none__')) {
+          // If "No Organisation Recorded" is selected, include nodes with no organization
+          // along with nodes from other selected organizations
+          return nodeOrg === '' || !nodeOrg || filters.organization.includes(nodeOrg);
+        } else {
+          // Only include nodes from selected organizations
+          return filters.organization.includes(nodeOrg);
+        }
       }
 
       // Apply relationship type filter
