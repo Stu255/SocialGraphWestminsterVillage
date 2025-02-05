@@ -71,7 +71,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/graphs", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Not logged in" }); // Changed to JSON response
+      return res.status(401).json({ error: "Not logged in" }); 
     }
 
     try {
@@ -185,10 +185,10 @@ export function registerRoutes(app: Express): Server {
     try {
       console.log("Received update request for person:", req.params.id, req.body);
 
-      // Map relationshipToYou to userRelationshipType
+      
       const userRelationshipType = req.body.relationshipToYou;
 
-      // Validate relationship value if present
+      
       if (userRelationshipType !== undefined && userRelationshipType !== null) {
         const relationshipValue = Number(userRelationshipType);
         if (isNaN(relationshipValue) || relationshipValue < 0 || relationshipValue > 5) {
@@ -198,14 +198,14 @@ export function registerRoutes(app: Express): Server {
         }
       }
 
-      // Update the person
+      
       const [updatedPerson] = await db
         .update(people)
         .set({
           name: req.body.name,
           jobTitle: req.body.jobTitle,
           organization: req.body.organization,
-          userRelationshipType: userRelationshipType, // Map to correct field name
+          userRelationshipType: userRelationshipType, 
           officeNumber: req.body.officeNumber,
           mobileNumber: req.body.mobileNumber,
           email1: req.body.email1,
@@ -257,10 +257,10 @@ export function registerRoutes(app: Express): Server {
       console.log("Received connection create request:", req.body);
       const { sourcePersonId, targetPersonId, connectionType, graphId } = req.body;
 
-      // Create bidirectional connection in a single transaction
+      
       const connection = await db.transaction(async (tx) => {
         console.log("Starting transaction for new connection");
-        // First, delete any existing connections between these nodes
+        
         await tx.delete(connections)
           .where(
             and(
@@ -285,7 +285,7 @@ export function registerRoutes(app: Express): Server {
           graphId
         });
 
-        // Then create the new bidirectional connection
+        
         const [forward] = await tx
           .insert(connections)
           .values({
@@ -328,7 +328,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Source ID, Target ID and Graph ID are required" });
       }
 
-      // Delete both directions of the connection in a single transaction
+      
       await db.transaction(async (tx) => {
         await tx.delete(connections)
           .where(and(
@@ -377,7 +377,7 @@ export function registerRoutes(app: Express): Server {
 
       const { connectionType, graphId, sourcePersonId, targetPersonId } = req.body;
 
-      // Validate connection type
+      
       if (connectionType === undefined || connectionType === null || 
           typeof connectionType !== 'number' || 
           connectionType < 0 || connectionType > 5) {
@@ -386,7 +386,7 @@ export function registerRoutes(app: Express): Server {
         });
       }
 
-      // If we're creating a new connection
+      
       if (!req.params.id || req.params.id === 'new') {
         const [connection] = await db
           .insert(connections)
@@ -401,7 +401,7 @@ export function registerRoutes(app: Express): Server {
         return res.json(connection);
       }
 
-      // Update existing connection
+      
       const [existingConnection] = await db
         .select()
         .from(connections)
@@ -411,15 +411,15 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "Connection not found" });
       }
 
-      // Update both directions of the connection in a transaction
+      
       await db.transaction(async (tx) => {
-        // Update the forward connection
+        
         await tx
           .update(connections)
           .set({ connectionType })
           .where(eq(connections.id, parseInt(req.params.id)));
 
-        // Find and update the reverse connection
+        
         await tx
           .update(connections)
           .set({ connectionType })
@@ -444,7 +444,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add organization routes
+  
   app.get("/api/organizations", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not logged in" });
@@ -475,7 +475,9 @@ export function registerRoutes(app: Express): Server {
     try {
       console.log("Creating organization with data:", req.body);
 
-      if (!req.body.graphId) {
+      
+      const graphId = req.body.graphId || req.body.graph_id;
+      if (!graphId) {
         return res.status(400).json({ error: "Graph ID is required" });
       }
 
@@ -483,7 +485,7 @@ export function registerRoutes(app: Express): Server {
         .insert(organizations)
         .values({
           name: req.body.name,
-          graphId: req.body.graphId,
+          graphId: graphId,
           industry: req.body.industry || null,
           hqCity: req.body.hqCity || null,
           brandColor: req.body.brandColor || "#000000",
@@ -534,7 +536,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add graph management routes
+  
   app.put("/api/graphs/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not logged in" });
@@ -568,7 +570,7 @@ export function registerRoutes(app: Express): Server {
   
       try {
           const now = new Date();
-          // Get the original graph
+          
           const [originalGraph] = await db
               .select()
               .from(socialGraphs)
@@ -578,8 +580,7 @@ export function registerRoutes(app: Express): Server {
               return res.status(404).json({ error: "Graph not found" });
           }
   
-  
-          // Create new graph with copied name and current timestamp
+          
           const [newGraph] = await db
               .insert(socialGraphs)
               .values({
