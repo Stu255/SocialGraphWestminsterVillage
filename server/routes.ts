@@ -185,10 +185,8 @@ export function registerRoutes(app: Express): Server {
     try {
       console.log("Received update request for person:", req.params.id, req.body);
 
-      
       const userRelationshipType = req.body.relationshipToYou;
 
-      
       if (userRelationshipType !== undefined && userRelationshipType !== null) {
         const relationshipValue = Number(userRelationshipType);
         if (isNaN(relationshipValue) || relationshipValue < 0 || relationshipValue > 5) {
@@ -198,7 +196,6 @@ export function registerRoutes(app: Express): Server {
         }
       }
 
-      
       const [updatedPerson] = await db
         .update(people)
         .set({
@@ -257,7 +254,6 @@ export function registerRoutes(app: Express): Server {
       console.log("Received connection create request:", req.body);
       const { sourcePersonId, targetPersonId, connectionType, graphId } = req.body;
 
-      
       const connection = await db.transaction(async (tx) => {
         console.log("Starting transaction for new connection");
         
@@ -285,7 +281,6 @@ export function registerRoutes(app: Express): Server {
           graphId
         });
 
-        
         const [forward] = await tx
           .insert(connections)
           .values({
@@ -328,7 +323,6 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Source ID, Target ID and Graph ID are required" });
       }
 
-      
       await db.transaction(async (tx) => {
         await tx.delete(connections)
           .where(and(
@@ -377,7 +371,6 @@ export function registerRoutes(app: Express): Server {
 
       const { connectionType, graphId, sourcePersonId, targetPersonId } = req.body;
 
-      
       if (connectionType === undefined || connectionType === null || 
           typeof connectionType !== 'number' || 
           connectionType < 0 || connectionType > 5) {
@@ -386,7 +379,6 @@ export function registerRoutes(app: Express): Server {
         });
       }
 
-      
       if (!req.params.id || req.params.id === 'new') {
         const [connection] = await db
           .insert(connections)
@@ -401,7 +393,6 @@ export function registerRoutes(app: Express): Server {
         return res.json(connection);
       }
 
-      
       const [existingConnection] = await db
         .select()
         .from(connections)
@@ -411,7 +402,6 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "Connection not found" });
       }
 
-      
       await db.transaction(async (tx) => {
         
         await tx
@@ -444,7 +434,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  
   app.get("/api/organizations", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not logged in" });
@@ -475,7 +464,6 @@ export function registerRoutes(app: Express): Server {
     try {
       console.log("Creating organization with data:", req.body);
 
-      
       const graphId = req.body.graphId || req.body.graph_id;
       if (!graphId) {
         return res.status(400).json({ error: "Graph ID is required" });
@@ -536,7 +524,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  
   app.put("/api/graphs/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not logged in" });
@@ -665,6 +652,44 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error deleting graph:", error);
       res.status(500).json({ error: "Failed to delete graph" });
+    }
+  });
+
+  app.get("/api/people/global", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not logged in" });
+    }
+
+    try {
+      // Get all people from graphs owned by the current user
+      const allPeople = await db
+        .select({
+          id: people.id,
+          name: people.name,
+          jobTitle: people.jobTitle,
+          organization: people.organization,
+          userRelationshipType: people.userRelationshipType,
+          lastContact: people.lastContact,
+          officeNumber: people.officeNumber,
+          mobileNumber: people.mobileNumber,
+          email1: people.email1,
+          email2: people.email2,
+          linkedin: people.linkedin,
+          twitter: people.twitter,
+          notes: people.notes,
+          graphId: people.graphId,
+          createdAt: people.createdAt,
+          graphName: socialGraphs.name,
+        })
+        .from(people)
+        .innerJoin(socialGraphs, eq(people.graphId, socialGraphs.id))
+        .where(eq(socialGraphs.userId, req.user.id));
+
+      const sortedPeople = sortPeopleByName(allPeople);
+      res.json(sortedPeople);
+    } catch (error) {
+      console.error("Error fetching global contacts:", error);
+      res.status(500).json({ error: "Failed to fetch global contacts" });
     }
   });
 
