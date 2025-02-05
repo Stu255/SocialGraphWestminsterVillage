@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import * as d3 from "d3";
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
@@ -6,6 +6,7 @@ import { USER_RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
 import { CONNECTION_TYPES } from "./ConnectionManager";
 import { ContactFormDialog } from "./ContactFormDialog";
 import { AddConnectionDialog } from "./AddConnectionDialog";
+import { ContactDetailsPopup } from "./ContactDetailsPopup";
 
 interface Node extends d3.SimulationNodeDatum {
   id: number;
@@ -67,6 +68,8 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [connectionsDialogOpen, setConnectionsDialogOpen] = useState(false);
+  const [showDetailsPopup, setShowDetailsPopup] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<Node | null>(null);
 
   const { data: organizations = [] } = useQuery<any[]>({
     queryKey: ["/api/organizations", graphId],
@@ -276,7 +279,13 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
       .attr("font-size", "12px")
       .attr("dx", 15)
       .attr("dy", 4)
-      .attr("fill", "#333");
+      .attr("fill", "#333")
+      .style("cursor", "pointer")
+      .on("click", (event, d) => {
+        event.stopPropagation(); 
+        setSelectedContact(d);
+        setShowDetailsPopup(true);
+      });
 
     simulation.on("tick", () => {
       linkGroup.selectAll("line")
@@ -294,7 +303,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
   }, [nodes, links, filters, organizationColors]);
 
   return (
-    <Card className="h-full w-full">
+    <Card className="h-full w-full relative">
       <svg 
         ref={svgRef} 
         className="w-full h-full min-h-[600px]" 
@@ -326,6 +335,15 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
             />
           )}
         </>
+      )}
+      {showDetailsPopup && selectedContact && (
+        <ContactDetailsPopup
+          contact={selectedContact}
+          onClose={() => {
+            setShowDetailsPopup(false);
+            setSelectedContact(null);
+          }}
+        />
       )}
     </Card>
   );
