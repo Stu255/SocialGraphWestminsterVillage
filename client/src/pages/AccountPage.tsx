@@ -4,10 +4,11 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, LogOut } from "lucide-react";
+import { Plus, LogOut, Users } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
 import { GraphCard } from "@/components/GraphCard";
+import { ContactListDialog } from "@/components/ContactListDialog";
 
 interface SocialGraph {
   id: number;
@@ -20,6 +21,7 @@ interface SocialGraph {
 
 export default function AccountPage() {
   const [newGraphName, setNewGraphName] = useState("");
+  const [showGlobalContacts, setShowGlobalContacts] = useState(false);
   const [, setLocation] = useLocation();
   const { logout, user } = useUser();
   const { toast } = useToast();
@@ -102,10 +104,16 @@ export default function AccountPage() {
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Welcome, {user?.username}</h1>
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setShowGlobalContacts(true)}>
+              <Users className="h-4 w-4 mr-2" />
+              Global Contacts
+            </Button>
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -149,6 +157,12 @@ export default function AccountPage() {
             </div>
           </CardContent>
         </Card>
+
+        <ContactListDialog
+          open={showGlobalContacts}
+          onOpenChange={setShowGlobalContacts}
+          isGlobalView
+        />
       </div>
     </div>
   );

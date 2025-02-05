@@ -34,7 +34,8 @@ import { AddOrganizationDialog } from "./AddOrganizationDialog";
 interface ContactListDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  graphId: number;
+  graphId?: number;  // Make graphId optional for global view
+  isGlobalView?: boolean;
 }
 
 interface EditDialogProps {
@@ -343,24 +344,26 @@ type SortConfig = {
 
 const ITEMS_PER_PAGE = 10;
 
-export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDialogProps) {
+export function ContactListDialog({ open, onOpenChange, graphId, isGlobalView = false }: ContactListDialogProps) {
   const [editingContact, setEditingContact] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: null, direction: null });
   const [filters, setFilters] = useState<FilterValues>({});
 
+  // Modify query to handle global view
   const { data: people } = useQuery({
-    queryKey: ["/api/people", graphId],
+    queryKey: ["/api/people", isGlobalView ? "global" : graphId],
     queryFn: async () => {
-      const res = await fetch(`/api/people?graphId=${graphId}`);
+      const endpoint = isGlobalView ? `/api/people/global` : `/api/people?graphId=${graphId}`;
+      const res = await fetch(endpoint);
       if (!res.ok) throw new Error("Failed to fetch people");
       const data = await res.json();
-      // Map userRelationshipType to relationshipToYou for UI consistency
       return data.map((person: any) => ({
         ...person,
         relationshipToYou: person.userRelationshipType
       }));
     },
+    enabled: isGlobalView || !!graphId,
   });
 
   // Filter contacts based on current filters
@@ -369,7 +372,6 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
       if (!value) return true;
       if (key === 'relationshipToYou') {
         const relationshipName = getUserRelationshipNameById(person.userRelationshipType)?.toLowerCase() || '';
-        console.log("Filtering relationship:", person.name, relationshipName, value.toLowerCase());
         return relationshipName.includes(value.toLowerCase());
       }
       const fieldValue = String(person[key] || "").toLowerCase();
@@ -427,7 +429,7 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
     setCurrentPage(page);
   };
 
-    const renderColumnHeader = (column: string, label: string) => {
+  const renderColumnHeader = (column: string, label: string) => {
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2">
@@ -455,8 +457,12 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[825px]">
           <DialogHeader>
-            <DialogTitle>Contacts</DialogTitle>
-            <DialogDescription>A list of all contacts in your network</DialogDescription>
+            <DialogTitle>{isGlobalView ? "Global Contacts" : "Contacts"}</DialogTitle>
+            <DialogDescription>
+              {isGlobalView
+                ? "A list of all contacts across all your networks"
+                : "A list of all contacts in your network"}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="relative">
@@ -474,7 +480,6 @@ export function ContactListDialog({ open, onOpenChange, graphId }: ContactListDi
                 <TableBody>
                   {paginatedPeople.map((person: any) => {
                     const relationshipName = getUserRelationshipNameById(person.relationshipToYou);
-                    console.log("Rendering person:", person.name, "relationship:", person.relationshipToYou, "->", relationshipName);
                     return (
                       <TableRow key={person.id}>
                         <TableCell className="font-medium">{person.name}</TableCell>
