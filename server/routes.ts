@@ -11,9 +11,11 @@ import {
   fieldPreferences,
   insertPersonSchema,
   insertSocialGraphSchema,
-  customFields 
+  customFields,
+  interactions 
 } from "@db/schema";
 import { setupAuth } from "./auth";
+import {interactionContacts} from "@db/schema"; 
 
 function getSortableSurname(name: string): string {
   const parts = name.split(" ");
@@ -690,6 +692,55 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error fetching global contacts:", error);
       res.status(500).json({ error: "Failed to fetch global contacts" });
+    }
+  });
+
+  app.post("/api/interactions", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not logged in" });
+    }
+
+    try {
+      const { type, notes, date, contactIds, graphId } = req.body;
+
+      if (!type || !date || !contactIds || !Array.isArray(contactIds) || !graphId) {
+        return res.status(400).json({ 
+          error: "Missing required fields" 
+        });
+      }
+
+      const interaction = await db.transaction(async (tx) => {
+        // Create the interaction
+        const [newInteraction] = await tx
+          .insert(interactions)
+          .values({
+            type,
+            notes: notes || null,
+            date,
+            graphId
+          })
+          .returning();
+
+        // Create associations with contacts
+        for (const contactId of contactIds) {
+          await tx
+            .insert(interactionContacts)
+            .values({
+              interactionId: newInteraction.id,
+              personId: contactId
+            });
+        }
+
+        return newInteraction;
+      });
+
+      res.json(interaction);
+    } catch (error: any) {
+      console.error("Error creating interaction:", error);
+      res.status(500).json({ 
+        error: "Failed to create interaction",
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 

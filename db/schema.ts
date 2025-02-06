@@ -90,6 +90,33 @@ export const connections = pgTable("connections", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Interactions table to store contact interactions
+export const interactions = pgTable("interactions", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(), // email, message, call, meeting, event
+  notes: text("notes"),
+  date: timestamp("date").notNull(),
+  graphId: integer("graph_id").references(() => socialGraphs.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Junction table for interactions and contacts
+export const interactionContacts = pgTable("interaction_contacts", {
+  id: serial("id").primaryKey(),
+  interactionId: integer("interaction_id")
+    .references(() => interactions.id)
+    .notNull(),
+  personId: integer("person_id")
+    .references(() => people.id)
+    .notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueInteractionPerson: unique("unique_interaction_person_idx").on(
+    table.interactionId,
+    table.personId
+  ),
+}));
+
 // Update the schemas to reflect the correct naming
 export const insertPersonSchema = createInsertSchema(people, {
   lastContact: z.string()
@@ -123,6 +150,11 @@ export const selectConnectionSchema = createSelectSchema(connections);
 export const insertConnectionTypeSchema = createInsertSchema(connectionTypes);
 export const selectConnectionTypeSchema = createSelectSchema(connectionTypes);
 export const selectOrganizationSchema = createSelectSchema(organizations);
+export const insertInteractionSchema = createInsertSchema(interactions);
+export const selectInteractionSchema = createSelectSchema(interactions);
+export const insertInteractionContactSchema = createInsertSchema(interactionContacts);
+export const selectInteractionContactSchema = createSelectSchema(interactionContacts);
+
 
 // Schema types
 export type User = typeof users.$inferSelect;
@@ -135,3 +167,7 @@ export type Connection = typeof connections.$inferSelect;
 export type ConnectionType = typeof connectionTypes.$inferSelect;
 export type Organization = typeof organizations.$inferSelect;
 export type InsertOrganization = typeof organizations.$inferInsert;
+export type Interaction = typeof interactions.$inferSelect;
+export type InsertInteraction = typeof interactions.$inferInsert;
+export type InteractionContact = typeof interactionContacts.$inferSelect;
+export type InsertInteractionContact = typeof interactionContacts.$inferInsert;
