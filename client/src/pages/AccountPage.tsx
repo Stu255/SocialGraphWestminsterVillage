@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, LogOut, Users } from "lucide-react";
+import { Plus, LogOut, Building2, Network } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
 import { GraphCard } from "@/components/GraphCard";
@@ -38,7 +38,6 @@ export default function AccountPage() {
     }
   });
 
-  // Handle error state using useEffect
   useEffect(() => {
     if (isError) {
       toast({
@@ -106,8 +105,12 @@ export default function AccountPage() {
           <h1 className="text-3xl font-bold">Welcome, {user?.username}</h1>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => setShowGlobalContacts(true)}>
-              <Users className="h-4 w-4 mr-2" />
-              Global Contacts
+              <Building2 className="h-4 w-4 mr-2" />
+              Global Organizations
+            </Button>
+            <Button variant="outline" onClick={handleLogout}>
+              <Network className="h-4 w-4 mr-2" />
+              Connection Types
             </Button>
             <Button variant="outline" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
@@ -128,8 +131,8 @@ export default function AccountPage() {
                 placeholder="New graph name..."
                 className="flex-1"
               />
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={createGraphMutation.isPending || !newGraphName.trim()}
               >
                 <Plus className="h-4 w-4 mr-2" />
