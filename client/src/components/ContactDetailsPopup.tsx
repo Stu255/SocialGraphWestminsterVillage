@@ -69,21 +69,11 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
 export function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetailsPopupProps) {
   const [showEdit, setShowEdit] = useState(false);
 
-  const contactInfo = [
-    { icon: Phone, label: "Office", value: contact.officeNumber, href: `tel:${contact.officeNumber}` },
-    { icon: Phone, label: "Mobile", value: contact.mobileNumber, href: `tel:${contact.mobileNumber}` },
-    { icon: Mail, label: "Primary Email", value: contact.email1, href: `mailto:${contact.email1}` },
-    { icon: Mail, label: "Secondary Email", value: contact.email2, href: `mailto:${contact.email2}` },
-    { icon: Linkedin, label: "LinkedIn", value: "View Profile", href: contact.linkedin },
-    { icon: Twitter, label: "Twitter", value: "View Profile", href: contact.twitter },
-  ].filter(item => item.value); // Only show items with values
-
   return (
     <>
       <Card className="absolute bottom-0 left-0 right-0 h-[40%] z-50 overflow-hidden border-t">
         <div className="h-full flex flex-col">
           <Tabs defaultValue="details" className="flex-1">
-            {/* Header with integrated tabs */}
             <div className="flex items-center justify-between p-4 border-b bg-muted/40">
               <div className="flex-1">
                 <h3 className="text-lg font-semibold">{contact.name}</h3>
@@ -124,31 +114,106 @@ export function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetail
 
             <div className="flex-1 overflow-y-auto p-4">
               <TabsContent value="details" className="m-0">
-                <div className="grid gap-4">
-                  {contactInfo.map((item, index) => (
-                    item.value && (
-                      <div key={index} className="flex items-center gap-3">
-                        <div className="flex-shrink-0">
-                          <item.icon className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm text-muted-foreground">{item.label}</p>
-                          {item.href ? (
-                            <a
-                              href={item.href}
-                              target={item.icon === Linkedin || item.icon === Twitter ? "_blank" : undefined}
-                              rel={item.icon === Linkedin || item.icon === Twitter ? "noopener noreferrer" : undefined}
-                              className="text-sm font-medium hover:underline"
-                            >
-                              {item.value}
-                            </a>
-                          ) : (
-                            <p className="text-sm font-medium">{item.value}</p>
-                          )}
+                <div className="grid grid-cols-3 gap-8">
+                  {/* Phone Numbers Column */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Phone Numbers</h4>
+                    {contact.officeNumber && (
+                      <div className="flex items-center gap-3">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Office</p>
+                          <a href={`tel:${contact.officeNumber}`} className="text-sm font-medium hover:underline">
+                            {contact.officeNumber}
+                          </a>
                         </div>
                       </div>
-                    )
-                  ))}
+                    )}
+                    {contact.mobileNumber && (
+                      <div className="flex items-center gap-3">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Mobile</p>
+                          <a href={`tel:${contact.mobileNumber}`} className="text-sm font-medium hover:underline">
+                            {contact.mobileNumber}
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                    {!contact.officeNumber && !contact.mobileNumber && (
+                      <p className="text-sm text-muted-foreground">No phone numbers available</p>
+                    )}
+                  </div>
+
+                  {/* Email Addresses Column */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Email Addresses</h4>
+                    {contact.email1 && (
+                      <div className="flex items-center gap-3">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Primary</p>
+                          <a href={`mailto:${contact.email1}`} className="text-sm font-medium hover:underline">
+                            {contact.email1}
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                    {contact.email2 && (
+                      <div className="flex items-center gap-3">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Secondary</p>
+                          <a href={`mailto:${contact.email2}`} className="text-sm font-medium hover:underline">
+                            {contact.email2}
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                    {!contact.email1 && !contact.email2 && (
+                      <p className="text-sm text-muted-foreground">No email addresses available</p>
+                    )}
+                  </div>
+
+                  {/* Social Links Column */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Social Media</h4>
+                    {contact.linkedin && (
+                      <div className="flex items-center gap-3">
+                        <Linkedin className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">LinkedIn</p>
+                          <a 
+                            href={contact.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-medium hover:underline"
+                          >
+                            View Profile
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                    {contact.twitter && (
+                      <div className="flex items-center gap-3">
+                        <Twitter className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Twitter</p>
+                          <a
+                            href={contact.twitter}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-medium hover:underline"
+                          >
+                            View Profile
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                    {!contact.linkedin && !contact.twitter && (
+                      <p className="text-sm text-muted-foreground">No social media links available</p>
+                    )}
+                  </div>
                 </div>
               </TabsContent>
 
