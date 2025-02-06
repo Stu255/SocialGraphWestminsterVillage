@@ -5,28 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, Phone, Linkedin, Twitter, Building2, Briefcase, Settings } from "lucide-react";
 import { ContactFormDialog } from "./ContactFormDialog";
 
-interface ContactDetailsPopupProps {
-  contact: {
-    id: number;
-    name: string;
-    jobTitle?: string;
-    organization?: string;
-    officeNumber?: string;
-    mobileNumber?: string;
-    email1?: string;
-    email2?: string;
-    linkedin?: string;
-    twitter?: string;
-    notes?: string;
-    interactions?: Array<{
-      date: string;
-      type: string;
-    }>;
-  };
-  onClose: () => void;
-  graphId: number;
-}
-
 const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: string }> }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -118,7 +96,7 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
         className="flex overflow-x-auto pb-4 no-scrollbar" 
         style={{ scrollBehavior: 'smooth' }}
       >
-        <div className="flex gap-6">
+        <div className="flex gap-1">
           {months.map((monthData, monthIndex) => {
             const cells = Array.from({ length: 7 * 6 }, (_, index) => {
               const row = index % 7;
@@ -148,7 +126,7 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
             return (
               <div key={monthIndex} className="flex flex-col gap-1">
                 <div className="text-sm text-muted-foreground mb-1">
-                  {monthData.name} {monthData.year}
+                  {monthData.name}
                 </div>
                 <div className="grid grid-cols-6 gap-1">
                   {cells.map((cell, cellIndex) => (
@@ -348,4 +326,26 @@ export function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetail
       />
     </>
   );
+}
+
+interface ContactDetailsPopupProps {
+  contact: {
+    id: number;
+    name: string;
+    jobTitle?: string;
+    organization?: string;
+    officeNumber?: string;
+    mobileNumber?: string;
+    email1?: string;
+    email2?: string;
+    linkedin?: string;
+    twitter?: string;
+    notes?: string;
+    interactions?: Array<{
+      date: string;
+      type: string;
+    }>;
+  };
+  onClose: () => void;
+  graphId: number;
 }
