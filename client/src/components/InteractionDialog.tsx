@@ -47,11 +47,28 @@ export function InteractionDialog({ open, onOpenChange, date, graphId, initialCo
         if (!res.ok) {
           const errorText = await res.text();
           console.error("Interaction creation error response:", errorText);
-          throw new Error(errorText || "Failed to create interaction");
+
+          // Try to parse error as JSON first
+          try {
+            const errorJson = JSON.parse(errorText);
+            throw new Error(errorJson.message || "Failed to create interaction");
+          } catch (parseError) {
+            // If it's not JSON (e.g., HTML), throw a generic error
+            throw new Error("Server error occurred while creating interaction. Please try again.");
+          }
         }
 
-        const data = await res.json();
-        return data;
+        const responseText = await res.text();
+        if (!responseText) {
+          return null; // Handle empty response
+        }
+
+        try {
+          return JSON.parse(responseText);
+        } catch (parseError) {
+          console.error("Failed to parse response:", responseText);
+          throw new Error("Invalid response from server");
+        }
       } catch (error) {
         console.error("Interaction creation error:", error);
         throw error;
