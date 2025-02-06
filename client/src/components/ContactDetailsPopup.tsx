@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, Phone, Linkedin, Twitter, Building2, Briefcase, Settings } from "lucide-react";
 import { ContactFormDialog } from "./ContactFormDialog";
 import { InteractionDialog } from "./InteractionDialog";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface ContactDetailsPopupProps {
   contact: {
@@ -28,6 +29,19 @@ interface ContactDetailsPopupProps {
 const InteractionHeatmap = ({ interactions, contactId, graphId }: { interactions?: Array<{ date: string }>, contactId: number, graphId: number }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  // Fetch interactions data
+  const { data: interactionsData } = useQuery({
+    queryKey: ["/api/interactions", graphId, contactId],
+    queryFn: async () => {
+      const response = await fetch(`/api/interactions?graphId=${graphId}&contactId=${contactId}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch interactions");
+      }
+      return response.json();
+    },
+  });
 
   const today = new Date();
   const currentMonth = today.getMonth();
@@ -52,7 +66,8 @@ const InteractionHeatmap = ({ interactions, contactId, graphId }: { interactions
   }
 
   const interactionCounts = new Map<string, number>();
-  interactions?.forEach(interaction => {
+  const allInteractions = interactionsData || interactions || [];
+  allInteractions.forEach(interaction => {
     const day = new Date(interaction.date).toISOString().split('T')[0];
     interactionCounts.set(day, (interactionCounts.get(day) || 0) + 1);
   });
@@ -85,7 +100,7 @@ const InteractionHeatmap = ({ interactions, contactId, graphId }: { interactions
 
   const handleWheel = (e: React.WheelEvent) => {
     if (scrollRef.current) {
-      const monthWidth = 140; 
+      const monthWidth = 140;
       const scrollAmount = e.deltaY > 0 ? monthWidth : -monthWidth;
       scrollRef.current.scrollLeft += scrollAmount;
       e.preventDefault();
@@ -94,12 +109,12 @@ const InteractionHeatmap = ({ interactions, contactId, graphId }: { interactions
 
   useEffect(() => {
     if (scrollRef.current) {
-      const monthWidth = 140; 
+      const monthWidth = 140;
 
       const now = new Date();
       const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-      const nextMonthIndex = months.findIndex(m => 
+      const nextMonthIndex = months.findIndex(m =>
         m.month === nextMonth.getMonth() && m.year === nextMonth.getFullYear()
       );
 
@@ -113,10 +128,10 @@ const InteractionHeatmap = ({ interactions, contactId, graphId }: { interactions
 
   return (
     <div className="space-y-4">
-      <div 
+      <div
         ref={scrollRef}
         onWheel={handleWheel}
-        className="flex overflow-x-auto pb-4 no-scrollbar" 
+        className="flex overflow-x-auto pb-4 no-scrollbar"
         style={{ scrollBehavior: 'smooth' }}
       >
         <div className="flex gap-4">
@@ -339,8 +354,8 @@ function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetailsPopupP
 
               <TabsContent value="interactions" className="m-0">
                 <div className="space-y-4">
-                  <InteractionHeatmap 
-                    interactions={contact.interactions} 
+                  <InteractionHeatmap
+                    interactions={contact.interactions}
                     contactId={contact.id}
                     graphId={graphId}
                   />

@@ -48,19 +48,17 @@ export function InteractionDialog({ open, onOpenChange, date, graphId, initialCo
           const errorText = await res.text();
           console.error("Interaction creation error response:", errorText);
 
-          // Try to parse error as JSON first
           try {
             const errorJson = JSON.parse(errorText);
             throw new Error(errorJson.message || "Failed to create interaction");
           } catch (parseError) {
-            // If it's not JSON (e.g., HTML), throw a generic error
             throw new Error("Server error occurred while creating interaction. Please try again.");
           }
         }
 
         const responseText = await res.text();
         if (!responseText) {
-          return null; // Handle empty response
+          return null;
         }
 
         try {
@@ -75,7 +73,9 @@ export function InteractionDialog({ open, onOpenChange, date, graphId, initialCo
       }
     },
     onSuccess: () => {
+      // Invalidate both queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/interactions", graphId] });
       onOpenChange(false);
       setType("email");
       setNotes("");
@@ -137,7 +137,7 @@ export function InteractionDialog({ open, onOpenChange, date, graphId, initialCo
         <DialogHeader>
           <DialogTitle>Record Interaction</DialogTitle>
           <DialogDescription>
-            {date 
+            {date
               ? `Record an interaction for ${new Date(date).toLocaleDateString()}`
               : "Record a new interaction"}
           </DialogDescription>

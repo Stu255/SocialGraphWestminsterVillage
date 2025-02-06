@@ -744,5 +744,49 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add this GET endpoint for interactions in the registerRoutes function
+  app.get("/api/interactions", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not logged in" });
+    }
+
+    try {
+      const { graphId, contactId } = req.query;
+
+      if (!graphId) {
+        return res.status(400).json({ error: "Graph ID is required" });
+      }
+
+      const interactionsQuery = db
+        .select({
+          id: interactions.id,
+          type: interactions.type,
+          notes: interactions.notes,
+          date: interactions.date,
+          createdAt: interactions.createdAt,
+        })
+        .from(interactions)
+        .where(eq(interactions.graphId, Number(graphId)));
+
+      if (contactId) {
+        interactionsQuery
+          .innerJoin(
+            interactionContacts,
+            eq(interactions.id, interactionContacts.interactionId)
+          )
+          .where(eq(interactionContacts.personId, Number(contactId)));
+      }
+
+      const interactionsData = await interactionsQuery;
+      res.json(interactionsData);
+    } catch (error: any) {
+      console.error("Error fetching interactions:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch interactions",
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  });
+
   return httpServer;
 }
