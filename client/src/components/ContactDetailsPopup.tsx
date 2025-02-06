@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,18 +28,19 @@ interface ContactDetailsPopupProps {
 }
 
 const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: string }> }) => {
-  // Get date range for display
-  const today = new Date();
-  const fourMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 4, 1);
-  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrollPosition, setScrollPosition] = useState(0);
 
-  // Generate array of month data (4 past months + current + next month)
+  // Get date range for display (12 months back and forward)
+  const today = new Date();
+  const twelveMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 12, 1);
+  const twelveMonthsForward = new Date(today.getFullYear(), today.getMonth() + 12, 1);
+
+  // Generate array of month data
   const months = [];
-  for (let m = new Date(fourMonthsAgo); m <= nextMonth; m.setMonth(m.getMonth() + 1)) {
+  for (let m = new Date(twelveMonthsAgo); m <= twelveMonthsForward; m.setMonth(m.getMonth() + 1)) {
     const monthStart = new Date(m);
     const daysInMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate();
-
-    // Get the day of week (0-6) for the first day of month
     const firstDayOfWeek = new Date(monthStart.getFullYear(), monthStart.getMonth(), 1).getDay();
 
     const monthData = {
@@ -49,7 +50,7 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
       daysInMonth,
       firstDayOfWeek,
     };
-    months.push(monthData); // Add to end of array for left-to-right chronology
+    months.push(monthData);
   }
 
   // Count interactions per day
@@ -89,55 +90,84 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
     return `${colorStyle} ${baseStyle} ${todayStyle}`;
   };
 
+  // Handle wheel scroll
+  const handleWheel = (e: React.WheelEvent) => {
+    if (scrollRef.current) {
+      // Scroll by month width (approximately 120px) for each wheel tick
+      const scrollAmount = e.deltaY > 0 ? 120 : -120;
+      scrollRef.current.scrollLeft += scrollAmount;
+      setScrollPosition(scrollRef.current.scrollLeft);
+    }
+  };
+
+  // Center on current month on initial render
+  useEffect(() => {
+    if (scrollRef.current) {
+      // Calculate position to center current month
+      // Each month is approximately 120px wide, and we want to center on month 12
+      const centerPosition = 12 * 120 - (scrollRef.current.clientWidth / 2) + 60;
+      scrollRef.current.scrollLeft = centerPosition;
+      setScrollPosition(centerPosition);
+    }
+  }, []);
+
   return (
     <div className="space-y-4">
-      <div className="flex gap-6">
-        {months.map((monthData, monthIndex) => {
-          // Create array for all possible cell positions in the month grid
-          const cells = Array.from({ length: 7 * 6 }, (_, index) => {
-            const row = index % 7; // 0 = Sunday, 6 = Saturday
-            const col = Math.floor(index / 7);
-            const dayNumber = index - monthData.firstDayOfWeek + 1;
-            const isValidDay = dayNumber > 0 && dayNumber <= monthData.daysInMonth;
+      <div 
+        ref={scrollRef}
+        onWheel={handleWheel}
+        className="flex overflow-x-auto pb-4 no-scrollbar" 
+        style={{ scrollBehavior: 'smooth' }}
+      >
+        <div className="flex gap-6">
+          {months.map((monthData, monthIndex) => {
+            const cells = Array.from({ length: 7 * 6 }, (_, index) => {
+              const row = index % 7;
+              const col = Math.floor(index / 7);
+              const dayNumber = index - monthData.firstDayOfWeek + 1;
+              const isValidDay = dayNumber > 0 && dayNumber <= monthData.daysInMonth;
 
-            if (!isValidDay) {
-              return null;
-            }
+              if (!isValidDay) {
+                return null;
+              }
 
-            const date = new Date(monthData.year, monthData.month, dayNumber);
-            const dateStr = date.toISOString().split('T')[0];
-            const count = interactionCounts.get(dateStr) || 0;
-            const isWeekend = row === 0 || row === 6; // Sunday or Saturday
+              const date = new Date(monthData.year, monthData.month, dayNumber);
+              const dateStr = date.toISOString().split('T')[0];
+              const count = interactionCounts.get(dateStr) || 0;
+              const isWeekend = row === 0 || row === 6;
 
-            return {
-              dayNumber,
-              row,
-              col,
-              count,
-              isWeekend,
-              dateStr,
-            };
-          }).filter(cell => cell !== null);
+              return {
+                dayNumber,
+                row,
+                col,
+                count,
+                isWeekend,
+                dateStr,
+              };
+            }).filter(cell => cell !== null);
 
-          return (
-            <div key={monthIndex} className="flex flex-col gap-1">
-              <div className="text-sm text-muted-foreground mb-1">{monthData.name}</div>
-              <div className="grid grid-cols-6 gap-1">
-                {cells.map((cell, cellIndex) => (
-                  <div
-                    key={cellIndex}
-                    className={`w-3 h-3 rounded-sm ${getCellStyle(cell!.count, cell!.isWeekend, cell!.row, cell!.dateStr)}`}
-                    title={`${new Date(cell!.dateStr).toLocaleDateString()}: ${cell!.count} interactions`}
-                    style={{
-                      gridRow: cell!.row + 1,
-                      gridColumn: cell!.col + 1,
-                    }}
-                  />
-                ))}
+            return (
+              <div key={monthIndex} className="flex flex-col gap-1">
+                <div className="text-sm text-muted-foreground mb-1">
+                  {monthData.name} {monthData.year}
+                </div>
+                <div className="grid grid-cols-6 gap-1">
+                  {cells.map((cell, cellIndex) => (
+                    <div
+                      key={cellIndex}
+                      className={`w-3 h-3 rounded-sm ${getCellStyle(cell!.count, cell!.isWeekend, cell!.row, cell!.dateStr)}`}
+                      title={`${new Date(cell!.dateStr).toLocaleDateString()}: ${cell!.count} interactions`}
+                      style={{
+                        gridRow: cell!.row + 1,
+                        gridColumn: cell!.col + 1,
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
