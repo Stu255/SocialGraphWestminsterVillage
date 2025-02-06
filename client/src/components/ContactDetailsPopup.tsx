@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, Phone, Linkedin, Twitter, Building2, Briefcase, Settings } from "lucide-react";
 import { ContactFormDialog } from "./ContactFormDialog";
+import { InteractionDialog } from "./InteractionDialog";
 
 interface ContactDetailsPopupProps {
   contact: {
@@ -24,17 +25,16 @@ interface ContactDetailsPopupProps {
   graphId: number;
 }
 
-const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: string }> }) => {
+const InteractionHeatmap = ({ interactions, contactId, graphId }: { interactions?: Array<{ date: string }>, contactId: number, graphId: number }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  // Get date range for display (12 months back and forward)
   const today = new Date();
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
   const twelveMonthsAgo = new Date(currentYear, currentMonth - 12, 1);
   const twelveMonthsForward = new Date(currentYear, currentMonth + 12, 1);
 
-  // Generate array of month data
   const months = [];
   for (let m = new Date(twelveMonthsAgo); m <= twelveMonthsForward; m.setMonth(m.getMonth() + 1)) {
     const monthStart = new Date(m);
@@ -51,14 +51,12 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
     months.push(monthData);
   }
 
-  // Count interactions per day
   const interactionCounts = new Map<string, number>();
   interactions?.forEach(interaction => {
     const day = new Date(interaction.date).toISOString().split('T')[0];
     interactionCounts.set(day, (interactionCounts.get(day) || 0) + 1);
   });
 
-  // Helper to get cell style based on interaction count and date
   const getCellStyle = (count: number, isWeekend: boolean, row: number, dateStr: string) => {
     const cellDate = new Date(dateStr);
     const today = new Date();
@@ -68,52 +66,44 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
     const isToday = cellDate.getTime() === today.getTime();
     const isPast = cellDate < today;
 
-    // Base style including weekend spacing
-    const baseStyle = row === 5 ? 'mt-2' : '';
+    const baseStyle = `cursor-pointer ${row === 5 ? 'mt-2' : ''}`;
 
-    // Color based on past/future and interaction count
     const colorStyle = isPast
-      ? count === 0 ? 'bg-muted'
-        : count === 1 ? 'bg-red-200'
-        : count === 2 ? 'bg-red-400'
-        : 'bg-red-600'
-      : count === 0 ? 'bg-muted'
-        : count === 1 ? 'bg-green-200'
-        : count === 2 ? 'bg-green-400'
-        : 'bg-green-600';
+      ? count === 0 ? 'bg-muted hover:bg-muted/80'
+        : count === 1 ? 'bg-red-200 hover:bg-red-300'
+        : count === 2 ? 'bg-red-400 hover:bg-red-500'
+        : 'bg-red-600 hover:bg-red-700'
+      : count === 0 ? 'bg-muted hover:bg-muted/80'
+        : count === 1 ? 'bg-green-200 hover:bg-green-300'
+        : count === 2 ? 'bg-green-400 hover:bg-green-500'
+        : 'bg-green-600 hover:bg-green-700';
 
-    // Add yellow border for today
     const todayStyle = isToday ? 'ring-2 ring-yellow-400' : '';
 
     return `${colorStyle} ${baseStyle} ${todayStyle}`;
   };
 
-  // Handle wheel scroll
   const handleWheel = (e: React.WheelEvent) => {
     if (scrollRef.current) {
-      const monthWidth = 140; // Adjusted for new spacing
+      const monthWidth = 140; 
       const scrollAmount = e.deltaY > 0 ? monthWidth : -monthWidth;
       scrollRef.current.scrollLeft += scrollAmount;
       e.preventDefault();
     }
   };
 
-  // Center on current month on initial render
   useEffect(() => {
     if (scrollRef.current) {
-      const monthWidth = 140; // Width of each month including gap
+      const monthWidth = 140; 
 
-      // Get current date and next month
       const now = new Date();
       const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-      // Find the index of next month (March) in our months array
       const nextMonthIndex = months.findIndex(m => 
         m.month === nextMonth.getMonth() && m.year === nextMonth.getFullYear()
       );
 
       if (nextMonthIndex !== -1) {
-        // Calculate scroll position to align next month (March) at the right edge
         const containerWidth = scrollRef.current.clientWidth;
         const scrollPosition = (nextMonthIndex * monthWidth) - containerWidth + monthWidth;
         scrollRef.current.scrollLeft = scrollPosition;
@@ -167,6 +157,7 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
                       key={cellIndex}
                       className={`w-3 h-3 rounded-sm ${getCellStyle(cell!.count, cell!.isWeekend, cell!.row, cell!.dateStr)}`}
                       title={`${new Date(cell!.dateStr).toLocaleDateString()}: ${cell!.count} interactions`}
+                      onClick={() => setSelectedDate(cell!.dateStr)}
                       style={{
                         gridRow: cell!.row + 1,
                         gridColumn: cell!.col + 1,
@@ -179,6 +170,14 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
           })}
         </div>
       </div>
+
+      <InteractionDialog
+        open={!!selectedDate}
+        onOpenChange={(open) => !open && setSelectedDate(null)}
+        date={selectedDate || undefined}
+        graphId={graphId}
+        initialContactId={contactId}
+      />
     </div>
   );
 };
@@ -232,7 +231,6 @@ function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetailsPopupP
             <div className="flex-1 overflow-y-auto p-4">
               <TabsContent value="details" className="m-0">
                 <div className="grid grid-cols-3 gap-8">
-                  {/* Phone Numbers Column */}
                   <div className="space-y-4">
                     {contact.officeNumber && (
                       <div className="flex items-center gap-3">
@@ -261,7 +259,6 @@ function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetailsPopupP
                     )}
                   </div>
 
-                  {/* Email Addresses Column */}
                   <div className="space-y-4">
                     {contact.email1 && (
                       <div className="flex items-center gap-3">
@@ -290,7 +287,6 @@ function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetailsPopupP
                     )}
                   </div>
 
-                  {/* Social Links Column */}
                   <div className="space-y-4">
                     {contact.linkedin && (
                       <div className="flex items-center gap-3">
@@ -343,7 +339,11 @@ function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetailsPopupP
 
               <TabsContent value="interactions" className="m-0">
                 <div className="space-y-4">
-                  <InteractionHeatmap interactions={contact.interactions} />
+                  <InteractionHeatmap 
+                    interactions={contact.interactions} 
+                    contactId={contact.id}
+                    graphId={graphId}
+                  />
                 </div>
               </TabsContent>
             </div>
