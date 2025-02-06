@@ -1,9 +1,28 @@
-import { useState, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import React, { useRef, useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, Phone, Linkedin, Twitter, Building2, Briefcase, Settings } from "lucide-react";
 import { ContactFormDialog } from "./ContactFormDialog";
+
+interface ContactDetailsPopupProps {
+  contact: {
+    id: number;
+    name: string;
+    jobTitle?: string;
+    organization?: string;
+    email1?: string;
+    email2?: string;
+    officeNumber?: string;
+    mobileNumber?: string;
+    linkedin?: string;
+    twitter?: string;
+    notes?: string;
+    interactions?: Array<{ date: string }>;
+  };
+  onClose: () => void;
+  graphId: number;
+}
 
 const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: string }> }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -22,7 +41,6 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
 
     const monthData = {
       name: monthStart.toLocaleString('default', { month: 'short' }),
-      year: monthStart.getFullYear(),
       month: monthStart.getMonth(),
       daysInMonth,
       firstDayOfWeek,
@@ -70,19 +88,17 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
   // Handle wheel scroll
   const handleWheel = (e: React.WheelEvent) => {
     if (scrollRef.current) {
-      // Calculate the width of one month (including gap)
-      const monthWidth = 120; // Approximate width of a month including gap
+      const monthWidth = 160; // Increased to account for larger gap
       const scrollAmount = e.deltaY > 0 ? monthWidth : -monthWidth;
       scrollRef.current.scrollLeft += scrollAmount;
-      e.preventDefault(); // Prevent default vertical scroll
+      e.preventDefault();
     }
   };
 
   // Center on current month on initial render
   useEffect(() => {
     if (scrollRef.current) {
-      // Calculate position to center current month (month 12 in our array)
-      const monthWidth = 120; // Same as in handleWheel
+      const monthWidth = 160; // Same as in handleWheel
       const centerPosition = 12 * monthWidth;
       scrollRef.current.scrollLeft = centerPosition;
     }
@@ -96,7 +112,7 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
         className="flex overflow-x-auto pb-4 no-scrollbar" 
         style={{ scrollBehavior: 'smooth' }}
       >
-        <div className="flex gap-1">
+        <div className="flex gap-8">
           {months.map((monthData, monthIndex) => {
             const cells = Array.from({ length: 7 * 6 }, (_, index) => {
               const row = index % 7;
@@ -108,7 +124,7 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
                 return null;
               }
 
-              const date = new Date(monthData.year, monthData.month, dayNumber);
+              const date = new Date(today.getFullYear(), monthData.month, dayNumber);
               const dateStr = date.toISOString().split('T')[0];
               const count = interactionCounts.get(dateStr) || 0;
               const isWeekend = row === 0 || row === 6;
@@ -124,7 +140,7 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
             }).filter(cell => cell !== null);
 
             return (
-              <div key={monthIndex} className="flex flex-col gap-1">
+              <div key={monthIndex} className="flex flex-col gap-1 min-w-[120px]">
                 <div className="text-sm text-muted-foreground mb-1">
                   {monthData.name}
                 </div>
@@ -150,7 +166,7 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
   );
 };
 
-export function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetailsPopupProps) {
+function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetailsPopupProps) {
   const [showEdit, setShowEdit] = useState(false);
 
   return (
@@ -328,24 +344,4 @@ export function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetail
   );
 }
 
-interface ContactDetailsPopupProps {
-  contact: {
-    id: number;
-    name: string;
-    jobTitle?: string;
-    organization?: string;
-    officeNumber?: string;
-    mobileNumber?: string;
-    email1?: string;
-    email2?: string;
-    linkedin?: string;
-    twitter?: string;
-    notes?: string;
-    interactions?: Array<{
-      date: string;
-      type: string;
-    }>;
-  };
-  onClose: () => void;
-  graphId: number;
-}
+export { ContactDetailsPopup, InteractionHeatmap };
