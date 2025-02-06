@@ -101,11 +101,20 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
   // Center on current month on initial render
   useEffect(() => {
     if (scrollRef.current) {
-      const monthWidth = 140; // Same as in handleWheel
-      const centerPosition = 12 * monthWidth;
-      scrollRef.current.scrollLeft = centerPosition;
+      const monthWidth = 140; // Width of each month including gap
+      // Find the current month's index (should be at position 12 in the array)
+      const currentMonthIndex = months.findIndex(m => 
+        m.month === currentMonth && m.year === currentYear
+      );
+
+      if (currentMonthIndex !== -1) {
+        // Calculate scroll position to center the current month
+        const containerWidth = scrollRef.current.clientWidth;
+        const scrollPosition = (currentMonthIndex * monthWidth) - (containerWidth / 2) + (monthWidth / 2);
+        scrollRef.current.scrollLeft = scrollPosition;
+      }
     }
-  }, []);
+  }, [currentMonth, currentYear, months]);
 
   return (
     <div className="space-y-4">
