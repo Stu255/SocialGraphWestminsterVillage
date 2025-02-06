@@ -29,18 +29,19 @@ export function InteractionDialog({ open, onOpenChange, date, graphId, initialCo
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async (values: any) => {
+    mutationFn: async (values: {
+      type: string;
+      notes: string;
+      date: string;
+      contactIds: number[];
+      graphId: number;
+    }) => {
       try {
+        console.log("Sending interaction data:", values);
         const res = await fetch("/api/interactions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type,
-            notes,
-            date: date ? new Date(date).toISOString() : new Date().toISOString(),
-            contactIds: selectedContacts,
-            graphId
-          }),
+          body: JSON.stringify(values),
         });
 
         if (!res.ok) {
@@ -78,7 +79,7 @@ export function InteractionDialog({ open, onOpenChange, date, graphId, initialCo
     },
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (selectedContacts.length === 0) {
       toast({
         title: "Error",
@@ -97,9 +98,20 @@ export function InteractionDialog({ open, onOpenChange, date, graphId, initialCo
       return;
     }
 
-    mutation.mutateAsync({}).catch(error => {
+    try {
+      const interactionData = {
+        type,
+        notes,
+        date: date ? new Date(date).toISOString() : new Date().toISOString(),
+        contactIds: selectedContacts,
+        graphId
+      };
+
+      console.log("Submitting interaction:", interactionData);
+      await mutation.mutateAsync(interactionData);
+    } catch (error) {
       console.error("Submit error:", error);
-    });
+    }
   };
 
   return (
