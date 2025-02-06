@@ -30,38 +30,48 @@ interface ContactDetailsPopupProps {
 const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: string }> }) => {
   const today = new Date();
   const oneYearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
-  const weeks = [];
+  const days = [];
 
-  // Create array of weeks
-  for (let d = new Date(oneYearAgo); d <= today; d.setDate(d.getDate() + 7)) {
-    weeks.push(new Date(d));
+  // Create array of all days in the last year
+  for (let d = new Date(oneYearAgo); d <= today; d.setDate(d.getDate() + 1)) {
+    days.push(new Date(d));
   }
 
-  // Count interactions per week
+  // Group days into weeks (52 columns)
+  const weeks = [];
+  for (let i = 0; i < days.length; i += 7) {
+    weeks.push(days.slice(i, i + 7));
+  }
+
+  // Count interactions per day
   const interactionCounts = new Map<string, number>();
   interactions?.forEach(interaction => {
-    const week = new Date(interaction.date).toISOString().split('T')[0];
-    interactionCounts.set(week, (interactionCounts.get(week) || 0) + 1);
+    const day = new Date(interaction.date).toISOString().split('T')[0];
+    interactionCounts.set(day, (interactionCounts.get(day) || 0) + 1);
   });
 
   return (
-    <div className="flex flex-wrap gap-1">
-      {weeks.map((week, i) => {
-        const weekStr = week.toISOString().split('T')[0];
-        const count = interactionCounts.get(weekStr) || 0;
-        return (
-          <div
-            key={i}
-            className={`w-3 h-3 rounded-sm ${
-              count === 0 ? 'bg-muted' :
-              count === 1 ? 'bg-blue-200' :
-              count === 2 ? 'bg-blue-400' :
-              'bg-blue-600'
-            }`}
-            title={`${week.toLocaleDateString()}: ${count} interactions`}
-          />
-        );
-      })}
+    <div className="flex gap-1">
+      {weeks.map((week, weekIndex) => (
+        <div key={weekIndex} className="flex flex-col gap-1">
+          {week.map((day, dayIndex) => {
+            const dayStr = day.toISOString().split('T')[0];
+            const count = interactionCounts.get(dayStr) || 0;
+            return (
+              <div
+                key={dayIndex}
+                className={`w-3 h-3 rounded-sm ${
+                  count === 0 ? 'bg-muted' :
+                  count === 1 ? 'bg-blue-200' :
+                  count === 2 ? 'bg-blue-400' :
+                  'bg-blue-600'
+                }`}
+                title={`${day.toLocaleDateString()}: ${count} interactions`}
+              />
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 };
@@ -117,7 +127,6 @@ export function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetail
                 <div className="grid grid-cols-3 gap-8">
                   {/* Phone Numbers Column */}
                   <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Phone Numbers</h4>
                     {contact.officeNumber && (
                       <div className="flex items-center gap-3">
                         <Phone className="h-4 w-4 text-muted-foreground" />
@@ -147,7 +156,6 @@ export function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetail
 
                   {/* Email Addresses Column */}
                   <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Email Addresses</h4>
                     {contact.email1 && (
                       <div className="flex items-center gap-3">
                         <Mail className="h-4 w-4 text-muted-foreground" />
@@ -177,7 +185,6 @@ export function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetail
 
                   {/* Social Links Column */}
                   <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Social Media</h4>
                     {contact.linkedin && (
                       <div className="flex items-center gap-3">
                         <Linkedin className="h-4 w-4 text-muted-foreground" />
