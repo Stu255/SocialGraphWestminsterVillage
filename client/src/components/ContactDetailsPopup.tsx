@@ -69,14 +69,24 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
 export function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetailsPopupProps) {
   const [showEdit, setShowEdit] = useState(false);
 
+  const contactInfo = [
+    { icon: Phone, label: "Office", value: contact.officeNumber, href: `tel:${contact.officeNumber}` },
+    { icon: Phone, label: "Mobile", value: contact.mobileNumber, href: `tel:${contact.mobileNumber}` },
+    { icon: Mail, label: "Primary Email", value: contact.email1, href: `mailto:${contact.email1}` },
+    { icon: Mail, label: "Secondary Email", value: contact.email2, href: `mailto:${contact.email2}` },
+    { icon: Linkedin, label: "LinkedIn", value: "View Profile", href: contact.linkedin },
+    { icon: Twitter, label: "Twitter", value: "View Profile", href: contact.twitter },
+  ].filter(item => item.value); // Only show items with values
+
   return (
     <>
-      <Card className="absolute bottom-0 left-0 right-0 h-[30%] z-50 overflow-hidden border-t">
+      <Card className="absolute bottom-0 left-0 right-0 h-[40%] z-50 overflow-hidden border-t">
         <div className="h-full flex flex-col">
+          {/* Header */}
           <div className="flex items-center justify-between p-4 border-b bg-muted/40">
-            <div>
-              <h3 className="font-semibold">{contact.name}</h3>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold">{contact.name}</h3>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                 {contact.jobTitle && (
                   <div className="flex items-center gap-1">
                     <Briefcase className="h-3 w-3" />
@@ -104,6 +114,7 @@ export function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetail
             </div>
           </div>
 
+          {/* Tabs */}
           <Tabs defaultValue="details" className="flex-1">
             <div className="px-4 py-2 border-b bg-muted/40">
               <TabsList>
@@ -115,98 +126,39 @@ export function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetail
 
             <div className="p-4 overflow-y-auto">
               <TabsContent value="details" className="m-0">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium mb-2">Contact Information</h4>
-                    {(contact.officeNumber || contact.mobileNumber) && (
-                      <div className="flex items-start gap-2">
-                        <Phone className="h-4 w-4 mt-1" />
-                        <div className="space-y-1">
-                          {contact.officeNumber && (
-                            <p className="text-sm">
-                              <span className="text-muted-foreground">Office:</span>{" "}
-                              <a href={`tel:${contact.officeNumber}`} className="hover:underline">
-                                {contact.officeNumber}
-                              </a>
-                            </p>
-                          )}
-                          {contact.mobileNumber && (
-                            <p className="text-sm">
-                              <span className="text-muted-foreground">Mobile:</span>{" "}
-                              <a href={`tel:${contact.mobileNumber}`} className="hover:underline">
-                                {contact.mobileNumber}
-                              </a>
-                            </p>
+                <div className="grid gap-4">
+                  {contactInfo.map((item, index) => (
+                    item.value && (
+                      <div key={index} className="flex items-center gap-3">
+                        <div className="flex-shrink-0">
+                          <item.icon className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-muted-foreground">{item.label}</p>
+                          {item.href ? (
+                            <a
+                              href={item.href}
+                              target={item.icon === Linkedin || item.icon === Twitter ? "_blank" : undefined}
+                              rel={item.icon === Linkedin || item.icon === Twitter ? "noopener noreferrer" : undefined}
+                              className="text-sm font-medium hover:underline"
+                            >
+                              {item.value}
+                            </a>
+                          ) : (
+                            <p className="text-sm font-medium">{item.value}</p>
                           )}
                         </div>
                       </div>
-                    )}
-                    {(contact.email1 || contact.email2) && (
-                      <div className="flex items-start gap-2">
-                        <Mail className="h-4 w-4 mt-1" />
-                        <div className="space-y-1">
-                          {contact.email1 && (
-                            <p className="text-sm">
-                              <span className="text-muted-foreground">Primary:</span>{" "}
-                              <a 
-                                href={`mailto:${contact.email1}`}
-                                className="text-primary hover:underline"
-                              >
-                                {contact.email1}
-                              </a>
-                            </p>
-                          )}
-                          {contact.email2 && (
-                            <p className="text-sm">
-                              <span className="text-muted-foreground">Secondary:</span>{" "}
-                              <a 
-                                href={`mailto:${contact.email2}`}
-                                className="text-primary hover:underline"
-                              >
-                                {contact.email2}
-                              </a>
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium mb-2">Social Media</h4>
-                    {contact.linkedin && (
-                      <div className="flex items-center gap-2">
-                        <Linkedin className="h-4 w-4" />
-                        <a 
-                          href={contact.linkedin}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-primary hover:underline"
-                        >
-                          LinkedIn Profile
-                        </a>
-                      </div>
-                    )}
-                    {contact.twitter && (
-                      <div className="flex items-center gap-2">
-                        <Twitter className="h-4 w-4" />
-                        <a
-                          href={contact.twitter}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-primary hover:underline"
-                        >
-                          Twitter Profile
-                        </a>
-                      </div>
-                    )}
-                  </div>
+                    )
+                  ))}
                 </div>
               </TabsContent>
 
               <TabsContent value="notes" className="m-0">
                 {contact.notes ? (
-                  <p className="text-sm whitespace-pre-wrap">{contact.notes}</p>
+                  <div className="prose prose-sm max-w-none">
+                    <p className="whitespace-pre-wrap">{contact.notes}</p>
+                  </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">No notes available.</p>
                 )}
