@@ -59,13 +59,34 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
     interactionCounts.set(day, (interactionCounts.get(day) || 0) + 1);
   });
 
-  // Helper to get cell style based on interaction count
-  const getCellStyle = (count: number, isWeekend: boolean, row: number) => {
-    const baseStyle = row === 5 ? 'mt-2' : '';  // Add margin-top for Saturday row
-    return count === 0 ? `bg-muted ${baseStyle}` :
-           count === 1 ? `bg-blue-200 ${baseStyle}` :
-           count === 2 ? `bg-blue-400 ${baseStyle}` :
-                        `bg-blue-600 ${baseStyle}`;
+  // Helper to get cell style based on interaction count and date
+  const getCellStyle = (count: number, isWeekend: boolean, row: number, dateStr: string) => {
+    const cellDate = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    cellDate.setHours(0, 0, 0, 0);
+
+    const isToday = cellDate.getTime() === today.getTime();
+    const isPast = cellDate < today;
+
+    // Base style including weekend spacing
+    const baseStyle = row === 5 ? 'mt-2' : '';
+
+    // Color based on past/future and interaction count
+    const colorStyle = isPast
+      ? count === 0 ? 'bg-muted'
+        : count === 1 ? 'bg-red-200'
+        : count === 2 ? 'bg-red-400'
+        : 'bg-red-600'
+      : count === 0 ? 'bg-muted'
+        : count === 1 ? 'bg-green-200'
+        : count === 2 ? 'bg-green-400'
+        : 'bg-green-600';
+
+    // Add yellow border for today
+    const todayStyle = isToday ? 'ring-2 ring-yellow-400' : '';
+
+    return `${colorStyle} ${baseStyle} ${todayStyle}`;
   };
 
   return (
@@ -105,7 +126,7 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
                 {cells.map((cell, cellIndex) => (
                   <div
                     key={cellIndex}
-                    className={`w-3 h-3 rounded-sm ${getCellStyle(cell!.count, cell!.isWeekend, cell!.row)}`}
+                    className={`w-3 h-3 rounded-sm ${getCellStyle(cell!.count, cell!.isWeekend, cell!.row, cell!.dateStr)}`}
                     title={`${new Date(cell!.dateStr).toLocaleDateString()}: ${cell!.count} interactions`}
                     style={{
                       gridRow: cell!.row + 1,
