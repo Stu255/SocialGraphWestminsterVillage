@@ -69,13 +69,17 @@ export function ContactDetailsPopup({ contact, onClose }: ContactDetailsPopupPro
                         {contact.officeNumber && (
                           <p className="text-sm">
                             <span className="text-muted-foreground">Office:</span>{" "}
-                            {contact.officeNumber}
+                            <a href={`tel:${contact.officeNumber}`} className="hover:underline">
+                              {contact.officeNumber}
+                            </a>
                           </p>
                         )}
                         {contact.mobileNumber && (
                           <p className="text-sm">
                             <span className="text-muted-foreground">Mobile:</span>{" "}
-                            {contact.mobileNumber}
+                            <a href={`tel:${contact.mobileNumber}`} className="hover:underline">
+                              {contact.mobileNumber}
+                            </a>
                           </p>
                         )}
                       </div>
@@ -88,13 +92,23 @@ export function ContactDetailsPopup({ contact, onClose }: ContactDetailsPopupPro
                         {contact.email1 && (
                           <p className="text-sm">
                             <span className="text-muted-foreground">Primary:</span>{" "}
-                            {contact.email1}
+                            <a 
+                              href={`mailto:${contact.email1}`}
+                              className="text-primary hover:underline"
+                            >
+                              {contact.email1}
+                            </a>
                           </p>
                         )}
                         {contact.email2 && (
                           <p className="text-sm">
                             <span className="text-muted-foreground">Secondary:</span>{" "}
-                            {contact.email2}
+                            <a 
+                              href={`mailto:${contact.email2}`}
+                              className="text-primary hover:underline"
+                            >
+                              {contact.email2}
+                            </a>
                           </p>
                         )}
                       </div>
