@@ -71,6 +71,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
   const [showDetailsPopup, setShowDetailsPopup] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Node | null>(null);
   const simulationRef = useRef<d3.Simulation<Node, any> | null>(null);
+  const transformRef = useRef<d3.ZoomTransform | null>(null);
 
   const { data: organizations = [] } = useQuery<any[]>({
     queryKey: ["/api/organizations", graphId],
@@ -109,8 +110,13 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 4])
       .on("zoom", (event) => {
+        transformRef.current = event.transform;
         g.attr("transform", event.transform);
       });
+
+    if (transformRef.current) {
+      svg.call(zoom.transform, transformRef.current);
+    }
 
     svg.call(zoom);
 
@@ -157,7 +163,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
       .force("charge", d3.forceManyBody().strength(-300))
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collision", d3.forceCollide().radius(30))
-      .alphaDecay(0.05)
+      .alphaDecay(0.05) 
       .velocityDecay(0.4);
 
     const linkGroup = g.append("g")
@@ -277,6 +283,15 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
         setConnectionsDialogOpen(true);
       });
 
+    const handleNodeClick = (event: MouseEvent, d: Node) => {
+      event.stopPropagation();
+      const node = d as any;
+      node.fx = node.x;
+      node.fy = node.y;
+      setSelectedContact(d);
+      setShowDetailsPopup(true);
+    };
+
     nodeGroup.append("text")
       .text(d => d.name)
       .attr("font-size", "12px")
@@ -284,11 +299,20 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
       .attr("dy", 4)
       .attr("fill", "#333")
       .style("cursor", "pointer")
-      .on("click", (event, d) => {
+      .on("click", function(event: any, d: Node) {
         event.stopPropagation();
-        setSelectedContact(d);
-        setShowDetailsPopup(true);
+        handleNodeClick(event, d);
       });
+
+    const cleanup = () => {
+      if (simulationRef.current) {
+        filteredNodes.forEach(node => {
+          (node as any).fx = null;
+          (node as any).fy = null;
+        });
+        simulationRef.current.alpha(0.1).restart();
+      }
+    };
 
     simulationRef.current.on("tick", () => {
       linkGroup.selectAll("line")
@@ -301,9 +325,39 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
     });
 
     return () => {
+      cleanup();
       simulationRef.current?.stop();
     };
   }, [nodes, links, filters, organizationColors]);
+
+  useEffect(() => {
+    if (!showDetailsPopup) {
+      const filteredNodes = nodes.filter((node) => {
+        if (filters.organization && filters.organization.length > 0) {
+          const nodeOrg = node.organization || '';
+          if (filters.organization.includes('__none__')) {
+            return nodeOrg === '' || !nodeOrg || filters.organization.includes(nodeOrg);
+          } else {
+            return filters.organization.includes(nodeOrg);
+          }
+        }
+
+        if (filters.userRelationshipType && filters.userRelationshipType.length > 0) {
+          if (!filters.userRelationshipType.includes(node.userRelationshipType || 1)) return false;
+        }
+        return true;
+      });
+
+      filteredNodes.forEach(node => {
+        (node as any).fx = null;
+        (node as any).fy = null;
+      });
+
+      if (simulationRef.current) {
+        simulationRef.current.alpha(0.1).restart();
+      }
+    }
+  }, [showDetailsPopup]);
 
   return (
     <Card className="h-full w-full relative">
@@ -346,6 +400,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
             setShowDetailsPopup(false);
             setSelectedContact(null);
           }}
+          graphId={graphId}
         />
       )}
     </Card>
