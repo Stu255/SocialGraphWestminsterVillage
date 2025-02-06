@@ -106,7 +106,6 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
       // Get current date and next month
       const now = new Date();
       const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-      const nextNextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 1);
 
       // Find the index of next month (March) in our months array
       const nextMonthIndex = months.findIndex(m => 
@@ -114,9 +113,9 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
       );
 
       if (nextMonthIndex !== -1) {
-        // Calculate scroll position to align next month second from right
+        // Calculate scroll position to align next month (March) at the right edge
         const containerWidth = scrollRef.current.clientWidth;
-        const scrollPosition = ((nextMonthIndex + 1) * monthWidth) - containerWidth + monthWidth;
+        const scrollPosition = (nextMonthIndex * monthWidth) - containerWidth + monthWidth;
         scrollRef.current.scrollLeft = scrollPosition;
       }
     }
