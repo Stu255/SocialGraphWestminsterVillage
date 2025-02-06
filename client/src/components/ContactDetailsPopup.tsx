@@ -29,7 +29,6 @@ interface ContactDetailsPopupProps {
 
 const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: string }> }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [scrollPosition, setScrollPosition] = useState(0);
 
   // Get date range for display (12 months back and forward)
   const today = new Date();
@@ -93,21 +92,21 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
   // Handle wheel scroll
   const handleWheel = (e: React.WheelEvent) => {
     if (scrollRef.current) {
-      // Scroll by month width (approximately 120px) for each wheel tick
-      const scrollAmount = e.deltaY > 0 ? 120 : -120;
+      // Calculate the width of one month (including gap)
+      const monthWidth = 120; // Approximate width of a month including gap
+      const scrollAmount = e.deltaY > 0 ? monthWidth : -monthWidth;
       scrollRef.current.scrollLeft += scrollAmount;
-      setScrollPosition(scrollRef.current.scrollLeft);
+      e.preventDefault(); // Prevent default vertical scroll
     }
   };
 
   // Center on current month on initial render
   useEffect(() => {
     if (scrollRef.current) {
-      // Calculate position to center current month
-      // Each month is approximately 120px wide, and we want to center on month 12
-      const centerPosition = 12 * 120 - (scrollRef.current.clientWidth / 2) + 60;
+      // Calculate position to center current month (month 12 in our array)
+      const monthWidth = 120; // Same as in handleWheel
+      const centerPosition = 12 * monthWidth;
       scrollRef.current.scrollLeft = centerPosition;
-      setScrollPosition(centerPosition);
     }
   }, []);
 
