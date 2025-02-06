@@ -282,7 +282,6 @@ export function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetail
 
               <TabsContent value="interactions" className="m-0">
                 <div className="space-y-4">
-                  <h4 className="text-sm font-medium">Interaction History</h4>
                   <InteractionHeatmap interactions={contact.interactions} />
                   {(!contact.interactions || contact.interactions.length === 0) && (
                     <p className="text-sm text-muted-foreground">No interactions recorded yet.</p>
