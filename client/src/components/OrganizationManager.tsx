@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Users } from "lucide-react";
+import { Plus, Building2 } from "lucide-react";
 import { AddOrganizationDialog } from "./AddOrganizationDialog";
 import { OrganizationListDialog } from "./OrganizationListDialog";
 
@@ -34,7 +34,7 @@ export function OrganizationManager({ graphId }: OrganizationManagerProps) {
           variant="outline"
           onClick={() => setShowListDialog(true)}
         >
-          <Users className="h-4 w-4 mr-2" />
+          <Building2 className="h-4 w-4 mr-2" />
           See Organizations
         </Button>
 

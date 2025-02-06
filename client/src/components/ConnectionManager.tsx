@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Users } from "lucide-react";
+import { Plus, Network, Building2 } from "lucide-react";
 import { AddConnectionDialog } from "./AddConnectionDialog";
 
 // Define connection types (for edge lines)
@@ -54,7 +54,7 @@ export function ConnectionManager({ graphId, title = "Connections" }: Connection
           variant="outline"
           onClick={() => setShowListDialog(true)}
         >
-          <Users className="h-4 w-4 mr-2" />
+          <Network className="h-4 w-4 mr-2" />
           Connection Types
         </Button>
 
