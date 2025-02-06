@@ -61,7 +61,7 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
 
   // Helper to get cell style based on interaction count
   const getCellStyle = (count: number, isWeekend: boolean) => {
-    const baseStyle = isWeekend ? 'border-t border-muted-foreground/10' : '';
+    const baseStyle = isWeekend ? 'mt-2' : '';  // Add margin-top for weekend rows
     return count === 0 ? `bg-muted ${baseStyle}` :
            count === 1 ? `bg-blue-200 ${baseStyle}` :
            count === 2 ? `bg-blue-400 ${baseStyle}` :
@@ -283,9 +283,6 @@ export function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetail
               <TabsContent value="interactions" className="m-0">
                 <div className="space-y-4">
                   <InteractionHeatmap interactions={contact.interactions} />
-                  {(!contact.interactions || contact.interactions.length === 0) && (
-                    <p className="text-sm text-muted-foreground">No interactions recorded yet.</p>
-                  )}
                 </div>
               </TabsContent>
             </div>
