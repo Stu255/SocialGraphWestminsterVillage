@@ -66,30 +66,30 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
         {months.map((monthData, monthIndex) => (
           <div key={monthIndex} className="flex flex-col gap-1">
             <div className="text-sm text-muted-foreground mb-1">{monthData.name}</div>
-            <div className="grid grid-rows-7 gap-1">
-              {/* Generate 35 cells (5x7) for each month */}
+            <div className="grid grid-cols-7 gap-1">
               {Array.from({ length: 35 }).map((_, index) => {
-                const row = index % 7; // 0 = Monday, 6 = Sunday
-                const col = Math.floor(index / 7);
-                const adjustedDay = row === 6 ? row : row + 1; // Adjust for Monday start
-                const dayOfMonth = col * 7 + adjustedDay - monthData.firstDay + 1;
+                const col = index % 7;
+                const row = Math.floor(index / 7); // 0 = Monday, 6 = Sunday
+                const dayOfMonth = (col * 7) + row + 1;
 
                 // Check if this cell should show a date
-                const isValidDate = dayOfMonth > 0 && dayOfMonth <= monthData.lastDate;
+                const isValidDate = dayOfMonth <= monthData.lastDate;
+                const adjustedDate = new Date(monthData.year, monthData.month, dayOfMonth);
+                const actualDay = adjustedDate.getDay(); // 0 = Sunday, 1 = Monday
+                const shouldShow = isValidDate && (actualDay === (row === 6 ? 0 : row + 1));
 
-                if (!isValidDate) {
+                if (!shouldShow) {
                   return <div key={index} className="w-3 h-3" />; // Empty cell
                 }
 
-                const date = new Date(monthData.year, monthData.month, dayOfMonth);
-                const dateStr = date.toISOString().split('T')[0];
+                const dateStr = adjustedDate.toISOString().split('T')[0];
                 const count = interactionCounts.get(dateStr) || 0;
 
                 return (
                   <div
                     key={index}
-                    className={`w-3 h-3 rounded-sm ${getCellStyle(count)} ${row === 5 ? 'border-b border-muted-foreground/20' : ''}`}
-                    title={`${date.toLocaleDateString()}: ${count} interactions`}
+                    className={`w-3 h-3 rounded-sm ${getCellStyle(count)} ${row === 5 || row === 6 ? 'border-b border-muted-foreground/20' : ''}`}
+                    title={`${adjustedDate.toLocaleDateString()}: ${count} interactions`}
                   />
                 );
               })}
