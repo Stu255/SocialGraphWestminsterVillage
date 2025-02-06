@@ -60,8 +60,8 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
   });
 
   // Helper to get cell style based on interaction count
-  const getCellStyle = (count: number, isWeekend: boolean) => {
-    const baseStyle = isWeekend ? 'mt-2' : '';  // Add margin-top for weekend rows
+  const getCellStyle = (count: number, isWeekend: boolean, row: number) => {
+    const baseStyle = row === 5 ? 'mt-2' : '';  // Add margin-top for Saturday row
     return count === 0 ? `bg-muted ${baseStyle}` :
            count === 1 ? `bg-blue-200 ${baseStyle}` :
            count === 2 ? `bg-blue-400 ${baseStyle}` :
@@ -105,7 +105,7 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
                 {cells.map((cell, cellIndex) => (
                   <div
                     key={cellIndex}
-                    className={`w-3 h-3 rounded-sm ${getCellStyle(cell!.count, cell!.isWeekend)}`}
+                    className={`w-3 h-3 rounded-sm ${getCellStyle(cell!.count, cell!.isWeekend, cell!.row)}`}
                     title={`${new Date(cell!.dateStr).toLocaleDateString()}: ${cell!.count} interactions`}
                     style={{
                       gridRow: cell!.row + 1,
