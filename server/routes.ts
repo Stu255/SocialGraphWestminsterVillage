@@ -716,7 +716,7 @@ export function registerRoutes(app: Express): Server {
           .values({
             type,
             notes: notes || null,
-            date,
+            date: new Date(date), // Convert ISO string to Date object
             graphId
           })
           .returning();

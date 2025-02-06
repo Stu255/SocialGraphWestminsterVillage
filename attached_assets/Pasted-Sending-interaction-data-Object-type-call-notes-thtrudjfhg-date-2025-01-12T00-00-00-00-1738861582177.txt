@@ -1,0 +1,29 @@
+Sending interaction data: 
+Object {type: "call", notes: "thtrudjfhg", date: "2025-01-12T00:00:00.000Z", contactIds: Array(3), graphId: 2}
+Interaction creation error response: {"error":"Failed to create interaction","details":"value.toISOString is not a function"}
+at t.value (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Interaction creation error: 
+Error {}
+message: "Server error occurred while creating interaction. Please try again."
+stack: "Error: Server error occurred while creating interaction. Please try again.↵ at Object.mutationFn (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/src/components/InteractionDialog.tsx:54:19)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+Mutation error: 
+Error {}
+
+at t.value (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Submit error: 
+Error {}
+
+at t.value (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://cf932074-8621-41fb-b934-82a5491fb56a-00-320fkbns2zds6.janeway.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
