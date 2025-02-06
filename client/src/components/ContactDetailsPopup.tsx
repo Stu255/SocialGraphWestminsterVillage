@@ -82,49 +82,47 @@ export function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetail
     <>
       <Card className="absolute bottom-0 left-0 right-0 h-[40%] z-50 overflow-hidden border-t">
         <div className="h-full flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b bg-muted/40">
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold">{contact.name}</h3>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                {contact.jobTitle && (
-                  <div className="flex items-center gap-1">
-                    <Briefcase className="h-3 w-3" />
-                    <span>{contact.jobTitle}</span>
-                  </div>
-                )}
-                {contact.organization && (
-                  <>
-                    {contact.jobTitle && <span>•</span>}
-                    <div className="flex items-center gap-1">
-                      <Building2 className="h-3 w-3" />
-                      <span>{contact.organization}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => setShowEdit(true)}>
-                <Settings className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={onClose}>
-                ✕
-              </Button>
-            </div>
-          </div>
-
-          {/* Tabs */}
           <Tabs defaultValue="details" className="flex-1">
-            <div className="px-4 py-2 border-b bg-muted/40">
-              <TabsList>
+            {/* Header with integrated tabs */}
+            <div className="flex items-center justify-between p-4 border-b bg-muted/40">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold">{contact.name}</h3>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                  {contact.jobTitle && (
+                    <div className="flex items-center gap-1">
+                      <Briefcase className="h-3 w-3" />
+                      <span>{contact.jobTitle}</span>
+                    </div>
+                  )}
+                  {contact.organization && (
+                    <>
+                      {contact.jobTitle && <span>•</span>}
+                      <div className="flex items-center gap-1">
+                        <Building2 className="h-3 w-3" />
+                        <span>{contact.organization}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <TabsList className="mx-4">
                 <TabsTrigger value="details">Details</TabsTrigger>
                 <TabsTrigger value="notes">Notes</TabsTrigger>
                 <TabsTrigger value="interactions">Interactions</TabsTrigger>
               </TabsList>
+
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" onClick={() => setShowEdit(true)}>
+                  <Settings className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={onClose}>
+                  ✕
+                </Button>
+              </div>
             </div>
 
-            <div className="p-4 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto p-4">
               <TabsContent value="details" className="m-0">
                 <div className="grid gap-4">
                   {contactInfo.map((item, index) => (
