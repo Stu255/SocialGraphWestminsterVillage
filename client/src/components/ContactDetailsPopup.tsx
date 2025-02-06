@@ -28,21 +28,28 @@ interface ContactDetailsPopupProps {
 }
 
 const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: string }> }) => {
+  // Get date range for display
   const today = new Date();
-  const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+  const fourMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 4, 1);
+  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
 
-  // Generate array of month data
+  // Generate array of month data (4 past months + current + next month)
   const months = [];
-  for (let m = new Date(sixMonthsAgo); m <= today; m.setMonth(m.getMonth() + 1)) {
+  for (let m = new Date(fourMonthsAgo); m <= nextMonth; m.setMonth(m.getMonth() + 1)) {
     const monthStart = new Date(m);
+    const daysInMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate();
+
+    // Get the day of week (0-6) for the first day of month
+    const firstDayOfWeek = new Date(monthStart.getFullYear(), monthStart.getMonth(), 1).getDay();
+
     const monthData = {
       name: monthStart.toLocaleString('default', { month: 'short' }),
       year: monthStart.getFullYear(),
       month: monthStart.getMonth(),
-      firstDay: new Date(monthStart.getFullYear(), monthStart.getMonth(), 1).getDay(), // 0 = Sunday
-      lastDate: new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate()
+      daysInMonth,
+      firstDayOfWeek,
     };
-    months.unshift(monthData); // Add to start so most recent month is rightmost
+    months.push(monthData); // Add to end of array for left-to-right chronology
   }
 
   // Count interactions per day
@@ -53,49 +60,63 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
   });
 
   // Helper to get cell style based on interaction count
-  const getCellStyle = (count: number) => {
-    return count === 0 ? 'bg-muted' :
-           count === 1 ? 'bg-blue-200' :
-           count === 2 ? 'bg-blue-400' :
-                        'bg-blue-600';
+  const getCellStyle = (count: number, isWeekend: boolean) => {
+    const baseStyle = isWeekend ? 'border-t border-muted-foreground/10' : '';
+    return count === 0 ? `bg-muted ${baseStyle}` :
+           count === 1 ? `bg-blue-200 ${baseStyle}` :
+           count === 2 ? `bg-blue-400 ${baseStyle}` :
+                        `bg-blue-600 ${baseStyle}`;
   };
 
   return (
     <div className="space-y-4">
       <div className="flex gap-6">
-        {months.map((monthData, monthIndex) => (
-          <div key={monthIndex} className="flex flex-col gap-1">
-            <div className="text-sm text-muted-foreground mb-1">{monthData.name}</div>
-            <div className="grid grid-cols-7 gap-1">
-              {Array.from({ length: 35 }).map((_, index) => {
-                const col = index % 7;
-                const row = Math.floor(index / 7); // 0 = Monday, 6 = Sunday
-                const dayOfMonth = (col * 7) + row + 1;
+        {months.map((monthData, monthIndex) => {
+          // Create array for all possible cell positions in the month grid
+          const cells = Array.from({ length: 7 * 6 }, (_, index) => {
+            const row = index % 7; // 0 = Sunday, 6 = Saturday
+            const col = Math.floor(index / 7);
+            const dayNumber = index - monthData.firstDayOfWeek + 1;
+            const isValidDay = dayNumber > 0 && dayNumber <= monthData.daysInMonth;
 
-                // Check if this cell should show a date
-                const isValidDate = dayOfMonth <= monthData.lastDate;
-                const adjustedDate = new Date(monthData.year, monthData.month, dayOfMonth);
-                const actualDay = adjustedDate.getDay(); // 0 = Sunday, 1 = Monday
-                const shouldShow = isValidDate && (actualDay === (row === 6 ? 0 : row + 1));
+            if (!isValidDay) {
+              return null;
+            }
 
-                if (!shouldShow) {
-                  return <div key={index} className="w-3 h-3" />; // Empty cell
-                }
+            const date = new Date(monthData.year, monthData.month, dayNumber);
+            const dateStr = date.toISOString().split('T')[0];
+            const count = interactionCounts.get(dateStr) || 0;
+            const isWeekend = row === 0 || row === 6; // Sunday or Saturday
 
-                const dateStr = adjustedDate.toISOString().split('T')[0];
-                const count = interactionCounts.get(dateStr) || 0;
+            return {
+              dayNumber,
+              row,
+              col,
+              count,
+              isWeekend,
+              dateStr,
+            };
+          }).filter(cell => cell !== null);
 
-                return (
+          return (
+            <div key={monthIndex} className="flex flex-col gap-1">
+              <div className="text-sm text-muted-foreground mb-1">{monthData.name}</div>
+              <div className="grid grid-cols-6 gap-1">
+                {cells.map((cell, cellIndex) => (
                   <div
-                    key={index}
-                    className={`w-3 h-3 rounded-sm ${getCellStyle(count)} ${row === 5 || row === 6 ? 'border-b border-muted-foreground/20' : ''}`}
-                    title={`${adjustedDate.toLocaleDateString()}: ${count} interactions`}
+                    key={cellIndex}
+                    className={`w-3 h-3 rounded-sm ${getCellStyle(cell!.count, cell!.isWeekend)}`}
+                    title={`${new Date(cell!.dateStr).toLocaleDateString()}: ${cell!.count} interactions`}
+                    style={{
+                      gridRow: cell!.row + 1,
+                      gridColumn: cell!.col + 1,
+                    }}
                   />
-                );
-              })}
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
