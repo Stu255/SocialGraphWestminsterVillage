@@ -70,6 +70,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
   const [connectionsDialogOpen, setConnectionsDialogOpen] = useState(false);
   const [showDetailsPopup, setShowDetailsPopup] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Node | null>(null);
+  const simulationRef = useRef<d3.Simulation<Node, any> | null>(null);
 
   const { data: organizations = [] } = useQuery<any[]>({
     queryKey: ["/api/organizations", graphId],
@@ -149,13 +150,15 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
         type: link.connectionType
       }));
 
-    const simulation = d3.forceSimulation(filteredNodes)
+    simulationRef.current = d3.forceSimulation(filteredNodes)
       .force("link", d3.forceLink(processedLinks)
         .id((d: any) => d.id)
         .distance(100))
       .force("charge", d3.forceManyBody().strength(-300))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(30));
+      .force("collision", d3.forceCollide().radius(30))
+      .alphaDecay(0.05)
+      .velocityDecay(0.4);
 
     const linkGroup = g.append("g")
       .attr("class", "links");
@@ -202,7 +205,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
       .join("g")
       .call(d3.drag<any, any>()
         .on("start", (event, d) => {
-          if (!event.active) simulation.alphaTarget(0.3).restart();
+          if (!event.active) simulationRef.current?.alphaTarget(0.3).restart();
           d.fx = d.x;
           d.fy = d.y;
         })
@@ -211,7 +214,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
           d.fy = event.y;
         })
         .on("end", (event, d) => {
-          if (!event.active) simulation.alphaTarget(0);
+          if (!event.active) simulationRef.current?.alphaTarget(0);
           d.fx = null;
           d.fy = null;
         }));
@@ -282,12 +285,12 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
       .attr("fill", "#333")
       .style("cursor", "pointer")
       .on("click", (event, d) => {
-        event.stopPropagation(); 
+        event.stopPropagation();
         setSelectedContact(d);
         setShowDetailsPopup(true);
       });
 
-    simulation.on("tick", () => {
+    simulationRef.current.on("tick", () => {
       linkGroup.selectAll("line")
         .attr("x1", (d: any) => d.source.x)
         .attr("y1", (d: any) => d.source.y)
@@ -298,7 +301,7 @@ export function NetworkGraph({ nodes, links, filters, graphId }: Props) {
     });
 
     return () => {
-      simulation.stop();
+      simulationRef.current?.stop();
     };
   }, [nodes, links, filters, organizationColors]);
 
