@@ -24,43 +24,55 @@ export function InteractionDialog({ open, onOpenChange, date, graphId, initialCo
     initialContactId ? [initialContactId] : []
   );
   const [activeTab, setActiveTab] = useState("details");
-  
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: async (values: any) => {
-      const res = await fetch("/api/interactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type,
-          notes,
-          date: date || new Date().toISOString(),
-          contactIds: selectedContacts,
-          graphId
-        }),
-      });
+      try {
+        const res = await fetch("/api/interactions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type,
+            notes,
+            date: date ? new Date(date).toISOString() : new Date().toISOString(),
+            contactIds: selectedContacts,
+            graphId
+          }),
+        });
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || "Failed to create interaction");
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("Interaction creation error response:", errorText);
+          throw new Error(errorText || "Failed to create interaction");
+        }
+
+        const data = await res.json();
+        return data;
+      } catch (error) {
+        console.error("Interaction creation error:", error);
+        throw error;
       }
-
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/people", graphId] });
       onOpenChange(false);
+      setType("email");
+      setNotes("");
+      setSelectedContacts(initialContactId ? [initialContactId] : []);
+      setActiveTab("details");
       toast({
         title: "Success",
         description: "Interaction added successfully",
       });
     },
     onError: (error: Error) => {
+      console.error("Mutation error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to create interaction",
         variant: "destructive",
       });
     },
@@ -75,7 +87,19 @@ export function InteractionDialog({ open, onOpenChange, date, graphId, initialCo
       });
       return;
     }
-    mutation.mutate({});
+
+    if (!type) {
+      toast({
+        title: "Error",
+        description: "Please select an interaction type",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    mutation.mutateAsync({}).catch(error => {
+      console.error("Submit error:", error);
+    });
   };
 
   return (
