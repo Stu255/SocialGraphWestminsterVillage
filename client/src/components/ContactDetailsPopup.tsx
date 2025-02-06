@@ -102,15 +102,21 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
   useEffect(() => {
     if (scrollRef.current) {
       const monthWidth = 140; // Width of each month including gap
-      // Find the current month's index (should be at position 12 in the array)
-      const currentMonthIndex = months.findIndex(m => 
-        m.month === currentMonth && m.year === currentYear
+
+      // Get current date and next month
+      const now = new Date();
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const nextNextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 1);
+
+      // Find the index of next month (March) in our months array
+      const nextMonthIndex = months.findIndex(m => 
+        m.month === nextMonth.getMonth() && m.year === nextMonth.getFullYear()
       );
 
-      if (currentMonthIndex !== -1) {
-        // Calculate scroll position to center the current month
+      if (nextMonthIndex !== -1) {
+        // Calculate scroll position to align next month second from right
         const containerWidth = scrollRef.current.clientWidth;
-        const scrollPosition = (currentMonthIndex * monthWidth) - (containerWidth / 2) + (monthWidth / 2);
+        const scrollPosition = ((nextMonthIndex + 1) * monthWidth) - containerWidth + monthWidth;
         scrollRef.current.scrollLeft = scrollPosition;
       }
     }
