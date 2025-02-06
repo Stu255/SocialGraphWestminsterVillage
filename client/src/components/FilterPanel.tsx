@@ -5,6 +5,7 @@ import { FilterDialog } from "./FilterDialog";
 import { useState } from "react";
 import { USER_RELATIONSHIP_TYPES } from "./RelationshipTypeManager";
 import { CONNECTION_TYPES } from "./ConnectionManager";
+import { Building2, GitBranch } from "lucide-react";
 
 interface Organization {
   id: number;
@@ -73,7 +74,10 @@ export function FilterPanel({ filters, onFilterChange, graphId }: FilterPanelPro
     <Card>
       <CardContent className="space-y-4 pt-6">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Organization</label>
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <label className="text-sm font-medium">Organization</label>
+          </div>
           <div className="flex gap-2">
             <Button
               variant={filters.organization.length === 0 ? "default" : "outline"}
@@ -93,7 +97,10 @@ export function FilterPanel({ filters, onFilterChange, graphId }: FilterPanelPro
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Your Relationship Type</label>
+          <div className="flex items-center gap-2">
+            <GitBranch className="h-4 w-4 text-muted-foreground" />
+            <label className="text-sm font-medium">Your Relationship Type</label>
+          </div>
           <div className="flex gap-2">
             <Button
               variant={filters.userRelationshipType.length === 0 ? "default" : "outline"}
@@ -113,7 +120,10 @@ export function FilterPanel({ filters, onFilterChange, graphId }: FilterPanelPro
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Connection Type</label>
+          <div className="flex items-center gap-2">
+            <GitBranch className="h-4 w-4 text-muted-foreground" />
+            <label className="text-sm font-medium">Connection Type</label>
+          </div>
           <div className="flex gap-2">
             <Button
               variant={filters.connectionType.length === 0 ? "default" : "outline"}
