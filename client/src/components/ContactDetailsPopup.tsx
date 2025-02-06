@@ -88,7 +88,7 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
   // Handle wheel scroll
   const handleWheel = (e: React.WheelEvent) => {
     if (scrollRef.current) {
-      const monthWidth = 160; // Increased to account for larger gap
+      const monthWidth = 140; // Adjusted for new spacing
       const scrollAmount = e.deltaY > 0 ? monthWidth : -monthWidth;
       scrollRef.current.scrollLeft += scrollAmount;
       e.preventDefault();
@@ -98,7 +98,7 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
   // Center on current month on initial render
   useEffect(() => {
     if (scrollRef.current) {
-      const monthWidth = 160; // Same as in handleWheel
+      const monthWidth = 140; // Same as in handleWheel
       const centerPosition = 12 * monthWidth;
       scrollRef.current.scrollLeft = centerPosition;
     }
@@ -112,7 +112,7 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
         className="flex overflow-x-auto pb-4 no-scrollbar" 
         style={{ scrollBehavior: 'smooth' }}
       >
-        <div className="flex gap-8">
+        <div className="flex gap-4">
           {months.map((monthData, monthIndex) => {
             const cells = Array.from({ length: 7 * 6 }, (_, index) => {
               const row = index % 7;
