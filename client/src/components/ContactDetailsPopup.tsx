@@ -29,18 +29,20 @@ interface ContactDetailsPopupProps {
 
 const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: string }> }) => {
   const today = new Date();
-  const oneYearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
-  const days = [];
+  const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 5, 1);
 
-  // Create array of all days in the last year
-  for (let d = new Date(oneYearAgo); d <= today; d.setDate(d.getDate() + 1)) {
-    days.push(new Date(d));
-  }
-
-  // Group days into weeks (52 columns)
-  const weeks = [];
-  for (let i = 0; i < days.length; i += 7) {
-    weeks.push(days.slice(i, i + 7));
+  // Generate array of month data
+  const months = [];
+  for (let m = new Date(sixMonthsAgo); m <= today; m.setMonth(m.getMonth() + 1)) {
+    const monthStart = new Date(m);
+    const monthData = {
+      name: monthStart.toLocaleString('default', { month: 'short' }),
+      year: monthStart.getFullYear(),
+      month: monthStart.getMonth(),
+      firstDay: new Date(monthStart.getFullYear(), monthStart.getMonth(), 1).getDay(), // 0 = Sunday
+      lastDate: new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate()
+    };
+    months.unshift(monthData); // Add to start so most recent month is rightmost
   }
 
   // Count interactions per day
@@ -50,28 +52,51 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
     interactionCounts.set(day, (interactionCounts.get(day) || 0) + 1);
   });
 
+  // Helper to get cell style based on interaction count
+  const getCellStyle = (count: number) => {
+    return count === 0 ? 'bg-muted' :
+           count === 1 ? 'bg-blue-200' :
+           count === 2 ? 'bg-blue-400' :
+                        'bg-blue-600';
+  };
+
   return (
-    <div className="flex gap-1">
-      {weeks.map((week, weekIndex) => (
-        <div key={weekIndex} className="flex flex-col gap-1">
-          {week.map((day, dayIndex) => {
-            const dayStr = day.toISOString().split('T')[0];
-            const count = interactionCounts.get(dayStr) || 0;
-            return (
-              <div
-                key={dayIndex}
-                className={`w-3 h-3 rounded-sm ${
-                  count === 0 ? 'bg-muted' :
-                  count === 1 ? 'bg-blue-200' :
-                  count === 2 ? 'bg-blue-400' :
-                  'bg-blue-600'
-                }`}
-                title={`${day.toLocaleDateString()}: ${count} interactions`}
-              />
-            );
-          })}
-        </div>
-      ))}
+    <div className="space-y-4">
+      <div className="flex gap-6">
+        {months.map((monthData, monthIndex) => (
+          <div key={monthIndex} className="flex flex-col gap-1">
+            <div className="text-sm text-muted-foreground mb-1">{monthData.name}</div>
+            <div className="grid grid-rows-7 gap-1">
+              {/* Generate 35 cells (5x7) for each month */}
+              {Array.from({ length: 35 }).map((_, index) => {
+                const row = index % 7; // 0 = Monday, 6 = Sunday
+                const col = Math.floor(index / 7);
+                const adjustedDay = row === 6 ? row : row + 1; // Adjust for Monday start
+                const dayOfMonth = col * 7 + adjustedDay - monthData.firstDay + 1;
+
+                // Check if this cell should show a date
+                const isValidDate = dayOfMonth > 0 && dayOfMonth <= monthData.lastDate;
+
+                if (!isValidDate) {
+                  return <div key={index} className="w-3 h-3" />; // Empty cell
+                }
+
+                const date = new Date(monthData.year, monthData.month, dayOfMonth);
+                const dateStr = date.toISOString().split('T')[0];
+                const count = interactionCounts.get(dateStr) || 0;
+
+                return (
+                  <div
+                    key={index}
+                    className={`w-3 h-3 rounded-sm ${getCellStyle(count)} ${row === 5 ? 'border-b border-muted-foreground/20' : ''}`}
+                    title={`${date.toLocaleDateString()}: ${count} interactions`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -190,7 +215,7 @@ export function ContactDetailsPopup({ contact, onClose, graphId }: ContactDetail
                         <Linkedin className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <p className="text-sm text-muted-foreground">LinkedIn</p>
-                          <a 
+                          <a
                             href={contact.linkedin}
                             target="_blank"
                             rel="noopener noreferrer"
