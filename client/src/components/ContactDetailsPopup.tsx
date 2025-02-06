@@ -29,8 +29,10 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
 
   // Get date range for display (12 months back and forward)
   const today = new Date();
-  const twelveMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 12, 1);
-  const twelveMonthsForward = new Date(today.getFullYear(), today.getMonth() + 12, 1);
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  const twelveMonthsAgo = new Date(currentYear, currentMonth - 12, 1);
+  const twelveMonthsForward = new Date(currentYear, currentMonth + 12, 1);
 
   // Generate array of month data
   const months = [];
@@ -42,6 +44,7 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
     const monthData = {
       name: monthStart.toLocaleString('default', { month: 'short' }),
       month: monthStart.getMonth(),
+      year: monthStart.getFullYear(),
       daysInMonth,
       firstDayOfWeek,
     };
@@ -124,7 +127,7 @@ const InteractionHeatmap = ({ interactions }: { interactions?: Array<{ date: str
                 return null;
               }
 
-              const date = new Date(today.getFullYear(), monthData.month, dayNumber);
+              const date = new Date(monthData.year, monthData.month, dayNumber);
               const dateStr = date.toISOString().split('T')[0];
               const count = interactionCounts.get(dateStr) || 0;
               const isWeekend = row === 0 || row === 6;
