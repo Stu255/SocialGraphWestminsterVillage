@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Home, Building2, GitBranch } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FilterPanel } from "@/components/FilterPanel";
 import { NodeForm } from "@/components/NodeForm";
@@ -36,7 +36,7 @@ export function MobileLayout({
   const panels = [
     { title: "Filters", component: <FilterPanel filters={filters} onFilterChange={onFilterChange} /> },
     { title: "Add Person", component: <NodeForm graphId={graphId} /> },
-    { title: "Organizations", component: <OrganizationManager graphId={graphId} /> },
+    { title: "Add Organization", component: <OrganizationManager graphId={graphId} /> },
     { title: "Relationship Types", component: <RelationshipTypeManager graphId={graphId} /> },
     { title: "Analysis", component: 
       <AnalysisPanel 
