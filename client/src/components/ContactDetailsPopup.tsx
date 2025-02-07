@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, Phone, Linkedin, Twitter, Building2, Briefcase, Settings } from "lucide-react";
 import { ContactFormDialog } from "./ContactFormDialog";
 import { InteractionDialog } from "./InteractionDialog";
+import { DayInteractionsDialog } from "./DayInteractionsDialog";
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface ContactDetailsPopupProps {
@@ -29,6 +30,7 @@ interface ContactDetailsPopupProps {
 const InteractionHeatmap = ({ interactions, contactId, graphId }: { interactions?: Array<{ date: string }>, contactId: number, graphId: number }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [viewingDate, setViewingDate] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch interactions data
@@ -107,6 +109,16 @@ const InteractionHeatmap = ({ interactions, contactId, graphId }: { interactions
     }
   };
 
+  const handleContextMenu = (e: React.MouseEvent, dateStr: string) => {
+    e.preventDefault();
+    const dayInteractions = (interactionsData || []).filter(
+      (interaction: any) => interaction.date.split('T')[0] === dateStr
+    );
+    if (dayInteractions.length > 0) {
+      setViewingDate(dateStr);
+    }
+  };
+
   useEffect(() => {
     if (scrollRef.current) {
       const monthWidth = 140;
@@ -173,6 +185,7 @@ const InteractionHeatmap = ({ interactions, contactId, graphId }: { interactions
                       className={`w-3 h-3 rounded-sm ${getCellStyle(cell!.count, cell!.isWeekend, cell!.row, cell!.dateStr)}`}
                       title={`${new Date(cell!.dateStr).toLocaleDateString()}: ${cell!.count} interactions`}
                       onClick={() => setSelectedDate(cell!.dateStr)}
+                      onContextMenu={(e) => handleContextMenu(e, cell!.dateStr)}
                       style={{
                         gridRow: cell!.row + 1,
                         gridColumn: cell!.col + 1,
@@ -192,6 +205,15 @@ const InteractionHeatmap = ({ interactions, contactId, graphId }: { interactions
         date={selectedDate || undefined}
         graphId={graphId}
         initialContactId={contactId}
+      />
+
+      <DayInteractionsDialog
+        open={!!viewingDate}
+        onOpenChange={(open) => !open && setViewingDate(null)}
+        date={viewingDate || ""}
+        interactions={(interactionsData || []).filter(
+          (interaction: any) => interaction.date.split('T')[0] === viewingDate
+        )}
       />
     </div>
   );
