@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Mail, Phone, Calendar, MessageSquare } from "lucide-react";
 import { useState } from "react";
@@ -115,6 +115,12 @@ export function DayInteractionsDialog({
               </>
             )}
           </div>
+          <DialogTitle className="sr-only">
+            Interaction Details for {new Date(date).toLocaleDateString()}
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            View and manage interaction details and connected contacts
+          </DialogDescription>
         </DialogHeader>
 
         {currentInteraction && (
