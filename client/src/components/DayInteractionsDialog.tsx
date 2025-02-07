@@ -1,8 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Mail, Phone, Calendar, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
+import { NetworkGraph } from "./NetworkGraph";
 
 interface Contact {
   id: number;
@@ -24,6 +26,19 @@ interface DayInteractionsDialogProps {
   date: string;
   graphId: number;
 }
+
+const getInteractionIcon = (type: string) => {
+  switch (type.toLowerCase()) {
+    case 'email':
+      return Mail;
+    case 'call':
+      return Phone;
+    case 'meeting':
+      return Calendar;
+    default:
+      return MessageSquare;
+  }
+};
 
 export function DayInteractionsDialog({ 
   open, 
@@ -56,13 +71,63 @@ export function DayInteractionsDialog({
 
   const currentInteraction = interactions[currentIndex];
 
+  const getIconStyles = (interactionDate: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const compareDate = new Date(interactionDate);
+    compareDate.setHours(0, 0, 0, 0);
+
+    const isPast = compareDate < today;
+    const isToday = compareDate.getTime() === today.getTime();
+    const isFuture = compareDate > today;
+
+    return {
+      background: isPast ? 'bg-red-100' : isFuture ? 'bg-green-100' : 'bg-gray-100',
+      border: isToday ? 'ring-2 ring-yellow-400' : '',
+    };
+  };
+
+  const currentContacts = contacts?.filter(contact => 
+    currentInteraction?.contactIds?.includes(contact.id)
+  ) || [];
+
+  const filteredGraphData = {
+    nodes: currentContacts.map(contact => ({
+      id: contact.id,
+      name: contact.name,
+    })),
+    links: currentContacts.flatMap((contact, i) => 
+      currentContacts.slice(i + 1).map(target => ({
+        source: contact.id,
+        target: target.id,
+      }))
+    ),
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>
-          <DialogTitle>
-            Interactions on {new Date(date).toLocaleDateString()}
-          </DialogTitle>
+          <div className="flex items-center gap-4">
+            {currentInteraction && (
+              <>
+                <span className="text-lg">{new Date(date).toLocaleDateString()}</span>
+                {(() => {
+                  const Icon = getInteractionIcon(currentInteraction.type);
+                  const styles = getIconStyles(currentInteraction.date);
+                  return (
+                    <div className={cn(
+                      "p-2 rounded-full",
+                      styles.background,
+                      styles.border
+                    )}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                  );
+                })()}
+              </>
+            )}
+          </div>
         </DialogHeader>
 
         {currentInteraction && (
@@ -91,15 +156,10 @@ export function DayInteractionsDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-8">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Type</span>
-                  <span className="capitalize">{currentInteraction.type}</span>
-                </div>
                 {currentInteraction.notes && (
                   <div className="space-y-2">
-                    <span className="font-medium">Notes</span>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                       {currentInteraction.notes}
                     </p>
@@ -107,19 +167,14 @@ export function DayInteractionsDialog({
                 )}
               </div>
 
-              <div className="space-y-2 border-l pl-4">
-                <span className="font-medium">People Involved</span>
-                <div className="space-y-1">
-                  {contacts?.filter(contact => 
-                    currentInteraction.contactIds?.includes(contact.id)
-                  ).map(contact => (
-                    <div 
-                      key={contact.id}
-                      className="text-sm p-2 rounded-md bg-muted"
-                    >
-                      {contact.name}
-                    </div>
-                  ))}
+              <div className="border-l pl-4">
+                <div className="h-[300px] w-full">
+                  <NetworkGraph
+                    data={filteredGraphData}
+                    width="100%"
+                    height="100%"
+                    hideControls
+                  />
                 </div>
               </div>
             </div>
