@@ -214,6 +214,7 @@ const InteractionHeatmap = ({ interactions, contactId, graphId }: { interactions
         interactions={(interactionsData || []).filter(
           (interaction: any) => interaction.date.split('T')[0] === viewingDate
         )}
+        graphId={graphId}
       />
     </div>
   );

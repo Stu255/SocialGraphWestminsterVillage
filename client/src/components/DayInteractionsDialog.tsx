@@ -2,12 +2,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+
+interface Contact {
+  id: number;
+  name: string;
+}
 
 interface Interaction {
   id: number;
   type: string;
   notes: string | null;
   date: string;
+  contactIds?: number[];
 }
 
 interface DayInteractionsDialogProps {
@@ -15,16 +22,30 @@ interface DayInteractionsDialogProps {
   onOpenChange: (open: boolean) => void;
   interactions: Interaction[];
   date: string;
+  graphId: number;
 }
 
 export function DayInteractionsDialog({ 
   open, 
   onOpenChange, 
   interactions, 
-  date 
+  date,
+  graphId
 }: DayInteractionsDialogProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  
+
+  const { data: contacts } = useQuery({
+    queryKey: ["/api/people", graphId],
+    queryFn: async () => {
+      const response = await fetch(`/api/people?graphId=${graphId}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch contacts");
+      }
+      return response.json() as Promise<Contact[]>;
+    },
+    enabled: open,
+  });
+
   const handlePrevious = () => {
     setCurrentIndex((prev) => Math.max(0, prev - 1));
   };
@@ -37,7 +58,7 @@ export function DayInteractionsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>
             Interactions on {new Date(date).toLocaleDateString()}
@@ -70,19 +91,37 @@ export function DayInteractionsDialog({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Type</span>
-                <span className="capitalize">{currentInteraction.type}</span>
-              </div>
-              {currentInteraction.notes && (
-                <div className="space-y-1">
-                  <span className="font-medium">Notes</span>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {currentInteraction.notes}
-                  </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Type</span>
+                  <span className="capitalize">{currentInteraction.type}</span>
                 </div>
-              )}
+                {currentInteraction.notes && (
+                  <div className="space-y-2">
+                    <span className="font-medium">Notes</span>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {currentInteraction.notes}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2 border-l pl-4">
+                <span className="font-medium">People Involved</span>
+                <div className="space-y-1">
+                  {contacts?.filter(contact => 
+                    currentInteraction.contactIds?.includes(contact.id)
+                  ).map(contact => (
+                    <div 
+                      key={contact.id}
+                      className="text-sm p-2 rounded-md bg-muted"
+                    >
+                      {contact.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}
