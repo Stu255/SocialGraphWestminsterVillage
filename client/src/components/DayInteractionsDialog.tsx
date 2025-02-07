@@ -91,19 +91,6 @@ export function DayInteractionsDialog({
     currentInteraction?.contactIds?.includes(contact.id)
   ) || [];
 
-  const filteredGraphData = {
-    nodes: currentContacts.map(contact => ({
-      id: contact.id,
-      name: contact.name,
-    })),
-    links: currentContacts.flatMap((contact, i) => 
-      currentContacts.slice(i + 1).map(target => ({
-        source: contact.id,
-        target: target.id,
-      }))
-    ),
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px]">
@@ -170,10 +157,21 @@ export function DayInteractionsDialog({
               <div className="border-l pl-4">
                 <div className="h-[300px] w-full">
                   <NetworkGraph
-                    data={filteredGraphData}
-                    width="100%"
-                    height="100%"
-                    hideControls
+                    nodes={currentContacts.map(contact => ({
+                      id: contact.id,
+                      name: contact.name,
+                    }))}
+                    links={currentContacts.flatMap((contact, i) => 
+                      currentContacts.slice(i + 1).map(target => ({
+                        sourcePersonId: contact.id,
+                        targetPersonId: target.id,
+                        connectionType: 1,
+                        graphId: graphId,
+                        id: -1
+                      }))
+                    )}
+                    filters={{}}
+                    graphId={graphId}
                   />
                 </div>
               </div>
