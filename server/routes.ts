@@ -79,14 +79,37 @@ export function registerRoutes(app: Express): Server {
     try {
       // First, delete any graphs where deleteAt is in the past
       const now = new Date();
-      await db
-        .delete(socialGraphs)
+
+      // Find graphs that need to be deleted
+      const expiredGraphs = await db
+        .select()
+        .from(socialGraphs)
         .where(
           and(
             eq(socialGraphs.userId, req.user.id),
             lt(socialGraphs.deleteAt, now)
           )
         );
+
+      // Delete associated data for each expired graph
+      for (const graph of expiredGraphs) {
+        await db.transaction(async (tx) => {
+          // Delete all connections first
+          await tx
+            .delete(connections)
+            .where(eq(connections.graphId, graph.id));
+
+          // Delete all people associated with the graph
+          await tx
+            .delete(people)
+            .where(eq(people.graphId, graph.id));
+
+          // Finally delete the graph itself
+          await tx
+            .delete(socialGraphs)
+            .where(eq(socialGraphs.id, graph.id));
+        });
+      }
 
       // Then fetch remaining graphs
       const graphs = await db
@@ -99,7 +122,7 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: "Failed to fetch graphs" });
     }
   });
-  
+
   app.post("/api/graphs", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not logged in" });
