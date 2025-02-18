@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { eq, or, desc, and } from "drizzle-orm";
+import { eq, or, desc, and, lt } from "drizzle-orm";
 import { db } from "@db";
 import { 
   people, 
@@ -77,12 +77,25 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
+      // First, delete any graphs where deleteAt is in the past
+      const now = new Date();
+      await db
+        .delete(socialGraphs)
+        .where(
+          and(
+            eq(socialGraphs.userId, req.user.id),
+            lt(socialGraphs.deleteAt, now)
+          )
+        );
+
+      // Then fetch remaining graphs
       const graphs = await db
         .select()
         .from(socialGraphs)
         .where(eq(socialGraphs.userId, req.user.id));
       res.json(graphs);
     } catch (error) {
+      console.error("Error fetching/cleaning up graphs:", error);
       res.status(500).json({ error: "Failed to fetch graphs" });
     }
   });
