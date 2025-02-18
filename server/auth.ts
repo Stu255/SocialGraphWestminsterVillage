@@ -199,4 +199,76 @@ export function setupAuth(app: Express) {
 
     res.status(401).send("Not logged in");
   });
+
+  // New route for password reset request
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const { username } = req.body;
+      if (!username) {
+        return res.status(400).send("Email address is required");
+      }
+
+      // Check if user exists
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, username))
+        .limit(1);
+
+      // Always return success to prevent email enumeration
+      res.json({
+        message: "If an account exists with this email, you will receive password reset instructions.",
+      });
+
+      // TODO: Implement actual email sending logic here
+      // For now, we'll just log to console
+      if (user) {
+        console.log(`Password reset requested for user: ${username}`);
+      }
+    } catch (error) {
+      // Still return success to prevent email enumeration
+      res.json({
+        message: "If an account exists with this email, you will receive password reset instructions.",
+      });
+    }
+  });
+
+  // New route for changing password
+  app.post("/api/user/change-password", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not logged in");
+    }
+
+    try {
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).send("Both current and new passwords are required");
+      }
+
+      // Verify current password
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, req.user.id))
+        .limit(1);
+
+      const isMatch = await crypto.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).send("Current password is incorrect");
+      }
+
+      // Hash and update new password
+      const hashedPassword = await crypto.hash(newPassword);
+      await db
+        .update(users)
+        .set({ password: hashedPassword })
+        .where(eq(users.id, req.user.id));
+
+      res.json({ message: "Password updated successfully" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(500).send("Failed to change password");
+    }
+  });
 }

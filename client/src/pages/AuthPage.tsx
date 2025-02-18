@@ -13,8 +13,13 @@ interface FormValues {
   password: string;
 }
 
+interface ResetFormValues {
+  username: string;
+}
+
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showResetForm, setShowResetForm] = useState(false);
   const { toast } = useToast();
   const { login, register } = useUser();
 
@@ -29,6 +34,12 @@ export default function AuthPage() {
     defaultValues: {
       username: "",
       password: "",
+    },
+  });
+
+  const resetForm = useForm<ResetFormValues>({
+    defaultValues: {
+      username: "",
     },
   });
 
@@ -76,6 +87,82 @@ export default function AuthPage() {
     }
   };
 
+  const handleReset = async (values: ResetFormValues) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      toast({
+        title: "Success",
+        description: "If an account exists with this email, you will receive password reset instructions.",
+      });
+      setShowResetForm(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (showResetForm) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl">Reset Password</CardTitle>
+            <CardDescription>
+              Enter your email address and we'll send you instructions to reset your password
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...resetForm}>
+              <form onSubmit={resetForm.handleSubmit(handleReset)} className="space-y-4">
+                <FormField
+                  control={resetForm.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="email" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowResetForm(false)}
+                  >
+                    Back to Login
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={isLoading}>
+                    {isLoading ? "Sending..." : "Send Instructions"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -100,9 +187,9 @@ export default function AuthPage() {
                     name="username"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Username</FormLabel>
+                        <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} type="email" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -121,6 +208,14 @@ export default function AuthPage() {
                       </FormItem>
                     )}
                   />
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="px-0"
+                    onClick={() => setShowResetForm(true)}
+                  >
+                    Forgot password?
+                  </Button>
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Loading..." : "Login"}
                   </Button>
@@ -136,9 +231,9 @@ export default function AuthPage() {
                     name="username"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Username</FormLabel>
+                        <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} type="email" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, LogOut, Users } from "lucide-react";
+import { Plus, LogOut, Users, Settings } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
 import { GraphCard } from "@/components/GraphCard";
@@ -109,6 +109,10 @@ export default function AccountPage() {
               <Users className="h-4 w-4 mr-2" />
               Global Contacts
             </Button>
+            <Button variant="outline" onClick={() => setLocation('/settings')}>
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </Button>
             <Button variant="outline" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
               Logout
@@ -128,8 +132,8 @@ export default function AccountPage() {
                 placeholder="New graph name..."
                 className="flex-1"
               />
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={createGraphMutation.isPending || !newGraphName.trim()}
               >
                 <Plus className="h-4 w-4 mr-2" />

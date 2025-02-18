@@ -5,6 +5,7 @@ import { useUser } from "@/hooks/use-user";
 import AuthPage from "@/pages/AuthPage";
 import AccountPage from "@/pages/AccountPage";
 import GraphPage from "@/pages/GraphPage";
+import SettingsPage from "@/pages/SettingsPage";
 
 function App() {
   const { user, isLoading } = useUser();
@@ -25,6 +26,7 @@ function App() {
     <Switch>
       <Route path="/" component={AccountPage} />
       <Route path="/graph/:id" component={GraphPage} />
+      <Route path="/settings" component={SettingsPage} />
       <Route component={NotFound} />
     </Switch>
   );
