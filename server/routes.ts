@@ -2,20 +2,24 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { eq, or, desc, and, lt } from "drizzle-orm";
 import { db } from "@db";
+import multer from "multer";
+import { stringify } from "csv-stringify/sync";
+import { parse } from "csv-parse/sync";
 import { 
   people, 
   connections, 
   connectionTypes, 
   organizations, 
   socialGraphs,
-  fieldPreferences,
   insertPersonSchema,
   insertSocialGraphSchema,
+  interactions,
+  interactionContacts,
   customFields,
-  interactions 
+  fieldPreferences 
 } from "@db/schema";
 import { setupAuth } from "./auth";
-import {interactionContacts} from "@db/schema"; 
+import {interactionContacts as interactionContacts2} from "@db/schema"; 
 
 function getSortableSurname(name: string): string {
   const parts = name.split(" ");
@@ -66,6 +70,14 @@ function calculateCloseness(
   return (reachableNodes - 1) / totalDistance;
 }
 
+// Configure multer for file uploads
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
+});
+
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
 
@@ -77,10 +89,8 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      // First, delete any graphs where deleteAt is in the past
       const now = new Date();
 
-      // Find graphs that need to be deleted
       const expiredGraphs = await db
         .select()
         .from(socialGraphs)
@@ -91,27 +101,22 @@ export function registerRoutes(app: Express): Server {
           )
         );
 
-      // Delete associated data for each expired graph
       for (const graph of expiredGraphs) {
         await db.transaction(async (tx) => {
-          // Delete all connections first
           await tx
             .delete(connections)
             .where(eq(connections.graphId, graph.id));
 
-          // Delete all people associated with the graph
           await tx
             .delete(people)
             .where(eq(people.graphId, graph.id));
 
-          // Finally delete the graph itself
           await tx
             .delete(socialGraphs)
             .where(eq(socialGraphs.id, graph.id));
         });
       }
 
-      // Then fetch remaining graphs
       const graphs = await db
         .select()
         .from(socialGraphs)
@@ -179,8 +184,6 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      console.log("Received person data:", req.body);
-
       const personData = {
         name: req.body.name,
         graphId: req.body.graphId,
@@ -196,8 +199,6 @@ export function registerRoutes(app: Express): Server {
         twitter: req.body.twitter,
         notes: req.body.notes,
       };
-
-      console.log("Transformed person data:", personData);
 
       const result = insertPersonSchema.safeParse(personData);
       if (!result.success) {
@@ -221,8 +222,6 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      console.log("Received update request for person:", req.params.id, req.body);
-
       const userRelationshipType = req.body.relationshipToYou;
 
       if (userRelationshipType !== undefined && userRelationshipType !== null) {
@@ -256,7 +255,6 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ error: "Person not found" });
       }
 
-      console.log("Successfully updated person:", updatedPerson);
       res.json(updatedPerson);
     } catch (error: any) {
       console.error("Error updating person:", error);
@@ -289,12 +287,9 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      console.log("Received connection create request:", req.body);
       const { sourcePersonId, targetPersonId, connectionType, graphId } = req.body;
 
       const connection = await db.transaction(async (tx) => {
-        console.log("Starting transaction for new connection");
-        
         await tx.delete(connections)
           .where(
             and(
@@ -312,13 +307,6 @@ export function registerRoutes(app: Express): Server {
             )
           );
 
-        console.log("Creating forward connection:", {
-          sourcePersonId,
-          targetPersonId,
-          connectionType,
-          graphId
-        });
-
         const [forward] = await tx
           .insert(connections)
           .values({
@@ -329,7 +317,6 @@ export function registerRoutes(app: Express): Server {
           })
           .returning();
 
-        console.log("Creating reverse connection");
         const [reverse] = await tx
           .insert(connections)
           .values({ 
@@ -343,7 +330,6 @@ export function registerRoutes(app: Express): Server {
         return forward;
       });
 
-      console.log("Successfully created connection:", connection);
       res.json(connection);
     } catch (error) {
       console.error("Error creating connection:", error);
@@ -402,11 +388,6 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      console.log("Received connection update request:", {
-        id: req.params.id,
-        body: req.body
-      });
-
       const { connectionType, graphId, sourcePersonId, targetPersonId } = req.body;
 
       if (connectionType === undefined || connectionType === null || 
@@ -441,13 +422,11 @@ export function registerRoutes(app: Express): Server {
       }
 
       await db.transaction(async (tx) => {
-        
         await tx
           .update(connections)
           .set({ connectionType })
           .where(eq(connections.id, parseInt(req.params.id)));
 
-        
         await tx
           .update(connections)
           .set({ connectionType })
@@ -500,8 +479,6 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      console.log("Creating organization with data:", req.body);
-
       const graphId = req.body.graphId || req.body.graph_id;
       if (!graphId) {
         return res.status(400).json({ error: "Graph ID is required" });
@@ -522,7 +499,6 @@ export function registerRoutes(app: Express): Server {
         })
         .returning();
 
-      console.log("Created organization:", organization);
       res.json(organization);
     } catch (error) {
       console.error("Error creating organization:", error);
@@ -699,7 +675,6 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      // Get all people from graphs owned by the current user
       const allPeople = await db
         .select({
           id: people.id,
@@ -746,18 +721,16 @@ export function registerRoutes(app: Express): Server {
       }
 
       const interaction = await db.transaction(async (tx) => {
-        // Create the interaction
         const [newInteraction] = await tx
           .insert(interactions)
           .values({
             type,
             notes: notes || null,
-            date: new Date(date), // Convert ISO string to Date object
+            date: new Date(date), 
             graphId
           })
           .returning();
 
-        // Create associations with contacts
         for (const contactId of contactIds) {
           await tx
             .insert(interactionContacts)
@@ -780,7 +753,6 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Add this GET endpoint for interactions in the registerRoutes function
   app.get("/api/interactions", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not logged in" });
@@ -820,6 +792,152 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ 
         error: "Failed to fetch interactions",
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  });
+
+  app.get("/api/contacts/template", (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not logged in" });
+    }
+
+    try {
+      const headers = [
+        'name',
+        'jobTitle',
+        'organization',
+        'userRelationshipType',
+        'lastContact',
+        'officeNumber',
+        'mobileNumber',
+        'email1',
+        'email2',
+        'linkedin',
+        'twitter',
+        'notes'
+      ];
+
+      const templateRow = [
+        'Full Name (Required)',
+        'Job Title',
+        'Organization',
+        'Relationship (1-5)',
+        'Last Contact (YYYY-MM-DD)',
+        'Office Phone',
+        'Mobile Phone',
+        'Primary Email',
+        'Secondary Email',
+        'LinkedIn URL',
+        'Twitter Handle',
+        'Additional Notes'
+      ];
+
+      const csvContent = stringify([headers, templateRow]);
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=contacts_template.csv');
+
+      res.send(csvContent);
+    } catch (error) {
+      console.error("Error generating CSV template:", error);
+      res.status(500).json({ error: "Failed to generate CSV template" });
+    }
+  });
+
+  app.post("/api/contacts/upload", upload.single('file'), async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not logged in" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    try {
+      const records = parse(req.file.buffer.toString(), {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      });
+
+      const results = {
+        added: 0,
+        updated: 0,
+        errors: [] as string[]
+      };
+
+      const graphs = await db
+        .select()
+        .from(socialGraphs)
+        .where(eq(socialGraphs.userId, req.user.id));
+
+      if (graphs.length === 0) {
+        return res.status(400).json({ error: "No graphs found for user" });
+      }
+
+      const defaultGraphId = graphs[0].id;
+
+      for (const [index, record] of records.entries()) {
+        try {
+          if (!record.name) {
+            results.errors.push(`Row ${index + 1}: Name is required`);
+            continue;
+          }
+
+          const personData = {
+            name: record.name,
+            jobTitle: record.jobTitle || null,
+            organization: record.organization || null,
+            userRelationshipType: parseInt(record.userRelationshipType) || 1,
+            lastContact: record.lastContact || null,
+            officeNumber: record.officeNumber || null,
+            mobileNumber: record.mobileNumber || null,
+            email1: record.email1 || null,
+            email2: record.email2 || null,
+            linkedin: record.linkedin || null,
+            twitter: record.twitter || null,
+            notes: record.notes || null,
+            graphId: defaultGraphId
+          };
+
+          const validationResult = insertPersonSchema.safeParse(personData);
+          if (!validationResult.success) {
+            results.errors.push(
+              `Row ${index + 1}: ${validationResult.error.issues.map(i => i.message).join(", ")}`
+            );
+            continue;
+          }
+
+          const existingPerson = await db
+            .select()
+            .from(people)
+            .where(and(
+              eq(people.name, personData.name),
+              eq(people.graphId, defaultGraphId)
+            ));
+
+          if (existingPerson.length > 0) {
+            await db
+              .update(people)
+              .set(personData)
+              .where(eq(people.id, existingPerson[0].id));
+            results.updated++;
+          } else {
+            await db.insert(people).values(personData);
+            results.added++;
+          }
+        } catch (error) {
+          console.error(`Error processing row ${index + 1}:`, error);
+          results.errors.push(`Row ${index + 1}: Failed to process record`);
+        }
+      }
+
+      res.json(results);
+    } catch (error) {
+      console.error("Error processing CSV upload:", error);
+      res.status(500).json({ 
+        error: "Failed to process CSV upload",
+        details: process.env.NODE_ENV === 'development' ? error : undefined
       });
     }
   });
