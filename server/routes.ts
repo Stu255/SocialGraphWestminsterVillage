@@ -20,6 +20,38 @@ import {
 } from "@db/schema";
 import { setupAuth } from "./auth";
 import {interactionContacts as interactionContacts2} from "@db/schema"; 
+import { parse as parseDate } from "date-fns";
+
+function normalizeDate(dateStr: string): string | null {
+  if (!dateStr) return null;
+
+  try {
+    const formats = [
+      'yyyy-MM-dd',    
+      'MM/dd/yyyy',    
+      'dd/MM/yyyy',    
+      'MM-dd-yyyy',    
+      'dd-MM-yyyy',    
+      'M/d/yyyy',      
+      'd/M/yyyy',      
+      'MMM d, yyyy',   
+      'MMMM d, yyyy'   
+    ];
+
+    for (const format of formats) {
+      try {
+        const date = parseDate(dateStr, format, new Date());
+        if (isNaN(date.getTime())) continue;
+        return date.toISOString().split('T')[0]; 
+      } catch {
+        continue;
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 function getSortableSurname(name: string): string {
   const parts = name.split(" ");
@@ -70,11 +102,10 @@ function calculateCloseness(
   return (reachableNodes - 1) / totalDistance;
 }
 
-// Configure multer for file uploads
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+    fileSize: 5 * 1024 * 1024 
   }
 });
 
@@ -869,12 +900,21 @@ export function registerRoutes(app: Express): Server {
             continue;
           }
 
+          let normalizedLastContact = null;
+          if (record.lastContact) {
+            normalizedLastContact = normalizeDate(record.lastContact);
+            if (!normalizedLastContact) {
+              results.errors.push(`Row ${index + 1}: Invalid date format for Last Contact`);
+              continue;
+            }
+          }
+
           const personData = {
             name: record.name,
             jobTitle: record.jobTitle || null,
             organization: record.organization || null,
             userRelationshipType: parseInt(record.userRelationshipType) || 1,
-            lastContact: record.lastContact || null,
+            lastContact: normalizedLastContact,
             officeNumber: record.officeNumber || null,
             mobileNumber: record.mobileNumber || null,
             email1: record.email1 || null,
