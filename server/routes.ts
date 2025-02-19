@@ -886,11 +886,15 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
+      // Parse CSV with from_line: 2 to skip the header row
       const records = parse(req.file.buffer.toString(), {
         columns: true,
         skip_empty_lines: true,
-        trim: true
+        trim: true,
+        from_line: 2 // Skip the header row
       });
+
+      console.log("Parsed records:", records);
 
       const results = {
         added: 0,
@@ -911,8 +915,8 @@ export function registerRoutes(app: Express): Server {
 
       for (const [index, record] of records.entries()) {
         try {
-          if (!record.name) {
-            results.errors.push(`Row ${index + 1}: Name is required`);
+          // Skip empty rows or template example rows
+          if (!record.name || record.name.includes("(Required)") || record.name.toLowerCase().includes("full name")) {
             continue;
           }
 
@@ -921,7 +925,7 @@ export function registerRoutes(app: Express): Server {
             normalizedLastContact = normalizeDate(record.lastContact);
             if (!normalizedLastContact) {
               results.errors.push(
-                `Row ${index + 1}: Could not parse date "${record.lastContact}". ` +
+                `Row ${index + 2}: Could not parse date "${record.lastContact}". ` +
                 `Please use one of these formats: YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY, M/D/YYYY`
               );
               continue;
@@ -935,8 +939,7 @@ export function registerRoutes(app: Express): Server {
             userRelationshipType: parseInt(record.userRelationshipType) || 1,
             lastContact: normalizedLastContact,
             officeNumber: record.officeNumber || null,
-            mobileNumber: record.mobileNumber || null,
-            email1: record.email1 || null,
+            mobileNumber: record.mobileNumber || null,            email1: record.email1 || null,
             email2: record.email2 || null,
             linkedin: record.linkedin || null,
             twitter: record.twitter || null,
@@ -947,7 +950,7 @@ export function registerRoutes(app: Express): Server {
           const validationResult = insertPersonSchema.safeParse(personData);
           if (!validationResult.success) {
             results.errors.push(
-              `Row ${index + 1}: ${validationResult.error.issues.map(i => i.message).join(", ")}`
+              `Row ${index + 2}: ${validationResult.error.issues.map(i => i.message).join(", ")}`
             );
             continue;
           }
@@ -971,194 +974,8 @@ export function registerRoutes(app: Express): Server {
             results.added++;
           }
         } catch (error) {
-          console.error(`Error processing row ${index + 1}:`, error);
-          results.errors.push(`Row ${index + 1}: Failed to process record`);
-        }
-      }
-
-      res.json(results);
-    } catch (error) {
-      console.error("Error processing CSV upload:", error);
-      res.status(500).json({ 
-        error: "Failed to process CSV upload",
-        details: process.env.NODE_ENV === 'development' ? error : undefined
-      });
-    }
-  });
-
-  app.get("/api/interactions", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Not logged in" });
-    }
-
-    try {
-      const { graphId, contactId } = req.query;
-
-      if (!graphId) {
-        return res.status(400).json({ error: "Graph ID is required" });
-      }
-
-      const interactionsQuery = db
-        .select({
-          id: interactions.id,
-          type: interactions.type,
-          notes: interactions.notes,
-          date: interactions.date,
-          createdAt: interactions.createdAt,
-        })
-        .from(interactions)
-        .where(eq(interactions.graphId, Number(graphId)));
-
-      if (contactId) {
-        interactionsQuery
-          .innerJoin(
-            interactionContacts,
-            eq(interactions.id, interactionContacts.interactionId)
-          )
-          .where(eq(interactionContacts.personId, Number(contactId)));
-      }
-
-      const interactionsData = await interactionsQuery;
-      res.json(interactionsData);
-    } catch (error: any) {
-      console.error("Error fetching interactions:", error);
-      res.status(500).json({ 
-        error: "Failed to fetch interactions",
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
-    }
-  });
-
-  app.get("/api/contacts/template", (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Not logged in" });
-    }
-
-    try {
-      const headers = [
-        'name',
-        'jobTitle',
-        'organization',
-        'userRelationshipType',
-        'lastContact',
-        'officeNumber',
-        'mobileNumber',
-        'email1',
-        'email2',
-        'linkedin',
-        'twitter',
-        'notes'
-      ];
-
-      const csvContent = stringify([headers]);
-
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', 'attachment; filename=contacts_template.csv');
-
-      res.send(csvContent);
-    } catch (error) {
-      console.error("Error generating CSV template:", error);
-      res.status(500).json({ error: "Failed to generate CSV template" });
-    }
-  });
-
-  app.post("/api/contacts/upload", upload.single('file'), async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Not logged in" });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
-
-    try {
-      const records = parse(req.file.buffer.toString(), {
-        columns: true,
-        skip_empty_lines: true,
-        trim: true
-      });
-
-      const results = {
-        added: 0,
-        updated: 0,
-        errors: [] as string[]
-      };
-
-      const graphs = await db
-        .select()
-        .from(socialGraphs)
-        .where(eq(socialGraphs.userId, req.user.id));
-
-      if (graphs.length === 0) {
-        return res.status(400).json({ error: "No graphs found for user" });
-      }
-
-      const defaultGraphId = graphs[0].id;
-
-      for (const [index, record] of records.entries()) {
-        try {
-          if (!record.name) {
-            results.errors.push(`Row ${index + 1}: Name is required`);
-            continue;
-          }
-
-          let normalizedLastContact = null;
-          if (record.lastContact) {
-            normalizedLastContact = normalizeDate(record.lastContact);
-            if (!normalizedLastContact) {
-              results.errors.push(
-                `Row ${index + 1}: Could not parse date "${record.lastContact}". ` +
-                `Please use one of these formats: YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY, M/D/YYYY`
-              );
-              continue;
-            }
-          }
-
-          const personData = {
-            name: record.name,
-            jobTitle: record.jobTitle || null,
-            organization: record.organization || null,
-            userRelationshipType: parseInt(record.userRelationshipType) || 1,
-            lastContact: normalizedLastContact,
-            officeNumber: record.officeNumber || null,
-            mobileNumber: record.mobileNumber || null,
-            email1: record.email1 || null,
-            email2: record.email2 || null,
-            linkedin: record.linkedin || null,
-            twitter: record.twitter || null,
-            notes: record.notes || null,
-            graphId: defaultGraphId
-          };
-
-          const validationResult = insertPersonSchema.safeParse(personData);
-          if (!validationResult.success) {
-            results.errors.push(
-              `Row ${index + 1}: ${validationResult.error.issues.map(i => i.message).join(", ")}`
-            );
-            continue;
-          }
-
-          const existingPerson = await db
-            .select()
-            .from(people)
-            .where(and(
-              eq(people.name, personData.name),
-              eq(people.graphId, defaultGraphId)
-            ));
-
-          if (existingPerson.length > 0) {
-            await db
-              .update(people)
-              .set(personData)
-              .where(eq(people.id, existingPerson[0].id));
-            results.updated++;
-          } else {
-            await db.insert(people).values(personData);
-            results.added++;
-          }
-        } catch (error) {
-          console.error(`Error processing row ${index + 1}:`, error);
-          results.errors.push(`Row ${index + 1}: Failed to process record`);
+          console.error(`Error processing row ${index + 2}:`, error);
+          results.errors.push(`Row ${index + 2}: Failed to process record`);
         }
       }
 
@@ -1342,11 +1159,15 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
+      // Parse CSV with from_line: 2 to skip the header row
       const records = parse(req.file.buffer.toString(), {
         columns: true,
         skip_empty_lines: true,
-        trim: true
+        trim: true,
+        from_line: 2 // Skip the header row
       });
+
+      console.log("Parsed records:", records);
 
       const results = {
         added: 0,
@@ -1367,8 +1188,8 @@ export function registerRoutes(app: Express): Server {
 
       for (const [index, record] of records.entries()) {
         try {
-          if (!record.name) {
-            results.errors.push(`Row ${index + 1}: Name is required`);
+          // Skip empty rows or template example rows
+          if (!record.name || record.name.includes("(Required)") || record.name.toLowerCase().includes("full name")) {
             continue;
           }
 
@@ -1377,7 +1198,7 @@ export function registerRoutes(app: Express): Server {
             normalizedLastContact = normalizeDate(record.lastContact);
             if (!normalizedLastContact) {
               results.errors.push(
-                `Row ${index + 1}: Could not parse date "${record.lastContact}". ` +
+                `Row ${index + 2}: Could not parse date "${record.lastContact}". ` +
                 `Please use one of these formats: YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY, M/D/YYYY`
               );
               continue;
@@ -1403,7 +1224,7 @@ export function registerRoutes(app: Express): Server {
           const validationResult = insertPersonSchema.safeParse(personData);
           if (!validationResult.success) {
             results.errors.push(
-              `Row ${index + 1}: ${validationResult.error.issues.map(i => i.message).join(", ")}`
+              `Row ${index + 2}: ${validationResult.error.issues.map(i => i.message).join(", ")}`
             );
             continue;
           }
@@ -1427,8 +1248,8 @@ export function registerRoutes(app: Express): Server {
             results.added++;
           }
         } catch (error) {
-          console.error(`Error processing row ${index + 1}:`, error);
-          results.errors.push(`Row ${index + 1}: Failed to process record`);
+          console.error(`Error processing row ${index + 2}:`, error);
+          results.errors.push(`Row ${index + 2}: Failed to process record`);
         }
       }
 
@@ -1830,11 +1651,15 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
+      // Parse CSV with from_line: 2 to skip the header row
       const records = parse(req.file.buffer.toString(), {
         columns: true,
         skip_empty_lines: true,
-        trim: true
+        trim: true,
+        from_line: 2 // Skip the header row
       });
+
+      console.log("Parsed records:", records);
 
       const results = {
         added: 0,
@@ -1855,8 +1680,8 @@ export function registerRoutes(app: Express): Server {
 
       for (const [index, record] of records.entries()) {
         try {
-          if (!record.name) {
-            results.errors.push(`Row ${index + 1}: Name is required`);
+          // Skip empty rows or template example rows
+          if (!record.name || record.name.includes("(Required)") || record.name.toLowerCase().includes("full name")) {
             continue;
           }
 
@@ -1865,7 +1690,7 @@ export function registerRoutes(app: Express): Server {
             normalizedLastContact = normalizeDate(record.lastContact);
             if (!normalizedLastContact) {
               results.errors.push(
-                `Row ${index + 1}: Could not parse date "${record.lastContact}". ` +
+                `Row ${index + 2}: Could not parse date "${record.lastContact}". ` +
                 `Please use one of these formats: YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY, M/D/YYYY`
               );
               continue;
@@ -1891,7 +1716,7 @@ export function registerRoutes(app: Express): Server {
           const validationResult = insertPersonSchema.safeParse(personData);
           if (!validationResult.success) {
             results.errors.push(
-              `Row ${index + 1}: ${validationResult.error.issues.map(i => i.message).join(", ")}`
+              `Row ${index + 2}: ${validationResult.error.issues.map(i => i.message).join(", ")}`
             );
             continue;
           }
@@ -1915,8 +1740,8 @@ export function registerRoutes(app: Express): Server {
             results.added++;
           }
         } catch (error) {
-          console.error(`Error processing row ${index + 1}:`, error);
-          results.errors.push(`Row ${index + 1}: Failed to process record`);
+          console.error(`Error processing row ${index + 2}:`, error);
+          results.errors.push(`Row ${index + 2}: Failed to process record`);
         }
       }
 
