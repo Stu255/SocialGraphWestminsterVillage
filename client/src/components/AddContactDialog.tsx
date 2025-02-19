@@ -229,12 +229,25 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                     }}
                     render={({ field: formField }) => (
                       <FormItem>
-                        <FormLabel className="capitalize">
-                          {field === "email1" ? "Email Address 1" :
-                           field === "email2" ? "Email Address 2" :
-                           field === "relationshipToYou" ? "Relationship To You" :
-                           field.replace(/([A-Z])/g, ' $1').trim()}
-                        </FormLabel>
+                        <div className="flex items-center justify-between">
+                          <FormLabel className="capitalize">
+                            {field === "email1" ? "Email Address 1" :
+                             field === "email2" ? "Email Address 2" :
+                             field === "relationshipToYou" ? "Relationship To You" :
+                             field.replace(/([A-Z])/g, ' $1').trim()}
+                          </FormLabel>
+                          {field === "organization" && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => setShowAddOrg(true)}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                         <FormControl>
                           {field === "relationshipToYou" ? (
                             <Select
@@ -253,67 +266,56 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                               </SelectContent>
                             </Select>
                           ) : field === "organization" ? (
-                            <div className="flex items-center gap-2">
-                              <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
-                                <PopoverTrigger asChild>
-                                  <FormControl>
-                                    <Button
-                                      variant="outline"
-                                      role="combobox"
-                                      aria-expanded={openCombobox}
-                                      className="w-full justify-between"
-                                    >
-                                      {formField.value
-                                        ? formField.value
-                                        : "Select organization..."}
-                                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                  </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="p-0">
-                                  <Command>
-                                    <CommandInput 
-                                      placeholder="Search organization..."
-                                      onValueChange={(search) => {
-                                        // The filtering is handled automatically by Command
-                                        // as it filters based on the CommandItem value prop
-                                      }}
-                                      className="h-9"
-                                    />
-                                    <CommandEmpty>No organization found.</CommandEmpty>
-                                    <CommandGroup>
-                                      {sortedOrganizations.map((org: any) => (
-                                        <CommandItem
-                                          key={org.id}
-                                          value={org.name}
-                                          onSelect={(currentValue) => {
-                                            formField.onChange(currentValue);
-                                            setOpenCombobox(false);
-                                          }}
-                                        >
-                                          <Check
-                                            className={cn(
-                                              "mr-2 h-4 w-4",
-                                              formField.value === org.name ? "opacity-100" : "opacity-0"
-                                            )}
-                                          />
-                                          {org.name}
-                                        </CommandItem>
-                                      ))}
-                                    </CommandGroup>
-                                  </Command>
-                                </PopoverContent>
-                              </Popover>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 flex-shrink-0"
-                                onClick={() => setShowAddOrg(true)}
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
+                            <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={openCombobox}
+                                    className="w-full justify-between"
+                                  >
+                                    {formField.value
+                                      ? formField.value
+                                      : "Select organization..."}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="p-0">
+                                <Command>
+                                  <CommandInput 
+                                    placeholder="Search organization..."
+                                    onValueChange={(search) => {
+                                      // The filtering is handled automatically by Command
+                                      // as it filters based on the CommandItem value prop
+                                    }}
+                                    className="h-9"
+                                  />
+                                  <CommandEmpty>No organization found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {sortedOrganizations.map((org: any) => (
+                                      <CommandItem
+                                        key={org.id}
+                                        value={org.name}
+                                        onSelect={(currentValue) => {
+                                          formField.onChange(currentValue);
+                                          setOpenCombobox(false);
+                                        }}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            formField.value === org.name ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+                                        {org.name}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
                           ) : field === "notes" ? (
                             <Textarea {...formField} className="min-h-[100px]" />
                           ) : field === "lastContact" ? (
