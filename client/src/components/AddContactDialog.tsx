@@ -199,7 +199,7 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
   };
 
   // Sort organizations alphabetically
-  const sortedOrganizations = [...(organizations || [])].sort((a: any, b: any) => 
+  const sortedOrganizations = [...(organizations || [])].sort((a: any, b: any) =>
     a.name.localeCompare(b.name)
   );
 
@@ -253,41 +253,27 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                               </SelectContent>
                             </Select>
                           ) : field === "organization" ? (
-                            <div className="relative">
+                            <div className="flex items-center gap-2">
                               <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
                                 <PopoverTrigger asChild>
                                   <FormControl>
-                                    <div className="flex items-center">
-                                      <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        aria-expanded={openCombobox}
-                                        className="w-full justify-between"
-                                      >
-                                        {formField.value
-                                          ? formField.value
-                                          : "Select organization..."}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                      </Button>
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="ml-2 h-8 w-8"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setShowAddOrg(true);
-                                        }}
-                                      >
-                                        <Plus className="h-4 w-4" />
-                                      </Button>
-                                    </div>
+                                    <Button
+                                      variant="outline"
+                                      role="combobox"
+                                      aria-expanded={openCombobox}
+                                      className="w-full justify-between"
+                                    >
+                                      {formField.value
+                                        ? formField.value
+                                        : "Select organization..."}
+                                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
                                   </FormControl>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                <PopoverContent className="p-0">
                                   <Command>
                                     <CommandInput 
-                                      placeholder="Search organization..." 
+                                      placeholder="Type to search..." 
                                       className="h-9"
                                     />
                                     <CommandEmpty>No organization found.</CommandEmpty>
@@ -301,12 +287,6 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                                             setOpenCombobox(false);
                                           }}
                                         >
-                                          <Check
-                                            className={cn(
-                                              "mr-2 h-4 w-4",
-                                              formField.value === org.name ? "opacity-100" : "opacity-0"
-                                            )}
-                                          />
                                           {org.name}
                                         </CommandItem>
                                       ))}
@@ -314,6 +294,15 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                                   </Command>
                                 </PopoverContent>
                               </Popover>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 flex-shrink-0"
+                                onClick={() => setShowAddOrg(true)}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
                             </div>
                           ) : field === "notes" ? (
                             <Textarea {...formField} className="min-h-[100px]" />
