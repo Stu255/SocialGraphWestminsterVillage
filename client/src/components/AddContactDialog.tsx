@@ -198,6 +198,11 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
     setStep(s => s - 1);
   };
 
+  // Sort organizations alphabetically
+  const sortedOrganizations = [...(organizations || [])].sort((a: any, b: any) => 
+    a.name.localeCompare(b.name)
+  );
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -224,25 +229,12 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                     }}
                     render={({ field: formField }) => (
                       <FormItem>
-                        <div className="flex items-center justify-between">
-                          <FormLabel className="capitalize">
-                            {field === "email1" ? "Email Address 1" :
-                             field === "email2" ? "Email Address 2" :
-                             field === "relationshipToYou" ? "Relationship To You" :
-                             field.replace(/([A-Z])/g, ' $1').trim()}
-                          </FormLabel>
-                          {field === "organization" && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={() => setShowAddOrg(true)}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
+                        <FormLabel className="capitalize">
+                          {field === "email1" ? "Email Address 1" :
+                           field === "email2" ? "Email Address 2" :
+                           field === "relationshipToYou" ? "Relationship To You" :
+                           field.replace(/([A-Z])/g, ' $1').trim()}
+                        </FormLabel>
                         <FormControl>
                           {field === "relationshipToYou" ? (
                             <Select
@@ -261,52 +253,68 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                               </SelectContent>
                             </Select>
                           ) : field === "organization" ? (
-                            <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant="outline"
-                                    role="combobox"
-                                    aria-expanded={openCombobox}
-                                    className="w-full justify-between"
-                                  >
-                                    {formField.value
-                                      ? formField.value
-                                      : "Select organization..."}
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                <Command>
-                                  <CommandInput 
-                                    placeholder="Search organization..." 
-                                    className="h-9"
-                                  />
-                                  <CommandEmpty>No organization found.</CommandEmpty>
-                                  <CommandGroup>
-                                    {organizations.map((org: any) => (
-                                      <CommandItem
-                                        key={org.id}
-                                        value={org.name}
-                                        onSelect={(currentValue) => {
-                                          formField.onChange(currentValue);
-                                          setOpenCombobox(false);
+                            <div className="relative">
+                              <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <div className="flex items-center">
+                                      <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={openCombobox}
+                                        className="w-full justify-between"
+                                      >
+                                        {formField.value
+                                          ? formField.value
+                                          : "Select organization..."}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="ml-2 h-8 w-8"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setShowAddOrg(true);
                                         }}
                                       >
-                                        <Check
-                                          className={cn(
-                                            "mr-2 h-4 w-4",
-                                            formField.value === org.name ? "opacity-100" : "opacity-0"
-                                          )}
-                                        />
-                                        {org.name}
-                                      </CommandItem>
-                                    ))}
-                                  </CommandGroup>
-                                </Command>
-                              </PopoverContent>
-                            </Popover>
+                                        <Plus className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                  <Command>
+                                    <CommandInput 
+                                      placeholder="Search organization..." 
+                                      className="h-9"
+                                    />
+                                    <CommandEmpty>No organization found.</CommandEmpty>
+                                    <CommandGroup>
+                                      {sortedOrganizations.map((org: any) => (
+                                        <CommandItem
+                                          key={org.id}
+                                          value={org.name}
+                                          onSelect={(currentValue) => {
+                                            formField.onChange(currentValue);
+                                            setOpenCombobox(false);
+                                          }}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              formField.value === org.name ? "opacity-100" : "opacity-0"
+                                            )}
+                                          />
+                                          {org.name}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
+                            </div>
                           ) : field === "notes" ? (
                             <Textarea {...formField} className="min-h-[100px]" />
                           ) : field === "lastContact" ? (
