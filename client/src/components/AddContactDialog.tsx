@@ -32,7 +32,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, ChevronRight, Check, ChevronsUpDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, ChevronsUpDown, Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RELATIONSHIP_TYPES, getRelationshipIdByName } from "./RelationshipTypeManager";
 import { cn } from "@/lib/utils";
@@ -173,7 +173,7 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
             description: "Relationship type is required",
             variant: "destructive",
           });
-          setStep(0); 
+          setStep(0);
           return;
         }
         await mutation.mutateAsync(data);
@@ -216,7 +216,7 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                   <FormField
                     key={field}
                     control={form.control}
-                    name={field}
+                    name={field as keyof typeof form.formState.defaultValues}
                     rules={{
                       required: field === "name" ? "Name is required" :
                                 field === "relationshipToYou" ? "Relationship type is required" :
@@ -224,12 +224,25 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                     }}
                     render={({ field: formField }) => (
                       <FormItem>
-                        <FormLabel className="capitalize">
-                          {field === "email1" ? "Email Address 1" :
-                           field === "email2" ? "Email Address 2" :
-                           field === "relationshipToYou" ? "Relationship To You" :
-                           field.replace(/([A-Z])/g, ' $1').trim()}
-                        </FormLabel>
+                        <div className="flex items-center justify-between">
+                          <FormLabel className="capitalize">
+                            {field === "email1" ? "Email Address 1" :
+                             field === "email2" ? "Email Address 2" :
+                             field === "relationshipToYou" ? "Relationship To You" :
+                             field.replace(/([A-Z])/g, ' $1').trim()}
+                          </FormLabel>
+                          {field === "organization" && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => setShowAddOrg(true)}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                         <FormControl>
                           {field === "relationshipToYou" ? (
                             <Select
@@ -264,9 +277,12 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                                   </Button>
                                 </FormControl>
                               </PopoverTrigger>
-                              <PopoverContent className="w-full p-0">
+                              <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                 <Command>
-                                  <CommandInput placeholder="Search organization..." />
+                                  <CommandInput 
+                                    placeholder="Search organization..." 
+                                    className="h-9"
+                                  />
                                   <CommandEmpty>No organization found.</CommandEmpty>
                                   <CommandGroup>
                                     {organizations.map((org: any) => (
