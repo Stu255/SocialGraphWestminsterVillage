@@ -31,6 +31,23 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { AddOrganizationDialog } from "./AddOrganizationDialog";
 
 
+interface CsvValidationError {
+  row: number;
+  fieldErrors: {
+    field: string;
+    value: string;
+    error: string;
+    originalRow: Record<string, string>;
+  }[];
+}
+
+interface CsvUploadResults {
+  added: number;
+  updated: number;
+  errors: CsvValidationError[];
+  rowsWithErrors: Set<number>;
+}
+
 interface ContactListDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -486,7 +503,6 @@ export function ContactListDialog({ open, onOpenChange, graphId, isGlobalView = 
     }
   };
 
-  // Handle CSV upload
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -505,17 +521,67 @@ export function ContactListDialog({ open, onOpenChange, graphId, isGlobalView = 
         throw new Error(error.message || 'Failed to upload contacts');
       }
 
-      const result = await response.json();
-      queryClient.invalidateQueries({ queryKey: ["/api/people/global"] });
+      const result: CsvUploadResults = await response.json();
 
-      toast({
-        title: "Success",
-        description: `Successfully processed contacts. Added: ${result.added}, Updated: ${result.updated}${result.errors.length > 0 ? `. Errors: ${result.errors.length}` : ''}`,
-      });
+      // Group errors by row for better display
+      const errorsByRow = result.errors.reduce((acc, error) => {
+        const row = error.row;
+        if (!acc[row]) {
+          acc[row] = {
+            rowNumber: row,
+            fields: new Map<string, { value: string; error: string; }>()
+          };
+        }
 
+        error.fieldErrors.forEach(fieldError => {
+          acc[row].fields.set(fieldError.field, {
+            value: fieldError.value,
+            error: fieldError.error
+          });
+        });
+
+        return acc;
+      }, {} as Record<number, { rowNumber: number; fields: Map<string, { value: string; error: string; }> }>);
+
+      // If there are errors, show them in a dialog
       if (result.errors.length > 0) {
-        console.error('CSV upload errors:', result.errors);
+        toast({
+          title: "CSV Upload Issues",
+          description: (
+            <div className="mt-2 space-y-2">
+              <p>Successfully processed:</p>
+              <ul className="list-disc pl-4">
+                <li>Added: {result.added} contacts</li>
+                <li>Updated: {result.updated} contacts</li>
+              </ul>
+              <p className="text-destructive">Found {result.errors.length} rows with issues:</p>
+              <div className="max-h-[200px] overflow-y-auto">
+                {Object.values(errorsByRow).map(({ rowNumber, fields }) => (
+                  <div key={rowNumber} className="border-l-2 border-destructive pl-2 mb-2">
+                    <p className="font-semibold">Row {rowNumber}:</p>
+                    <ul className="list-disc pl-4">
+                      {Array.from(fields.entries()).map(([field, { error }]) => (
+                        <li key={field} className="text-sm">
+                          {field}: {error}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ),
+          duration: 10000,
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: `Successfully processed contacts. Added: ${result.added}, Updated: ${result.updated}`,
+        });
       }
+
+      // Refresh the contacts list
+      queryClient.invalidateQueries({ queryKey: ["/api/people/global"] });
     } catch (error: any) {
       toast({
         title: "Error",
