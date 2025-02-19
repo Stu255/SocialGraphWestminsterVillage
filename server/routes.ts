@@ -817,22 +817,7 @@ export function registerRoutes(app: Express): Server {
         'notes'
       ];
 
-      const templateRow = [
-        'Full Name (Required)',
-        'Job Title',
-        'Organization',
-        'Relationship (1-5)',
-        'Last Contact (YYYY-MM-DD)',
-        'Office Phone',
-        'Mobile Phone',
-        'Primary Email',
-        'Secondary Email',
-        'LinkedIn URL',
-        'Twitter Handle',
-        'Additional Notes'
-      ];
-
-      const csvContent = stringify([headers, templateRow]);
+      const csvContent = stringify([headers]);
 
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename=contacts_template.csv');

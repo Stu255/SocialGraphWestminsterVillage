@@ -2,14 +2,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Settings2, ChevronLeft, ChevronRight, ArrowUpDown, ChevronFirst, ChevronLast } from "lucide-react";
+import { Settings2, ChevronLeft, ChevronRight, ArrowUpDown, ChevronFirst, ChevronLast, Download, Upload } from "lucide-react";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ContactFormDialog } from "./ContactFormDialog";
 import { getUserRelationshipNameById } from "./RelationshipTypeManager";
-import { useForm } from "react-hook-form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { useMutation } from "@tanstack/react-query";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -349,6 +349,8 @@ export function ContactListDialog({ open, onOpenChange, graphId, isGlobalView = 
   const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: null, direction: null });
   const [filters, setFilters] = useState<FilterValues>({});
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Modify query to handle global view
   const { data: people } = useQuery({
@@ -452,17 +454,114 @@ export function ContactListDialog({ open, onOpenChange, graphId, isGlobalView = 
     );
   };
 
+  // Handle CSV template download
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await fetch('/api/contacts/template', {
+        method: 'GET',
+      });
+
+      if (!response.ok) throw new Error('Failed to download template');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'contacts_template.csv';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Success",
+        description: "Template downloaded successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle CSV upload
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/contacts/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to upload contacts');
+      }
+
+      const result = await response.json();
+      queryClient.invalidateQueries({ queryKey: ["/api/people/global"] });
+
+      toast({
+        title: "Success",
+        description: `Successfully processed contacts. Added: ${result.added}, Updated: ${result.updated}${result.errors.length > 0 ? `. Errors: ${result.errors.length}` : ''}`,
+      });
+
+      if (result.errors.length > 0) {
+        console.error('CSV upload errors:', result.errors);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+
+    // Reset the file input
+    event.target.value = '';
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[825px]">
           <DialogHeader>
-            <DialogTitle>{isGlobalView ? "Global Contacts" : "Contacts"}</DialogTitle>
-            <DialogDescription>
-              {isGlobalView
-                ? "A list of all contacts across all your networks"
-                : "A list of all contacts in your network"}
-            </DialogDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle>{isGlobalView ? "Global Contacts" : "Contacts"}</DialogTitle>
+                <DialogDescription>
+                  {isGlobalView
+                    ? "A list of all contacts across all your networks"
+                    : "A list of all contacts in your network"}
+                </DialogDescription>
+              </div>
+              {isGlobalView && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="csv-upload"
+                  />
+                  <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Template
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => document.getElementById('csv-upload')?.click()}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload CSV
+                  </Button>
+                </div>
+              )}
+            </div>
           </DialogHeader>
 
           <div className="relative">

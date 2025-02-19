@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, LogOut, Users, Settings, Download, Upload } from "lucide-react";
+import { Plus, LogOut, Users, Settings } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
 import { GraphCard } from "@/components/GraphCard";
@@ -37,76 +37,6 @@ export default function AccountPage() {
       });
     }
   });
-
-  // Handle CSV template download
-  const handleDownloadTemplate = async () => {
-    try {
-      const response = await fetch('/api/contacts/template', {
-        method: 'GET',
-      });
-
-      if (!response.ok) throw new Error('Failed to download template');
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'contacts_template.csv';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast({
-        title: "Success",
-        description: "Template downloaded successfully",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Handle CSV upload
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const response = await fetch('/api/contacts/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to upload contacts');
-      }
-
-      const result = await response.json();
-      queryClient.invalidateQueries({ queryKey: ["/api/people/global"] });
-
-      toast({
-        title: "Success",
-        description: `Successfully uploaded ${result.added} contacts`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-
-    // Reset the file input
-    event.target.value = '';
-  };
 
   // Handle error state using useEffect
   useEffect(() => {
@@ -175,21 +105,6 @@ export default function AccountPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Welcome, {user?.username}</h1>
           <div className="flex items-center gap-2">
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleFileUpload}
-              className="hidden"
-              id="csv-upload"
-            />
-            <Button variant="outline" onClick={handleDownloadTemplate}>
-              <Download className="h-4 w-4 mr-2" />
-              Download Template
-            </Button>
-            <Button variant="outline" onClick={() => document.getElementById('csv-upload')?.click()}>
-              <Upload className="h-4 w-4 mr-2" />
-              Upload CSV
-            </Button>
             <Button variant="outline" onClick={() => setShowGlobalContacts(true)}>
               <Users className="h-4 w-4 mr-2" />
               Global Contacts
