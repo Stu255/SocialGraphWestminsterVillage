@@ -273,7 +273,11 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                                 <PopoverContent className="p-0">
                                   <Command>
                                     <CommandInput 
-                                      placeholder="Type to search..." 
+                                      placeholder="Search organization..."
+                                      onValueChange={(search) => {
+                                        // The filtering is handled automatically by Command
+                                        // as it filters based on the CommandItem value prop
+                                      }}
                                       className="h-9"
                                     />
                                     <CommandEmpty>No organization found.</CommandEmpty>
@@ -287,6 +291,12 @@ export function AddContactDialog({ open, onOpenChange, graphId }: AddContactDial
                                             setOpenCombobox(false);
                                           }}
                                         >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              formField.value === org.name ? "opacity-100" : "opacity-0"
+                                            )}
+                                          />
                                           {org.name}
                                         </CommandItem>
                                       ))}
