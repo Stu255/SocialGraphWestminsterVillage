@@ -619,7 +619,7 @@ export function ContactListDialog({ open, onOpenChange, graphId, isGlobalView = 
                   />
                   <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
                     <Download className="h-4 w-4 mr-2" />
-                    Download Template
+                    Export Contacts
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => document.getElementById('csv-upload')?.click()}>
                     <Upload className="h-4 w-4 mr-2" />
