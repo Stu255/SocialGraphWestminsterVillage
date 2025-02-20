@@ -1,4 +1,4 @@
 name,jobTitle,organization,userRelationshipType,lastContact,officeNumber,mobileNumber,email1,email2,linkedin,twitter,notes
 Full Name (Required),Job Title,Organization,Relationship (1-5),Last Contact (YYYY-MM-DD),Office Phone,Mobile Phone,Primary Email,Secondary Email,LinkedIn URL,Twitter Handle,Additional Notes
 Daniel Ellison,Brother,London,1,25/02/2025,7880745894,7880745895,,dan@google.com,,,dickhead
-Gillian Ellison,Another,NW,1,16/02/2025,154r4,145154,,dfadf,,,yes
+Gillian Ellison,Another,NW,1,16/02/2025,,,,,,,yes

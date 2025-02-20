@@ -5,21 +5,21 @@ import { db } from "@db";
 import multer from "multer";
 import { stringify } from "csv-stringify/sync";
 import { parse } from "csv-parse/sync";
-import { 
-  people, 
-  connections, 
-  connectionTypes, 
-  organizations, 
+import {
+  people,
+  connections,
+  connectionTypes,
+  organizations,
   socialGraphs,
   insertPersonSchema,
   insertSocialGraphSchema,
   interactions,
   interactionContacts,
   customFields,
-  fieldPreferences 
+  fieldPreferences
 } from "@db/schema";
 import { setupAuth } from "./auth";
-import {interactionContacts as interactionContacts2} from "@db/schema"; 
+import {interactionContacts as interactionContacts2} from "@db/schema";
 import { parse as parseDate } from "date-fns";
 
 function normalizeDate(dateStr: string): string | null {
@@ -111,17 +111,17 @@ function calculateCloseness(
 
   if (reachableNodes === 1) return 0;
   if (reachableNodes < totalNodes) {
-    return ((reachableNodes - 1) * (reachableNodes - 1)) / 
-           ((totalNodes - 1) * totalDistance);
+    return ((reachableNodes - 1) * (reachableNodes - 1)) /
+      ((totalNodes - 1) * totalDistance);
   }
 
   return (reachableNodes - 1) / totalDistance;
 }
 
-const upload = multer({ 
+const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 5 * 1024 * 1024 
+    fileSize: 5 * 1024 * 1024
   }
 });
 
@@ -132,7 +132,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/graphs", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Not logged in" }); 
+      return res.status(401).json({ error: "Not logged in" });
     }
 
     try {
@@ -190,8 +190,8 @@ export function registerRoutes(app: Express): Server {
 
       const result = insertSocialGraphSchema.safeParse(graphData);
       if (!result.success) {
-        return res.status(400).json({ 
-          error: "Invalid input: " + result.error.issues.map(i => i.message).join(", ") 
+        return res.status(400).json({
+          error: "Invalid input: " + result.error.issues.map(i => i.message).join(", ")
         });
       }
 
@@ -250,8 +250,8 @@ export function registerRoutes(app: Express): Server {
       const result = insertPersonSchema.safeParse(personData);
       if (!result.success) {
         console.error("Validation failed:", result.error.issues);
-        return res.status(400).json({ 
-          error: "Invalid input: " + result.error.issues.map(i => i.message).join(", ") 
+        return res.status(400).json({
+          error: "Invalid input: " + result.error.issues.map(i => i.message).join(", ")
         });
       }
 
@@ -274,8 +274,8 @@ export function registerRoutes(app: Express): Server {
       if (userRelationshipType !== undefined && userRelationshipType !== null) {
         const relationshipValue = Number(userRelationshipType);
         if (isNaN(relationshipValue) || relationshipValue < 0 || relationshipValue > 5) {
-          return res.status(400).json({ 
-            error: "Invalid relationship value. Must be a number between 0 and 5" 
+          return res.status(400).json({
+            error: "Invalid relationship value. Must be a number between 0 and 5"
           });
         }
       }
@@ -286,7 +286,7 @@ export function registerRoutes(app: Express): Server {
           name: req.body.name,
           jobTitle: req.body.jobTitle,
           organization: req.body.organization,
-          userRelationshipType: userRelationshipType, 
+          userRelationshipType: userRelationshipType,
           officeNumber: req.body.officeNumber,
           mobileNumber: req.body.mobileNumber,
           email1: req.body.email1,
@@ -305,7 +305,7 @@ export function registerRoutes(app: Express): Server {
       res.json(updatedPerson);
     } catch (error: any) {
       console.error("Error updating person:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: error?.message || "Failed to update person",
         details: process.env.NODE_ENV === 'development' ? error : undefined
       });
@@ -366,11 +366,11 @@ export function registerRoutes(app: Express): Server {
 
         const [reverse] = await tx
           .insert(connections)
-          .values({ 
-            sourcePersonId: targetPersonId, 
-            targetPersonId: sourcePersonId, 
-            connectionType, 
-            graphId 
+          .values({
+            sourcePersonId: targetPersonId,
+            targetPersonId: sourcePersonId,
+            connectionType,
+            graphId
           })
           .returning();
 
@@ -416,18 +416,18 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: "Failed to delete connection" });
     }
   });
-  
-    app.delete("/api/connections/:id", async (req, res) => {
-      if (!req.isAuthenticated()) {
-          return res.status(401).json({ error: "Not logged in" });
-      }
-      try {
-          await db.delete(connections).where(eq(connections.id, parseInt(req.params.id)));
-          res.json({ success: true });
-      } catch (error) {
-          res.status(500).json({ error: "Failed to delete connection" });
-      }
-    });
+
+  app.delete("/api/connections/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not logged in" });
+    }
+    try {
+      await db.delete(connections).where(eq(connections.id, parseInt(req.params.id)));
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete connection" });
+    }
+  });
 
   app.put("/api/relationships/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -437,11 +437,11 @@ export function registerRoutes(app: Express): Server {
     try {
       const { connectionType, graphId, sourcePersonId, targetPersonId } = req.body;
 
-      if (connectionType === undefined || connectionType === null || 
-          typeof connectionType !== 'number' || 
-          connectionType < 0 || connectionType > 5) {
-        return res.status(400).json({ 
-          error: "Invalid connection type. Must be a number between 0 and 5" 
+      if (connectionType === undefined || connectionType === null ||
+        typeof connectionType !== 'number' ||
+        connectionType < 0 || connectionType > 5) {
+        return res.status(400).json({
+          error: "Invalid connection type. Must be a number between 0 and 5"
         });
       }
 
@@ -593,7 +593,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const [graph] = await db
         .update(socialGraphs)
-        .set({ 
+        .set({
           name: req.body.name,
           modifiedAt: new Date()
         })
@@ -611,39 +611,39 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-    app.post("/api/graphs/:id/duplicate", async (req, res) => {
-      if (!req.isAuthenticated()) {
-          return res.status(401).json({ error: "Not logged in" });
+  app.post("/api/graphs/:id/duplicate", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not logged in" });
+    }
+
+    try {
+      const now = new Date();
+
+      const [originalGraph] = await db
+        .select()
+        .from(socialGraphs)
+        .where(eq(socialGraphs.id, parseInt(req.params.id)));
+
+      if (!originalGraph) {
+        return res.status(404).json({ error: "Graph not found" });
       }
-  
-      try {
-          const now = new Date();
-          
-          const [originalGraph] = await db
-              .select()
-              .from(socialGraphs)
-              .where(eq(socialGraphs.id, parseInt(req.params.id)));
-  
-          if (!originalGraph) {
-              return res.status(404).json({ error: "Graph not found" });
-          }
-  
-          
-          const [newGraph] = await db
-              .insert(socialGraphs)
-              .values({
-                  name: `${originalGraph.name} (Copy)`,
-                  userId: req.user.id,
-                  modifiedAt: now,
-              })
-              .returning();
-  
-          res.json(newGraph);
-      } catch (error) {
-          console.error("Error duplicating graph:", error);
-          res.status(500).json({ error: "Failed to duplicate graph" });
-      }
-    });
+
+
+      const [newGraph] = await db
+        .insert(socialGraphs)
+        .values({
+          name: `${originalGraph.name} (Copy)`,
+          userId: req.user.id,
+          modifiedAt: now,
+        })
+        .returning();
+
+      res.json(newGraph);
+    } catch (error) {
+      console.error("Error duplicating graph:", error);
+      res.status(500).json({ error: "Failed to duplicate graph" });
+    }
+  });
 
   app.post("/api/graphs/:id/delete", async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -656,7 +656,7 @@ export function registerRoutes(app: Express): Server {
 
       const [graph] = await db
         .update(socialGraphs)
-        .set({ 
+        .set({
           deleteAt,
           modifiedAt: new Date()
         })
@@ -673,31 +673,31 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: "Failed to set delete timer" });
     }
   });
-  
-    app.delete("/api/graphs/:id/delete-timer", async (req, res) => {
-      if (!req.isAuthenticated()) {
-          return res.status(401).json({ error: "Not logged in" });
+
+  app.delete("/api/graphs/:id/delete-timer", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not logged in" });
+    }
+
+    try {
+      const [graph] = await db
+        .update(socialGraphs)
+        .set({
+          deleteAt: new Date('3099-12-31T23:59:59Z')
+        })
+        .where(eq(socialGraphs.id, parseInt(req.params.id)))
+        .returning();
+
+      if (!graph) {
+        return res.status(404).json({ error: "Graph not found" });
       }
-  
-      try {
-          const [graph] = await db
-              .update(socialGraphs)
-              .set({ 
-                deleteAt: new Date('3099-12-31T23:59:59Z')
-              })
-              .where(eq(socialGraphs.id, parseInt(req.params.id)))
-              .returning();
-  
-          if (!graph) {
-              return res.status(404).json({ error: "Graph not found" });
-          }
-  
-          res.json(graph);
-      } catch (error) {
-          console.error("Error canceling delete timer:", error);
-          res.status(500).json({ error: "Failed to cancel delete timer" });
-      }
-    });
+
+      res.json(graph);
+    } catch (error) {
+      console.error("Error canceling delete timer:", error);
+      res.status(500).json({ error: "Failed to cancel delete timer" });
+    }
+  });
 
   app.delete("/api/graphs/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -762,8 +762,8 @@ export function registerRoutes(app: Express): Server {
       const { type, notes, date, contactIds, graphId } = req.body;
 
       if (!type || !date || !contactIds || !Array.isArray(contactIds) || !graphId) {
-        return res.status(400).json({ 
-          error: "Missing required fields" 
+        return res.status(400).json({
+          error: "Missing required fields"
         });
       }
 
@@ -773,7 +773,7 @@ export function registerRoutes(app: Express): Server {
           .values({
             type,
             notes: notes || null,
-            date: new Date(date), 
+            date: new Date(date),
             graphId
           })
           .returning();
@@ -793,7 +793,7 @@ export function registerRoutes(app: Express): Server {
       res.json(interaction);
     } catch (error: any) {
       console.error("Error creating interaction:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to create interaction",
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
@@ -836,7 +836,7 @@ export function registerRoutes(app: Express): Server {
       res.json(interactionsData);
     } catch (error: any) {
       console.error("Error fetching interactions:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to fetch interactions",
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
@@ -886,9 +886,25 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      // Parse CSV with from_line: 2 to skip the header row
+      // Define column mappings from template to internal fields
+      const columnMap = {
+        'Full Name (Required)': 'name',
+        'Job Title': 'jobTitle',
+        'Organization': 'organization',
+        'Relationship (1-5)': 'userRelationshipType',
+        'Last Contact (YYYY-MM-DD)': 'lastContact',
+        'Office Phone': 'officeNumber',
+        'Mobile Phone': 'mobileNumber',
+        'Primary Email': 'email1',
+        'Secondary Email': 'email2',
+        'LinkedIn URL': 'linkedin',
+        'Twitter Handle': 'twitter',
+        'Additional Notes': 'notes'
+      };
+
+      // Parse CSV with column mapping
       const records = parse(req.file.buffer.toString(), {
-        columns: true,
+        columns: (headers: string[]) => headers.map(h => columnMap[h] || h),
         skip_empty_lines: true,
         trim: true,
         from_line: 2 // Skip the header row
@@ -928,8 +944,7 @@ export function registerRoutes(app: Express): Server {
                 `Row ${index + 2}: Could not parse date "${record.lastContact}". ` +
                 `Please use one of these formats: YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY, M/D/YYYY`
               );
-              continue;
-            }
+              continue            }
           }
 
           const personData = {
@@ -939,13 +954,16 @@ export function registerRoutes(app: Express): Server {
             userRelationshipType: parseInt(record.userRelationshipType) || 1,
             lastContact: normalizedLastContact,
             officeNumber: record.officeNumber || null,
-            mobileNumber: record.mobileNumber || null,            email1: record.email1 || null,
+            mobileNumber: record.mobileNumber || null,
+            email1: record.email1 || null,
             email2: record.email2 || null,
             linkedin: record.linkedin || null,
             twitter: record.twitter || null,
             notes: record.notes || null,
             graphId: defaultGraphId
           };
+
+          console.log("Processing person data:", personData);
 
           const validationResult = insertPersonSchema.safeParse(personData);
           if (!validationResult.success) {
@@ -982,13 +1000,12 @@ export function registerRoutes(app: Express): Server {
       res.json(results);
     } catch (error) {
       console.error("Error processing CSV upload:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to process CSV upload",
         details: process.env.NODE_ENV === 'development' ? error : undefined
       });
     }
   });
-
   app.get("/api/people/global", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not logged in" });
@@ -1035,8 +1052,8 @@ export function registerRoutes(app: Express): Server {
       const { type, notes, date, contactIds, graphId } = req.body;
 
       if (!type || !date || !contactIds || !Array.isArray(contactIds) || !graphId) {
-        return res.status(400).json({ 
-          error: "Missing required fields" 
+        return res.status(400).json({
+          error: "Missing required fields"
         });
       }
 
@@ -1046,7 +1063,7 @@ export function registerRoutes(app: Express): Server {
           .values({
             type,
             notes: notes || null,
-            date: new Date(date), 
+            date: new Date(date),
             graphId
           })
           .returning();
@@ -1066,7 +1083,7 @@ export function registerRoutes(app: Express): Server {
       res.json(interaction);
     } catch (error: any) {
       console.error("Error creating interaction:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to create interaction",
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
@@ -1109,7 +1126,7 @@ export function registerRoutes(app: Express): Server {
       res.json(interactionsData);
     } catch (error: any) {
       console.error("Error fetching interactions:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to fetch interactions",
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
@@ -1159,9 +1176,25 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      // Parse CSV with from_line: 2 to skip the header row
+      // Define column mappings from template to internal fields
+      const columnMap = {
+        'Full Name (Required)': 'name',
+        'Job Title': 'jobTitle',
+        'Organization': 'organization',
+        'Relationship (1-5)': 'userRelationshipType',
+        'Last Contact (YYYY-MM-DD)': 'lastContact',
+        'Office Phone': 'officeNumber',
+        'Mobile Phone': 'mobileNumber',
+        'Primary Email': 'email1',
+        'Secondary Email': 'email2',
+        'LinkedIn URL': 'linkedin',
+        'Twitter Handle': 'twitter',
+        'Additional Notes': 'notes'
+      };
+
+      // Parse CSV with column mapping
       const records = parse(req.file.buffer.toString(), {
-        columns: true,
+        columns: (headers: string[]) => headers.map(h => columnMap[h] || h),
         skip_empty_lines: true,
         trim: true,
         from_line: 2 // Skip the header row
@@ -1221,6 +1254,8 @@ export function registerRoutes(app: Express): Server {
             graphId: defaultGraphId
           };
 
+          console.log("Processing person data:", personData);
+
           const validationResult = insertPersonSchema.safeParse(personData);
           if (!validationResult.success) {
             results.errors.push(
@@ -1256,7 +1291,7 @@ export function registerRoutes(app: Express): Server {
       res.json(results);
     } catch (error) {
       console.error("Error processing CSV upload:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to process CSV upload",
         details: process.env.NODE_ENV === 'development' ? error : undefined
       });
@@ -1358,7 +1393,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const [graph] = await db
         .update(socialGraphs)
-        .set({ 
+        .set({
           name: req.body.name,
           modifiedAt: new Date()
         })
@@ -1376,39 +1411,39 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-    app.post("/api/graphs/:id/duplicate", async (req, res) => {
-      if (!req.isAuthenticated()) {
-          return res.status(401).json({ error: "Not logged in" });
+  app.post("/api/graphs/:id/duplicate", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not logged in" });
+    }
+
+    try {
+      const now = new Date();
+
+      const [originalGraph] = await db
+        .select()
+        .from(socialGraphs)
+        .where(eq(socialGraphs.id, parseInt(req.params.id)));
+
+      if (!originalGraph) {
+        return res.status(404).json({ error: "Graph not found" });
       }
-  
-      try {
-          const now = new Date();
-          
-          const [originalGraph] = await db
-              .select()
-              .from(socialGraphs)
-              .where(eq(socialGraphs.id, parseInt(req.params.id)));
-  
-          if (!originalGraph) {
-              return res.status(404).json({ error: "Graph not found" });
-          }
-  
-          
-          const [newGraph] = await db
-              .insert(socialGraphs)
-              .values({
-                  name: `${originalGraph.name} (Copy)`,
-                  userId: req.user.id,
-                  modifiedAt: now,
-              })
-              .returning();
-  
-          res.json(newGraph);
-      } catch (error) {
-          console.error("Error duplicating graph:", error);
-          res.status(500).json({ error: "Failed to duplicate graph" });
-      }
-    });
+
+
+      const [newGraph] = await db
+        .insert(socialGraphs)
+        .values({
+          name: `${originalGraph.name} (Copy)`,
+          userId: req.user.id,
+          modifiedAt: now,
+        })
+        .returning();
+
+      res.json(newGraph);
+    } catch (error) {
+      console.error("Error duplicating graph:", error);
+      res.status(500).json({ error: "Failed to duplicate graph" });
+    }
+  });
 
   app.post("/api/graphs/:id/delete", async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -1421,7 +1456,7 @@ export function registerRoutes(app: Express): Server {
 
       const [graph] = await db
         .update(socialGraphs)
-        .set({ 
+        .set({
           deleteAt,
           modifiedAt: new Date()
         })
@@ -1438,31 +1473,31 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: "Failed to set delete timer" });
     }
   });
-  
-    app.delete("/api/graphs/:id/delete-timer", async (req, res) => {
-      if (!req.isAuthenticated()) {
-          return res.status(401).json({ error: "Not logged in" });
+
+  app.delete("/api/graphs/:id/delete-timer", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not logged in" });
+    }
+
+    try {
+      const [graph] = await db
+        .update(socialGraphs)
+        .set({
+          deleteAt: new Date('3099-12-31T23:59:59Z')
+        })
+        .where(eq(socialGraphs.id, parseInt(req.params.id)))
+        .returning();
+
+      if (!graph) {
+        return res.status(404).json({ error: "Graph not found" });
       }
-  
-      try {
-          const [graph] = await db
-              .update(socialGraphs)
-              .set({ 
-                deleteAt: new Date('3099-12-31T23:59:59Z')
-              })
-              .where(eq(socialGraphs.id, parseInt(req.params.id)))
-              .returning();
-  
-          if (!graph) {
-              return res.status(404).json({ error: "Graph not found" });
-          }
-  
-          res.json(graph);
-      } catch (error) {
-          console.error("Error canceling delete timer:", error);
-          res.status(500).json({ error: "Failed to cancel delete timer" });
-      }
-    });
+
+      res.json(graph);
+    } catch (error) {
+      console.error("Error canceling delete timer:", error);
+      res.status(500).json({ error: "Failed to cancel delete timer" });
+    }
+  });
 
   app.delete("/api/graphs/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -1527,8 +1562,8 @@ export function registerRoutes(app: Express): Server {
       const { type, notes, date, contactIds, graphId } = req.body;
 
       if (!type || !date || !contactIds || !Array.isArray(contactIds) || !graphId) {
-        return res.status(400).json({ 
-          error: "Missing required fields" 
+        return res.status(400).json({
+          error: "Missing required fields"
         });
       }
 
@@ -1538,7 +1573,7 @@ export function registerRoutes(app: Express): Server {
           .values({
             type,
             notes: notes || null,
-            date: new Date(date), 
+            date: new Date(date),
             graphId
           })
           .returning();
@@ -1558,7 +1593,7 @@ export function registerRoutes(app: Express): Server {
       res.json(interaction);
     } catch (error: any) {
       console.error("Error creating interaction:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to create interaction",
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
@@ -1601,7 +1636,7 @@ export function registerRoutes(app: Express): Server {
       res.json(interactionsData);
     } catch (error: any) {
       console.error("Error fetching interactions:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to fetch interactions",
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
@@ -1651,9 +1686,25 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      // Parse CSV with from_line: 2 to skip the header row
+      // Define column mappings from template to internal fields
+      const columnMap = {
+        'Full Name (Required)': 'name',
+        'Job Title': 'jobTitle',
+        'Organization': 'organization',
+        'Relationship (1-5)': 'userRelationshipType',
+        'Last Contact (YYYY-MM-DD)': 'lastContact',
+        'Office Phone': 'officeNumber',
+        'Mobile Phone': 'mobileNumber',
+        'Primary Email': 'email1',
+        'Secondary Email': 'email2',
+        'LinkedIn URL': 'linkedin',
+        'Twitter Handle': 'twitter',
+        'Additional Notes': 'notes'
+      };
+
+      // Parse CSV with column mapping
       const records = parse(req.file.buffer.toString(), {
-        columns: true,
+        columns: (headers: string[]) => headers.map(h => columnMap[h] || h),
         skip_empty_lines: true,
         trim: true,
         from_line: 2 // Skip the header row
@@ -1713,6 +1764,8 @@ export function registerRoutes(app: Express): Server {
             graphId: defaultGraphId
           };
 
+          console.log("Processing person data:", personData);
+
           const validationResult = insertPersonSchema.safeParse(personData);
           if (!validationResult.success) {
             results.errors.push(
@@ -1748,7 +1801,7 @@ export function registerRoutes(app: Express): Server {
       res.json(results);
     } catch (error) {
       console.error("Error processing CSV upload:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to process CSV upload",
         details: process.env.NODE_ENV === 'development' ? error : undefined
       });
