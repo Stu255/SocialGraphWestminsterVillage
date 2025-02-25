@@ -21,30 +21,30 @@ import {
 import { setupAuth } from "./auth";
 import {interactionContacts as interactionContacts2} from "@db/schema";
 import { parse as parseDate } from "date-fns";
+import { apiAuth } from "./auth";
 
 function normalizeDate(dateStr: string): string | null {
   if (!dateStr) return null;
 
   try {
-    // First, clean up the input
     const cleanDate = dateStr.trim();
     console.log("Attempting to parse date:", cleanDate);
 
     const formats = [
-      'yyyy-MM-dd',    // Standard ISO
-      'MM/dd/yyyy',    // US format
-      'dd/MM/yyyy',    // UK format
-      'MM-dd-yyyy',    // US with dashes
-      'dd-MM-yyyy',    // UK with dashes
-      'M/d/yyyy',      // Short US format (Excel default)
-      'd/M/yyyy',      // Short UK format
-      'MMM d, yyyy',   // Month name format
-      'MMMM d, yyyy',  // Full month name
-      'd-MMM-yyyy',    // Excel alternative format
-      'MMM-dd-yyyy',   // Another common format
-      'yyyy/MM/dd',    // Alternative ISO
-      'M-d-yyyy',      // Short with dashes
-      'd-M-yyyy'       // Short UK with dashes
+      'yyyy-MM-dd',    
+      'MM/dd/yyyy',    
+      'dd/MM/yyyy',    
+      'MM-dd-yyyy',    
+      'dd-MM-yyyy',    
+      'M/d/yyyy',      
+      'd/M/yyyy',      
+      'MMM d, yyyy',   
+      'MMMM d, yyyy',  
+      'd-MMM-yyyy',    
+      'MMM-dd-yyyy',   
+      'yyyy/MM/dd',    
+      'M-d-yyyy',      
+      'd-M-yyyy'       
     ];
 
     for (const format of formats) {
@@ -60,7 +60,6 @@ function normalizeDate(dateStr: string): string | null {
       }
     }
 
-    // If we get here, no format worked
     console.log("Failed to parse date:", cleanDate, "with any known format");
     return null;
   } catch (error) {
@@ -886,7 +885,6 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      // Define column mappings from template to internal fields
       const columnMap = {
         'Full Name (Required)': 'name',
         'Job Title': 'jobTitle',
@@ -902,12 +900,11 @@ export function registerRoutes(app: Express): Server {
         'Additional Notes': 'notes'
       };
 
-      // Parse CSV with column mapping
       const records = parse(req.file.buffer.toString(), {
         columns: (headers: string[]) => headers.map(h => columnMap[h] || h),
         skip_empty_lines: true,
         trim: true,
-        from_line: 2 // Skip the header row
+        from_line: 2 
       });
 
       console.log("Parsed records:", records);
@@ -931,7 +928,6 @@ export function registerRoutes(app: Express): Server {
 
       for (const [index, record] of records.entries()) {
         try {
-          // Skip empty rows or template example rows
           if (!record.name || record.name.includes("(Required)") || record.name.toLowerCase().includes("full name")) {
             continue;
           }
@@ -944,7 +940,8 @@ export function registerRoutes(app: Express): Server {
                 `Row ${index + 2}: Could not parse date "${record.lastContact}". ` +
                 `Please use one of these formats: YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY, M/D/YYYY`
               );
-              continue            }
+              continue;
+            }
           }
 
           const personData = {
@@ -1006,6 +1003,7 @@ export function registerRoutes(app: Express): Server {
       });
     }
   });
+
   app.get("/api/people/global", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not logged in" });
@@ -1176,7 +1174,6 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      // Define column mappings from template to internal fields
       const columnMap = {
         'Full Name (Required)': 'name',
         'Job Title': 'jobTitle',
@@ -1192,12 +1189,11 @@ export function registerRoutes(app: Express): Server {
         'Additional Notes': 'notes'
       };
 
-      // Parse CSV with column mapping
       const records = parse(req.file.buffer.toString(), {
         columns: (headers: string[]) => headers.map(h => columnMap[h] || h),
         skip_empty_lines: true,
         trim: true,
-        from_line: 2 // Skip the header row
+        from_line: 2 
       });
 
       console.log("Parsed records:", records);
@@ -1221,7 +1217,6 @@ export function registerRoutes(app: Express): Server {
 
       for (const [index, record] of records.entries()) {
         try {
-          // Skip empty rows or template example rows
           if (!record.name || record.name.includes("(Required)") || record.name.toLowerCase().includes("full name")) {
             continue;
           }
@@ -1686,7 +1681,6 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      // Define column mappings from template to internal fields
       const columnMap = {
         'Full Name (Required)': 'name',
         'Job Title': 'jobTitle',
@@ -1702,12 +1696,11 @@ export function registerRoutes(app: Express): Server {
         'Additional Notes': 'notes'
       };
 
-      // Parse CSV with column mapping
       const records = parse(req.file.buffer.toString(), {
         columns: (headers: string[]) => headers.map(h => columnMap[h] || h),
         skip_empty_lines: true,
         trim: true,
-        from_line: 2 // Skip the header row
+        from_line: 2 
       });
 
       console.log("Parsed records:", records);
@@ -1731,7 +1724,6 @@ export function registerRoutes(app: Express): Server {
 
       for (const [index, record] of records.entries()) {
         try {
-          // Skip empty rows or template example rows
           if (!record.name || record.name.includes("(Required)") || record.name.toLowerCase().includes("full name")) {
             continue;
           }
@@ -1805,6 +1797,258 @@ export function registerRoutes(app: Express): Server {
         error: "Failed to process CSV upload",
         details: process.env.NODE_ENV === 'development' ? error : undefined
       });
+    }
+  });
+
+  // Add these routes after the existing routes
+
+  // API endpoint to get all graphs for a user
+  app.get("/api/v1/graphs", apiAuth, async (req, res) => {
+    try {
+      const graphs = await db
+        .select()
+        .from(socialGraphs)
+        .where(eq(socialGraphs.userId, req.user.id));
+      res.json(graphs);
+    } catch (error) {
+      console.error("Error fetching graphs:", error);
+      res.status(500).json({ error: "Failed to fetch graphs" });
+    }
+  });
+
+  // API endpoint to create a new contact
+  app.post("/api/v1/contacts", apiAuth, async (req, res) => {
+    try {
+      const { graphId } = req.query;
+      if (!graphId) {
+        return res.status(400).json({ error: "Graph ID is required" });
+      }
+
+      const personData = {
+        name: req.body.name,
+        graphId: Number(graphId),
+        jobTitle: req.body.jobTitle,
+        organization: req.body.organization,
+        userRelationshipType: req.body.relationshipToYou || 1,
+        lastContact: req.body.lastContact,
+        officeNumber: req.body.officeNumber,
+        mobileNumber: req.body.mobileNumber,
+        email1: req.body.email1,
+        email2: req.body.email2,
+        linkedin: req.body.linkedin,
+        twitter: req.body.twitter,
+        notes: req.body.notes,
+      };
+
+      const result = insertPersonSchema.safeParse(personData);
+      if (!result.success) {
+        return res.status(400).json({
+          error: "Invalid input: " + result.error.issues.map(i => i.message).join(", ")
+        });
+      }
+
+      const [person] = await db.insert(people).values(result.data).returning();
+      res.json(person);
+    } catch (error) {
+      console.error("Error creating contact:", error);
+      res.status(500).json({ error: "Failed to create contact" });
+    }
+  });
+
+  // API endpoint to update a contact
+  app.put("/api/v1/contacts/:id", apiAuth, async (req, res) => {
+    try {
+      const [updatedPerson] = await db
+        .update(people)
+        .set({
+          name: req.body.name,
+          jobTitle: req.body.jobTitle,
+          organization: req.body.organization,
+          userRelationshipType: req.body.relationshipToYou,
+          officeNumber: req.body.officeNumber,
+          mobileNumber: req.body.mobileNumber,
+          email1: req.body.email1,
+          email2: req.body.email2,
+          linkedin: req.body.linkedin,
+          twitter: req.body.twitter,
+          notes: req.body.notes,
+        })
+        .where(eq(people.id, parseInt(req.params.id)))
+        .returning();
+
+      if (!updatedPerson) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+
+      res.json(updatedPerson);
+    } catch (error) {
+      console.error("Error updating contact:", error);
+      res.status(500).json({ error: "Failed to update contact" });
+    }
+  });
+
+  // API endpoint to create a new organization
+  app.post("/api/v1/organizations", apiAuth, async (req, res) => {
+    try {
+      const graphId = req.body.graphId || req.body.graph_id;
+      if (!graphId) {
+        return res.status(400).json({ error: "Graph ID is required" });
+      }
+
+      const [organization] = await db
+        .insert(organizations)
+        .values({
+          name: req.body.name,
+          graphId: graphId,
+          industry: req.body.industry || null,
+          hqCity: req.body.hqCity || null,
+          brandColor: req.body.brandColor || "#000000",
+          accentColor: req.body.accentColor || "#000000",
+          website: req.body.website || null,
+          headcount: req.body.headcount || null,
+          turnover: req.body.turnover || null,
+        })
+        .returning();
+
+      res.json(organization);
+    } catch (error) {
+      console.error("Error creating organization:", error);
+      res.status(500).json({ error: "Failed to create organization" });
+    }
+  });
+
+  // API endpoint to update an organization
+  app.put("/api/v1/organizations/:id", apiAuth, async (req, res) => {
+    try {
+      const [organization] = await db
+        .update(organizations)
+        .set({
+          name: req.body.name,
+          industry: req.body.industry || null,
+          hqCity: req.body.hqCity || null,
+          brandColor: req.body.brandColor || "#000000",
+          accentColor: req.body.accentColor || "#000000",
+          website: req.body.website || null,
+          headcount: req.body.headcount || null,
+          turnover: req.body.turnover || null,
+        })
+        .where(eq(organizations.id, parseInt(req.params.id)))
+        .returning();
+
+      if (!organization) {
+        return res.status(404).json({ error: "Organization not found" });
+      }
+
+      res.json(organization);
+    } catch (error) {
+      console.error("Error updating organization:", error);
+      res.status(500).json({ error: "Failed to update organization" });
+    }
+  });
+
+  // API endpoint to create a new connection
+  app.post("/api/v1/connections", apiAuth, async (req, res) => {
+    try {
+      const { sourcePersonId, targetPersonId, connectionType, graphId } = req.body;
+
+      const connection = await db.transaction(async (tx) => {
+        // Delete any existing connections between these contacts
+        await tx.delete(connections)
+          .where(
+            and(
+              eq(connections.graphId, graphId),
+              or(
+                and(
+                  eq(connections.sourcePersonId, sourcePersonId),
+                  eq(connections.targetPersonId, targetPersonId)
+                ),
+                and(
+                  eq(connections.sourcePersonId, targetPersonId),
+                  eq(connections.targetPersonId, sourcePersonId)
+                )
+              )
+            )
+          );
+
+        // Create new bidirectional connection
+        const [forward] = await tx
+          .insert(connections)
+          .values({
+            sourcePersonId,
+            targetPersonId,
+            connectionType,
+            graphId
+          })
+          .returning();
+
+        await tx
+          .insert(connections)
+          .values({
+            sourcePersonId: targetPersonId,
+            targetPersonId: sourcePersonId,
+            connectionType,
+            graphId
+          });
+
+        return forward;
+      });
+
+      res.json(connection);
+    } catch (error) {
+      console.error("Error creating connection:", error);
+      res.status(500).json({ error: "Failed to create connection" });
+    }
+  });
+
+  // API endpoint to update a connection
+  app.put("/api/v1/connections/:id", apiAuth, async (req, res) => {
+    try {
+      const { connectionType } = req.body;
+
+      if (connectionType === undefined || connectionType === null ||
+        typeof connectionType !== 'number' ||
+        connectionType < 0 || connectionType > 5) {
+        return res.status(400).json({
+          error: "Invalid connection type. Must be a number between 0 and 5"
+        });
+      }
+
+      const [existingConnection] = await db
+        .select()
+        .from(connections)
+        .where(eq(connections.id, parseInt(req.params.id)));
+
+      if (!existingConnection) {
+        return res.status(404).json({ error: "Connection not found" });
+      }
+
+      await db.transaction(async (tx) => {
+        await tx
+          .update(connections)
+          .set({ connectionType })
+          .where(eq(connections.id, parseInt(req.params.id)));
+
+        await tx
+          .update(connections)
+          .set({ connectionType })
+          .where(
+            and(
+              eq(connections.sourcePersonId, existingConnection.targetPersonId),
+              eq(connections.targetPersonId, existingConnection.sourcePersonId),
+              eq(connections.graphId, existingConnection.graphId)
+            )
+          );
+      });
+
+      const [updatedConnection] = await db
+        .select()
+        .from(connections)
+        .where(eq(connections.id, parseInt(req.params.id)));
+
+      res.json(updatedConnection);
+    } catch (error) {
+      console.error("Error updating connection:", error);
+      res.status(500).json({ error: "Failed to update connection" });
     }
   });
 

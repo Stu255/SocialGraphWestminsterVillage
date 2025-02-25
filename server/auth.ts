@@ -1,13 +1,13 @@
 import passport from "passport";
 import { IVerifyOptions, Strategy as LocalStrategy } from "passport-local";
-import { type Express } from "express";
+import { type Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import createMemoryStore from "memorystore";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { scrypt, randomBytes, timingSafeEqual, randomUUID } from "crypto";
 import { promisify } from "util";
-import { users, insertUserSchema, type User as SelectUser } from "@db/schema";
+import { users, insertUserSchema, type User as SelectUser, apiTokens, insertApiTokenSchema } from "@db/schema";
 import { db } from "@db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 const scryptAsync = promisify(scrypt);
 const crypto = {
@@ -17,7 +17,6 @@ const crypto = {
     return `${buf.toString("hex")}.${salt}`;
   },
   compare: async (suppliedPassword: string, storedPassword: string) => {
-    // If there's no salt separator, the password hasn't been properly hashed
     if (!storedPassword.includes('.')) {
       return false;
     }
@@ -32,10 +31,39 @@ const crypto = {
   },
 };
 
-// extend express user object with our schema
 declare global {
   namespace Express {
     interface User extends SelectUser { }
+  }
+}
+
+export async function validateApiToken(token: string) {
+  try {
+    const [apiToken] = await db
+      .select()
+      .from(apiTokens)
+      .where(
+        and(
+          eq(apiTokens.token, token),
+          eq(apiTokens.isActive, true)
+        )
+      )
+      .limit(1);
+
+    if (!apiToken) {
+      return null;
+    }
+
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, apiToken.userId))
+      .limit(1);
+
+    return user;
+  } catch (error) {
+    console.error("Error validating API token:", error);
+    return null;
   }
 }
 
@@ -113,7 +141,6 @@ export function setupAuth(app: Express) {
 
       const { username, password } = result.data;
 
-      // Check if user already exists
       const [existingUser] = await db
         .select()
         .from(users)
@@ -124,10 +151,8 @@ export function setupAuth(app: Express) {
         return res.status(400).send("Username already exists");
       }
 
-      // Hash the password
       const hashedPassword = await crypto.hash(password);
 
-      // Create the new user
       const [newUser] = await db
         .insert(users)
         .values({
@@ -136,7 +161,6 @@ export function setupAuth(app: Express) {
         })
         .returning();
 
-      // Log the user in after registration
       req.login(newUser, (err) => {
         if (err) {
           return next(err);
@@ -200,7 +224,6 @@ export function setupAuth(app: Express) {
     res.status(401).send("Not logged in");
   });
 
-  // New route for password reset request
   app.post("/api/reset-password", async (req, res) => {
     try {
       const { username } = req.body;
@@ -208,32 +231,26 @@ export function setupAuth(app: Express) {
         return res.status(400).send("Email address is required");
       }
 
-      // Check if user exists
       const [user] = await db
         .select()
         .from(users)
         .where(eq(users.username, username))
         .limit(1);
 
-      // Always return success to prevent email enumeration
       res.json({
         message: "If an account exists with this email, you will receive password reset instructions.",
       });
 
-      // TODO: Implement actual email sending logic here
-      // For now, we'll just log to console
       if (user) {
         console.log(`Password reset requested for user: ${username}`);
       }
     } catch (error) {
-      // Still return success to prevent email enumeration
       res.json({
         message: "If an account exists with this email, you will receive password reset instructions.",
       });
     }
   });
 
-  // New route for changing password
   app.post("/api/user/change-password", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not logged in");
@@ -246,7 +263,6 @@ export function setupAuth(app: Express) {
         return res.status(400).send("Both current and new passwords are required");
       }
 
-      // Verify current password
       const [user] = await db
         .select()
         .from(users)
@@ -258,7 +274,6 @@ export function setupAuth(app: Express) {
         return res.status(400).send("Current password is incorrect");
       }
 
-      // Hash and update new password
       const hashedPassword = await crypto.hash(newPassword);
       await db
         .update(users)
@@ -271,4 +286,105 @@ export function setupAuth(app: Express) {
       res.status(500).send("Failed to change password");
     }
   });
+
+  // API Token Management
+  app.post("/api/tokens/create", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not logged in" });
+    }
+
+    try {
+      const { name } = req.body;
+      if (!name) {
+        return res.status(400).json({ error: "Token name is required" });
+      }
+
+      const token = randomUUID();
+
+      const [apiToken] = await db
+        .insert(apiTokens)
+        .values({
+          userId: req.user.id,
+          token,
+          name,
+          isActive: true,
+          createdAt: new Date()
+        })
+        .returning();
+
+      res.json({
+        id: apiToken.id,
+        name: apiToken.name,
+        token,
+        createdAt: apiToken.createdAt
+      });
+    } catch (error) {
+      console.error("Error creating API token:", error);
+      res.status(500).json({ error: "Failed to create API token" });
+    }
+  });
+
+  app.get("/api/tokens", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not logged in" });
+    }
+
+    try {
+      const tokens = await db
+        .select({
+          id: apiTokens.id,
+          name: apiTokens.name,
+          createdAt: apiTokens.createdAt,
+          isActive: apiTokens.isActive
+        })
+        .from(apiTokens)
+        .where(eq(apiTokens.userId, req.user.id));
+
+      res.json(tokens);
+    } catch (error) {
+      console.error("Error fetching API tokens:", error);
+      res.status(500).json({ error: "Failed to fetch API tokens" });
+    }
+  });
+
+  app.delete("/api/tokens/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not logged in" });
+    }
+
+    try {
+      await db
+        .update(apiTokens)
+        .set({ isActive: false })
+        .where(
+          and(
+            eq(apiTokens.id, parseInt(req.params.id)),
+            eq(apiTokens.userId, req.user.id)
+          )
+        );
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error revoking API token:", error);
+      res.status(500).json({ error: "Failed to revoke API token" });
+    }
+  });
+}
+
+export async function apiAuth(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: "Invalid authentication method" });
+  }
+
+  const token = authHeader.substring(7);
+  const user = await validateApiToken(token);
+
+  if (!user) {
+    return res.status(401).json({ error: "Invalid API token" });
+  }
+
+  req.user = user;
+  next();
 }

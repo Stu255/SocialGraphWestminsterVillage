@@ -4,11 +4,12 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, LogOut, Users, Settings } from "lucide-react";
+import { Plus, LogOut, Users, Settings, Code2 } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
 import { GraphCard } from "@/components/GraphCard";
 import { ContactListDialog } from "@/components/ContactListDialog";
+import { ApiDocumentation } from "@/components/ApiDocumentation";
 
 interface SocialGraph {
   id: number;
@@ -22,6 +23,7 @@ interface SocialGraph {
 export default function AccountPage() {
   const [newGraphName, setNewGraphName] = useState("");
   const [showGlobalContacts, setShowGlobalContacts] = useState(false);
+  const [showApiDocs, setShowApiDocs] = useState(false);
   const [, setLocation] = useLocation();
   const { logout, user } = useUser();
   const { toast } = useToast();
@@ -38,7 +40,6 @@ export default function AccountPage() {
     }
   });
 
-  // Handle error state using useEffect
   useEffect(() => {
     if (isError) {
       toast({
@@ -105,6 +106,10 @@ export default function AccountPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Welcome, {user?.username}</h1>
           <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setShowApiDocs(true)}>
+              <Code2 className="h-4 w-4 mr-2" />
+              API
+            </Button>
             <Button variant="outline" onClick={() => setShowGlobalContacts(true)}>
               <Users className="h-4 w-4 mr-2" />
               Global Contacts
@@ -166,6 +171,11 @@ export default function AccountPage() {
           open={showGlobalContacts}
           onOpenChange={setShowGlobalContacts}
           isGlobalView
+        />
+
+        <ApiDocumentation
+          open={showApiDocs}
+          onOpenChange={setShowApiDocs}
         />
       </div>
     </div>

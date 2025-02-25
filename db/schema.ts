@@ -2,6 +2,19 @@ import { pgTable, text, serial, integer, timestamp, boolean, unique, jsonb, date
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// API Tokens table
+export const apiTokens = pgTable("api_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  token: text("token").notNull(),
+  name: text("name").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertApiTokenSchema = createInsertSchema(apiTokens);
+export const selectApiTokenSchema = createSelectSchema(apiTokens);
+
 /**
  * Naming Convention:
  * 
@@ -171,3 +184,5 @@ export type Interaction = typeof interactions.$inferSelect;
 export type InsertInteraction = typeof interactions.$inferInsert;
 export type InteractionContact = typeof interactionContacts.$inferSelect;
 export type InsertInteractionContact = typeof interactionContacts.$inferInsert;
+export type ApiToken = typeof apiTokens.$inferSelect;
+export type InsertApiToken = typeof apiTokens.$inferInsert;
